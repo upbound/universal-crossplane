@@ -1,0 +1,34 @@
+apiVersion: v1
+appVersion: 0.0.1
+description: Upbound Distribution of Crossplane allows you to connect your Crossplane-enabled cluster to Upbound Cloud.
+name: ubc-distro
+version: 0.0.1
+icon: https://crossplane.io/images/favicon_192x192.png
+home: https://upbound.io
+maintainers:
+  - name: Upbound Inc.
+    email: info@upbound.io
+keywords:
+  - cloud
+  - infrastructure
+  - services
+  - application
+  - database
+  - cache
+  - bucket
+  - infra
+  - app
+  - ops
+  - oam
+  - gcp
+  - azure
+  - aws
+  - alibaba
+  - cloudsql
+  - rds
+  - s3
+  - azuredatabase
+  - asparadb
+  - gke
+  - aks
+  - eks

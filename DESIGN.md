@@ -63,12 +63,15 @@ all component repositories.
 The `values.yaml` will contain the default values for all components deployed in
 the Helm chart.
 
+Additional to manifests of components, we will include a `ConfigMap` that lists the
+deployed versions of all component. 
+
 ### Upgrade
 
 There are two main scenarios for upgrading:
 * From open source Crossplane with the same version
 * From open source Crossplane with a different version
-* From an earlier version of distro that has additional components
+* From an earlier version of distro that doesn't have the additional components
 
 #### From Open Source Crossplane
 
@@ -96,6 +99,21 @@ We plan to include additional components in the distro alongside Crossplane. Sin
 they will be additive, users will be able to upgrade from both open source Crossplane
 and an earlier version of distro.
 
+## Future Considerations
+
+With this approach, we will have to make sure that variable names of different charts
+originally located elsewhere do not collide. However, once other components are ready
+and managed Crossplane service of Upbound starts to use the distro we'll be able to
+*move* their Helm charts to this repository, so this will get easier to test.
+
+### Monorepo
+
+Once this is used in both self-hosted and managed scenarios, we can consider moving
+the code of other components to this repository. In the end, Helm chart manifests and
+code of components other than Crossplane could live in this repository. This way, we'd
+be able to consolidate everything we can into one place and our final test pipelines
+can run in the same repository as the one that engineers open PRs.
+
 ## Alternatives Considered
 
 ### Upbound Operator
@@ -113,7 +131,10 @@ least for now, there is not a very special logic Helm cannot handle.
 
 The last but not the least is that we can easily go from only-Helm to operator
 approach without much sacrifice, hence we can avoid paying the cost of security
-concerns around the operator.
+concerns around the operator. Going back from operator to only-Helm incurs a higher
+cost both in terms of development effor and technical feasibility.
+
+See this [document](https://docs.google.com/document/d/1DApqQqdgAHy5lEAzUOuTIZbFsvnjuPKZnHMnQeIkCrM) for details.
 
 ### Helm Chart Dependencies
 
@@ -121,3 +142,5 @@ We could have one Helm chart with dependencies to other components, including
 Crossplane. However, Helm dependency management is too rigid for upgrade scenarios
 from a standard chart (OSS) to another one that has dependencies. Also, we lose
 flexibility around variable namings that might affect more than one component.
+
+See this [issue](https://github.com/upbound/hosted-crossplane-squad/issues/439) for details.

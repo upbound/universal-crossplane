@@ -14,7 +14,7 @@ PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 # Charts
 
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
-CROSSPLANE_TAG := v1.0.0
+CROSSPLANE_TAG := v1.1.0
 
 # ====================================================================================
 # Setup Output
@@ -62,7 +62,7 @@ TMPDIR := $(shell mktemp -d)
 # TODO(muvaf): we don't need to copy crds folder after this PR is merged https://github.com/crossplane/crossplane/pull/2160
 crossplane:
 	@$(INFO) Fetching Crossplane chart $(CROSSPLANE_TAG)
-	@git clone $(CROSSPLANE_REPO) $(TMPDIR)/crossplane
+	@git clone -b $(CROSSPLANE_TAG) $(CROSSPLANE_REPO) $(TMPDIR)/crossplane
 	@rm -rf $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crossplane
 	@mkdir -p $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crossplane
 	@cp -a $(TMPDIR)/crossplane/cluster/charts/crossplane/templates $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crossplane/templates

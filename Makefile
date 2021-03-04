@@ -59,14 +59,14 @@ submodules:
 
 TMPDIR := $(shell mktemp -d)
 
-# TODO(muvaf): we don't need to copy crds folder after this PR is merged https://github.com/crossplane/crossplane/pull/2160
+# TODO(muvaf): we don't need to handle crds folder after this PR is merged https://github.com/crossplane/crossplane/pull/2160
 crossplane:
 	@$(INFO) Fetching Crossplane chart $(CROSSPLANE_TAG)
 	@git clone -b $(CROSSPLANE_TAG) $(CROSSPLANE_REPO) $(TMPDIR)/crossplane
-	@rm -rf $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crossplane
-	@mkdir -p $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crossplane
-	@cp -a $(TMPDIR)/crossplane/cluster/charts/crossplane/templates $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crossplane/templates
-	@cp -a $(TMPDIR)/crossplane/cluster/charts/crossplane/crds $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crossplane/crds
+	@rm -rf $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
+	@mkdir -p $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
+	@cp -a $(TMPDIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
+	@cp -a $(TMPDIR)/crossplane/cluster/charts/crossplane/crds $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crds
 	@$(OK) Crossplane chart has been fetched
 
 

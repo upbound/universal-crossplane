@@ -1,0 +1,76 @@
+# ====================================================================================
+# Setup Project
+
+PROJECT_NAME := project-uruk-hai
+PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
+
+# -include will silently skip missing files, which allows us
+# to load those files with a target in the Makefile. If only
+# "include" was used, the make command would fail and refuse
+# to run a target until the include commands succeeded.
+-include build/makelib/common.mk
+
+# ====================================================================================
+# Charts
+
+CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
+CROSSPLANE_TAG := v1.1.0
+
+# ====================================================================================
+# Setup Output
+
+S3_BUCKET ?= project-uruk-hai.releases
+-include build/makelib/output.mk
+
+# ====================================================================================
+# Setup Kubernetes tools
+
+HELM_VERSION=v2.17.0
+-include build/makelib/k8s_tools.mk
+
+# ====================================================================================
+# Setup Helm
+
+HELM_BASE_URL = https://charts.upbound.io
+HELM_S3_BUCKET = upbound.charts
+HELM_CHARTS_DIR = $(ROOT_DIR)/charts
+HELM_CHARTS = project-uruk-hai
+HELM_CHART_LINT_ARGS_project-uruk-hai = --set nameOverride='',imagePullSecrets=''
+-include build/makelib/helm.mk
+
+# ====================================================================================
+# Targets
+
+# run `make help` to see the targets and options
+
+# We want submodules to be set up the first time `make` is run.
+# We manage the build/ folder and its Makefiles as a submodule.
+# The first time `make` is run, the includes of build/*.mk files will
+# all fail, and this target will be run. The next time, the default as defined
+# by the includes will be run instead.
+fallthrough: submodules
+	@echo Initial setup complete. Running make again . . .
+	@make
+
+# Update the submodules, such as the common build scripts.
+submodules:
+	@git submodule sync
+	@git submodule update --init --recursive
+
+# TODO(muvaf): we don't need to handle crds folder after this PR is merged https://github.com/crossplane/crossplane/pull/2160
+crossplane:
+	@$(INFO) Fetching Crossplane chart $(CROSSPLANE_TAG)
+	@mkdir -p $(WORK_DIR)/crossplane
+	@git -C $(WORK_DIR)/crossplane init
+	@git -C $(WORK_DIR)/crossplane remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true
+	@git -C $(WORK_DIR)/crossplane fetch origin refs/tags/$(CROSSPLANE_TAG):refs/tags/$(CROSSPLANE_TAG)
+	@git -C $(WORK_DIR)/crossplane checkout $(CROSSPLANE_TAG)
+	@rm -rf $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
+	@mkdir -p $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
+	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
+	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crds
+	@$(OK) Crossplane chart has been fetched
+
+reviewable: crossplane lint
+
+.PHONY: crossplane submodules fallthrough reviewable

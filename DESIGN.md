@@ -4,22 +4,30 @@
 * Reviewers: Upbound Engineering
 * Status: Draft
 
+> Project Uruk-hai is the temporary code name for the Upbound Distro.
+
+> "Do you know how the Orcs first came to being? They were Elves once, taken by
+> the dark powers, tortured and mutilated. A ruined and terrible form of life.
+> And now, perfected. My fighting Uruk-hai." —Saruman
+
 ## Problem Statement
 
-The main goal of Upbound Distribution of Crossplane is to provide a well-tested
-version of Crossplane and the ability to connect the cluster to Upbound Cloud.
-Most of the components that will allow the cluster to be connected to Upbound Cloud
-is also used by hosted Crossplane service. So, the components that will make up
-this distro live in several different repositories, including open source Crossplane.
+The main goal of Project Uruk-hai is to provide a well-tested version of Crossplane,
+additional features and the ability to connect the cluster to Upbound Cloud that
+users can deploy to their own clusters. Additionally, most of these additional
+components are also used by Upbound hosted Crossplane service.
+We'd like to have that service to run the Project Uruk-hai instead of deploying the
+components separately.
 
-Currently, the only component that is ready to be shipped in the distro artifact
+Currently, the only component that is ready to be shipped in the artifact
 is Crossplane. However, we will add other components as they get ready in a fashion
-that will allow seamless upgrades. Additionally, current open source deployments
-of Crossplane should be upgraded with this distro without any disruption of service.
+that will allow seamless upgrades. Users should be able to upgrade
+current open source deployments of Crossplane to Project Uruk-hai without any disruption
+of service.
 
 ## Proposal
 
-A new repository will be created to host the main Helm chart of Upbound Distribution.
+A new repository will be created to host the main Helm chart of Project Uruk-hai.
 It will contain all manifests that are necessary to deploy all the components
 without introducing a Helm chart dependency since upgrade scenarios do not work
 well with Helm's dependency management.
@@ -31,7 +39,7 @@ The directory structure will look like the following:
 ├── Makefile
 ├── README.md
 └── charts
-    └── upbound-crossplane
+    └── project-uruk-hai
         ├── crossplane
         │   └── templates
         │       ├── NOTES.txt
@@ -68,36 +76,39 @@ deployed versions of all component.
 
 ### Upgrade
 
-There are two main scenarios for upgrading:
+There are three main scenarios for upgrading to Project Uruk-hai:
 * From open source Crossplane with the same version
 * From open source Crossplane with a different version
-* From an earlier version of distro that doesn't have the additional components
+* From an earlier version of Project Uruk-hai that doesn't have the additional components
+
+We will have integration tests in running for every PR that will make sure these
+scenarios work.
 
 #### From Open Source Crossplane
 
 When a user deploys open source Crossplane v1.0.0 using Helm, they have a Helm release
-in their cluster that manages this deployment. Since distro chart will include the
-same manifests, upgrading to Distro v1.0.0 will not affect running Crossplane
-services. Helm 3 allows upgrade of a release with another chart and updates the
-metadata of the Helm release accordingly.
+in their cluster that manages this deployment. Since Project Uruk-hai chart will
+include the same manifests, upgrading to Project Uruk-hai v1.0.0 will not affect running
+Crossplane services. Helm 3 allows upgrade of a release with another chart and
+updates the metadata of the Helm release accordingly.
 
-The caveat in upgrading from OSS to distro is that we need to make sure distro
-doesn't accidentally downgrade the existing installation, which might cause unexpected
+The caveat in upgrading from OSS to Project Uruk-hai is that we need to make sure we
+don't accidentally downgrade the existing installation, which might cause unexpected
 errors. We will guard against that scenario by documentation initially and then
 have a pre-install hook in Helm that will do the necessary pre-flight checks.
 
 In order for documentation approach to be good enough, the only mode we will
-support for upgrading from a different Crossplane version is where both distro
-and the existing installation share the same version. For example, if user has
-Crossplane v1.0.0 but wants to upgrade to distro v1.1.0, then they will have to
-upgrade to Crossplane v1.1.0 first. This way users won't have to think about the
-different version pairs at all.
+support for upgrading from a different Crossplane version is where both Project Uruk-hai
+and the existing installation of Crossplane share the same version. For example,
+if user has Crossplane v1.0.0 but wants to upgrade to Project Uruk-hai v1.1.0, then
+they will have to upgrade to Crossplane v1.1.0 first. This way users won't have to
+think about the different version pairs at all.
 
 #### Additional Components
 
-We plan to include additional components in the distro alongside Crossplane. Since
-they will be additive, users will be able to upgrade from both open source Crossplane
-and an earlier version of distro.
+We plan to include additional components in the Project Uruk-hai alongside Crossplane.
+Since they will be additive, users will be able to upgrade from both open source
+Crossplane and an earlier version of Project Uruk-hai.
 
 ## Future Considerations
 
@@ -109,10 +120,10 @@ and managed Crossplane service of Upbound starts to use the distro we'll be able
 ### Monorepo
 
 Once this is used in both self-hosted and managed scenarios, we can consider moving
-the code of other components to this repository. In the end, Helm chart manifests and
-code of components other than Crossplane could live in this repository. This way, we'd
-be able to consolidate everything we can into one place and our final test pipelines
-can run in the same repository as the one that engineers open PRs.
+the code of other components to this repository. In the end, Helm chart manifests
+and code of components other than Crossplane could live in this repository. This
+way, we'd be able to consolidate everything we can into one place and our final
+test pipelines can run in the same repository as the one that engineers open PRs.
 
 ## Alternatives Considered
 
@@ -132,9 +143,10 @@ least for now, there is not a very special logic Helm cannot handle.
 The last but not the least is that we can easily go from only-Helm to operator
 approach without much sacrifice, hence we can avoid paying the cost of security
 concerns around the operator. Going back from operator to only-Helm incurs a higher
-cost both in terms of development effor and technical feasibility.
+cost both in terms of development effort and technical feasibility.
 
-See this [document](https://docs.google.com/document/d/1DApqQqdgAHy5lEAzUOuTIZbFsvnjuPKZnHMnQeIkCrM) for details.
+See this [document](https://docs.google.com/document/d/1DApqQqdgAHy5lEAzUOuTIZbFsvnjuPKZnHMnQeIkCrM)
+for a fuller discussion of the operator approach.
 
 ### Helm Chart Dependencies
 

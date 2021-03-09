@@ -57,16 +57,20 @@ submodules:
 	@git submodule sync
 	@git submodule update --init --recursive
 
-TMPDIR := $(shell mktemp -d)
+WORK_DIR := "${HOME}/.cache"
 
 # TODO(muvaf): we don't need to handle crds folder after this PR is merged https://github.com/crossplane/crossplane/pull/2160
 crossplane:
 	@$(INFO) Fetching Crossplane chart $(CROSSPLANE_TAG)
-	@git clone -b $(CROSSPLANE_TAG) $(CROSSPLANE_REPO) $(TMPDIR)/crossplane
+	@mkdir -p $(WORK_DIR)/crossplane
+	@git -C $(WORK_DIR)/crossplane init
+	@git -C $(WORK_DIR)/crossplane remote set-url origin $(CROSSPLANE_REPO)
+	@git -C $(WORK_DIR)/crossplane fetch origin refs/tags/$(CROSSPLANE_TAG):refs/tags/$(CROSSPLANE_TAG)
+	@git -C $(WORK_DIR)/crossplane checkout $(CROSSPLANE_TAG)
 	@rm -rf $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
 	@mkdir -p $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
-	@cp -a $(TMPDIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
-	@cp -a $(TMPDIR)/crossplane/cluster/charts/crossplane/crds $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crds
+	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
+	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crds
 	@$(OK) Crossplane chart has been fetched
 
 

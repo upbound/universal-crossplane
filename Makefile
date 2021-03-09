@@ -57,14 +57,12 @@ submodules:
 	@git submodule sync
 	@git submodule update --init --recursive
 
-WORK_DIR := "${HOME}/.cache"
-
 # TODO(muvaf): we don't need to handle crds folder after this PR is merged https://github.com/crossplane/crossplane/pull/2160
 crossplane:
 	@$(INFO) Fetching Crossplane chart $(CROSSPLANE_TAG)
 	@mkdir -p $(WORK_DIR)/crossplane
 	@git -C $(WORK_DIR)/crossplane init
-	@git -C $(WORK_DIR)/crossplane remote set-url origin $(CROSSPLANE_REPO)
+	@git -C $(WORK_DIR)/crossplane remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true
 	@git -C $(WORK_DIR)/crossplane fetch origin refs/tags/$(CROSSPLANE_TAG):refs/tags/$(CROSSPLANE_TAG)
 	@git -C $(WORK_DIR)/crossplane checkout $(CROSSPLANE_TAG)
 	@rm -rf $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane

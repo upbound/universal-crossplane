@@ -71,5 +71,6 @@ crossplane:
 	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crds
 	@$(OK) Crossplane chart has been fetched
 
+reviewable: crossplane lint
 
-.PHONY: crossplane submodules fallthrough
+.PHONY: crossplane submodules fallthrough reviewable

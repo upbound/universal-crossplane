@@ -1,7 +1,7 @@
 # ====================================================================================
 # Setup Project
 
-PROJECT_NAME := ubc-distro
+PROJECT_NAME := project-uruk-hai
 PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 
 # -include will silently skip missing files, which allows us
@@ -19,7 +19,7 @@ CROSSPLANE_TAG := v1.1.0
 # ====================================================================================
 # Setup Output
 
-S3_BUCKET ?= ubc-distro.releases
+S3_BUCKET ?= project-uruk-hai.releases
 -include build/makelib/output.mk
 
 # ====================================================================================
@@ -34,8 +34,8 @@ HELM_VERSION=v2.17.0
 HELM_BASE_URL = https://charts.upbound.io
 HELM_S3_BUCKET = upbound.charts
 HELM_CHARTS_DIR = $(ROOT_DIR)/charts
-HELM_CHARTS = ubc-distro
-HELM_CHART_LINT_ARGS_crossplane = --set nameOverride='',imagePullSecrets=''
+HELM_CHARTS = project-uruk-hai
+HELM_CHART_LINT_ARGS_project-uruk-hai = --set nameOverride='',imagePullSecrets=''
 -include build/makelib/helm.mk
 
 # ====================================================================================

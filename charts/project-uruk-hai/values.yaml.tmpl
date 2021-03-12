@@ -1,3 +1,5 @@
+nameOverride: "crossplane"
+
 replicas: 1
 
 deploymentStrategy: RollingUpdate
@@ -72,3 +74,38 @@ alpha:
 
 metrics:
   enabled: false
+
+### Agent Values
+
+jwtPublicKey: ""
+
+upbound:
+  apiEndpoint: "https://api.upbound.io"
+  connectEndpoint: "nats://connect.upbound.io:443"
+  controlPlane:
+    create: true
+    name: ""
+    organization: ""
+    apiToken: ""
+
+graphql:
+  image:
+    repository: upbound/crossplane-graphql
+    tag: "v0.25.0-alpha1.26.g63124dc-version-hack-1"
+    pullPolicy: IfNotPresent
+  resources: {}
+  config:
+    nodeEnv: production
+    # The default maximum number of concurrent requests to the tenant gateway
+    maxK8sConnections: 10
+
+gateway:
+  image:
+    repository: upbound/crossproxy
+    tag: v0.25.0-alpha1.54.g74ad71e
+    pullPolicy: IfNotPresent
+  resources: {}
+  config:
+    debugMode: false
+    platformTokenSecret: platform-token
+    args: []

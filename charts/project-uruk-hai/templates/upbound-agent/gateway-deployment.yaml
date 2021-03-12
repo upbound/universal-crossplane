@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "name" . }}-gateway
+  labels:
+    {{- include "labelsGateway" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "selectorLabelsGateway" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "selectorLabelsGateway" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ template "name" . }}-gateway
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range $index, $secret := .Values.imagePullSecrets }}
+      - name: {{ $secret }}
+      {{- end }}
+      {{ end }}
+      containers:
+        - name: gateway
+          image: "{{ .Values.gateway.image.repository }}:{{ .Values.gateway.image.tag }}"
+          args:
+          - tenant-gateway
+          - --server-port
+          - "6443"
+          - --jwt-public-key
+          - {{ .Values.jwtPublicKey }}
+          - --tls-cert-file
+          - /etc/certs/tenant-gateway/tls.crt
+          - --tls-private-key-file
+          - /etc/certs/tenant-gateway/tls.key
+          - --graphql-cabundle-file
+          - /etc/certs/tenant-gateway/ca.crt
+          - --nats-endpoint
+          - {{ .Values.upbound.connectEndpoint }}
+          - --nats-jwt-endpoint
+          - {{ .Values.upbound.apiEndpoint }}
+          - --pod-name
+          - $(POD_NAME)
+          {{- if .Values.gateway.config.debugMode }}
+          - "--debug"
+          {{- end }}
+          {{- range $arg := .Values.gateway.config.args }}
+          - {{ $arg }}
+          {{- end }}
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: PLATFORM-TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.gateway.config.platformTokenSecret }}
+                key: token
+          imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
+          ports:
+          - name: gateway
+            containerPort: 6443
+            protocol: TCP
+          resources:
+            {{- toYaml .Values.gateway.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /svc/tenant-gateway/ready
+              port: 6443
+            initialDelaySeconds: 5
+            timeoutSeconds: 15
+            periodSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /svc/tenant-gateway/up.json
+              port: 6443
+            initialDelaySeconds: 10
+            timeoutSeconds: 15
+            periodSeconds: 30
+            failureThreshold: 5
+          volumeMounts:
+            - mountPath: /etc/certs/tenant-gateway
+              name: certs
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            defaultMode: 420
+            secretName: gateway-tls

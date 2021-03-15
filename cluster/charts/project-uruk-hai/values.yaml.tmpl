@@ -83,15 +83,14 @@ upbound:
   apiEndpoint: "https://api.upbound.io"
   connectEndpoint: "nats://connect.upbound.io:443"
   controlPlane:
-    create: true
-    name: ""
-    organization: ""
-    apiToken: ""
+    connect: false
+    token: ""
+    tokenSecret: "control-plane-token-secret"
 
 graphql:
   image:
     repository: upbound/crossplane-graphql
-    tag: "v0.25.0-alpha1.26.g63124dc-version-hack-1"
+    tag: ""
     pullPolicy: IfNotPresent
   resources: {}
   config:
@@ -102,10 +101,9 @@ graphql:
 gateway:
   image:
     repository: upbound/crossproxy
-    tag: v0.25.0-alpha1.54.g74ad71e
+    tag: ""
     pullPolicy: IfNotPresent
   resources: {}
   config:
     debugMode: false
-    platformTokenSecret: platform-token
     args: []

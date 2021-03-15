@@ -1,7 +1,8 @@
+{{- if .Values.upbound.controlPlane.connect }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "name" . }}-graphql
+  name: {{ template "agent-name" . }}-graphql
   labels:
     {{- include "labelsGraphql" . | nindent 4 }}
 spec:
@@ -13,7 +14,7 @@ spec:
       labels:
         {{- include "selectorLabelsGraphql" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ template "name" . }}-graphql
+      serviceAccountName: {{ template "agent-name" . }}-graphql
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
       {{- range $index, $secret := .Values.imagePullSecrets }}
@@ -68,7 +69,7 @@ spec:
         - name: JWT_PUBLIC_KEY
           value: {{ .Values.jwtPublicKey }}
         - name: GATEWAY_ENDPOINT
-          value: {{ printf "https://%s-gateway:6443/k8s" (include "name" . ) }}
+          value: {{ printf "https://%s-gateway:6443/k8s" (include "agent-name" . ) }}
         - name: GATEWAY_CA_BUNDLE_FILE
           value:  /etc/certs/crossplane-graphql/ca.crt
         - name: MAX_K8S_CONNECTIONS
@@ -82,3 +83,4 @@ spec:
           secret:
             defaultMode: 420
             secretName: graphql-tls
+{{- end }}

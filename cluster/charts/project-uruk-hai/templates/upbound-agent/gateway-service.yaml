@@ -1,0 +1,32 @@
+{{- if .Values.upbound.controlPlane.connect }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "agent-name" . }}-gateway
+  labels:
+    {{- include "labelsGateway" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "selectorLabelsGateway" . | nindent 4 }}
+  ports:
+    - port: 6443
+      targetPort: 6443
+      protocol: TCP
+      name: https
+---
+# legacy service - drop once router uses new one
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenant-gateway
+  labels:
+    {{- include "labels" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "selectorLabelsGateway" . | nindent 4 }}
+  ports:
+    - port: 6443
+      targetPort: 6443
+      protocol: TCP
+      name: https
+  {{- end }}

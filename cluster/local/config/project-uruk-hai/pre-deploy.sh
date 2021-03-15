@@ -1,28 +1,32 @@
 #!/usr/bin/env bash
 set -aeuo pipefail
 
+UPBOUND_CROSSPLANE_NAMESPACE=${HELM_RELEASE_NAMESPACE}
+API_TOKEN="${LOCALDEV_CONNECT_API_TOKEN}"
+CONTROL_PLANE_NAME="${LOCALDEV_CONNECT_CP_NAME}"
+CONTROL_PLANE_ORG="${LOCALDEV_CONNECT_CP_ORG}"
+UPBOUND_PLATFORM_TOKEN_SECRET_NAME="control-plane-token-secret"
+
+if [ ${LOCALDEV_CONNECT_TO_UBC} != "true" ]; then
+  echo "LOCALDEV_CONNECT_TO_UBC is not set to true, skipping self hosted platform creation"
+  return 0
+fi
+
+# TODO(hasan): replace below with up cli
+
 _decode_base64_url() {
   local len=$((${#1} % 4))
   local result="$1"
   if [ $len -eq 2 ]; then result="$1"'=='
   elif [ $len -eq 3 ]; then result="$1"'='
   fi
-  echo "$result" | tr '_-' '/+' | base64 -d
+  echo "$result" | tr '_-' '/+' | base64 -D
 }
 
 get_token_id() { _decode_base64_url $(echo -n $1 | cut -d "." -f ${2:-2}) | jq -r .jti; }
 
 token_id=$(get_token_id "${API_TOKEN}")
 kube_cluster_id=$(kubectl get ns kube-system -o jsonpath='{.metadata.uid}')
-
-echo "Wait until dns resolved for ${UPBOUND_API_ENDPOINT/#https:\/\//}..."
-try=0
-while [ $try -lt 60 ]; do
-  getent hosts "${UPBOUND_API_ENDPOINT/#https:\/\//}" && break
-  echo "Failed to resolve, retrying..."
-  sleep 1
-  ((try++))
-done
 
 echo "Logging in with token id ${token_id}..."
 curl --cookie-jar /tmp/req.cookie \

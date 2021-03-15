@@ -24,8 +24,8 @@ S3_BUCKET ?= project-uruk-hai.releases
 
 # ====================================================================================
 # Setup Kubernetes tools
-
-HELM_VERSION=v2.17.0
+USE_HELM3 = true
+HELM_CHART_LINT_STRICT = false
 -include build/makelib/k8s_tools.mk
 
 # ====================================================================================
@@ -33,11 +33,15 @@ HELM_VERSION=v2.17.0
 
 HELM_BASE_URL = https://charts.upbound.io
 HELM_S3_BUCKET = upbound.charts
-HELM_CHARTS_DIR = $(ROOT_DIR)/charts
 HELM_CHARTS = project-uruk-hai
 HELM_CHART_LINT_ARGS_project-uruk-hai = --set nameOverride='',imagePullSecrets=''
 -include build/makelib/helm.mk
 
+# ====================================================================================
+# Setup Local Dev
+-include build/makelib/local.mk
+
+local-dev: local.up local.deploy.project-uruk-hai
 # ====================================================================================
 # Targets
 

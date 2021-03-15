@@ -1,29 +1,31 @@
+{{- if .Values.upbound.controlPlane.connect }}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ template "name" . }}-gateway
+  name: {{ template "agent-name" . }}-gateway
   labels:
     {{- include "labelsGateway" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ template "name" . }}-gateway
+  name: {{ template "agent-name" . }}-gateway
 subjects:
 - kind: ServiceAccount
-  name: {{ template "name" . }}-gateway
+  name: {{ template "agent-name" . }}-gateway
   namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ template "name" . }}-gateway-impersonator
+  name: {{ template "agent-name" . }}-gateway-impersonator
   labels:
     {{- include "labelsGateway" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ template "name" . }}-gateway-impersonator
+  name: {{ template "agent-name" . }}-gateway-impersonator
 subjects:
   - kind: ServiceAccount
-    name: {{ template "name" . }}-gateway
+    name: {{ template "agent-name" . }}-gateway
     namespace: {{ .Release.Namespace }}
+{{- end }}

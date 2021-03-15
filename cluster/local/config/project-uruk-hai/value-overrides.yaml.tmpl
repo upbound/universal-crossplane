@@ -1,0 +1,20 @@
+graphql:
+  image:
+    tag: v{{ .Env.GRAPHQL_VERSION }}
+
+gateway:
+  image:
+    tag: v{{ .Env.GATEWAY_VERSION }}
+
+# values for dev
+# TODO(hasan): remove once https://github.com/upbound/hosted-crossplane-squad/issues/491 fixed
+jwtPublicKey: {{ .Env.UPBOUND_JWT_PUBLIC_KEY }}
+upbound:
+  apiEndpoint: {{ .Env.UPBOUND_API_ENDPOINT }}
+  connectEndpoint: {{ .Env.UPBOUND_CONNECT_ENDPOINT }}
+  controlPlane:
+    {{ if eq (env.Getenv "LOCALDEV_CONNECT_TO_UBC" "") "true" }}
+    connect: true
+    {{ else }}
+    connect: false
+    {{ end }}

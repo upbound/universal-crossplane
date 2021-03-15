@@ -32,11 +32,11 @@ echo "Logging in with token id ${token_id}..."
 curl --cookie-jar /tmp/req.cookie \
   -H "Content-Type: application/json" \
   -d '{"id": "'"${token_id}"'","password": "'"${API_TOKEN}"'","remember": false}' \
-  "${UPBOUND_API_ENDPOINT}/v1/login"
+  "https://${UPBOUND_API_ENDPOINT}/v1/login"
 echo "Logged in!"
 
 echo "Checking if platform ${CONTROL_PLANE_NAME} in org ${CONTROL_PLANE_ORG} already exists..."
-platform_id=$(curl -s --cookie /tmp/req.cookie "${UPBOUND_API_ENDPOINT}/v1/namespaces/${CONTROL_PLANE_ORG}/platforms" | \
+platform_id=$(curl -s --cookie /tmp/req.cookie "https://${UPBOUND_API_ENDPOINT}/v1/namespaces/${CONTROL_PLANE_ORG}/platforms" | \
   jq -c '.platforms[] | select(.platform.name | contains("'"${CONTROL_PLANE_NAME}"'"))' | \
   jq -r .platform.id)
 
@@ -45,7 +45,7 @@ if [ -z "${platform_id}" ]; then
     platform_id=$(curl -s --cookie /tmp/req.cookie \
       -H "Content-Type: application/json" \
       -d '{"namespace": "'"${CONTROL_PLANE_ORG}"'","name": "'"${CONTROL_PLANE_NAME}"'","description": " ", "selfHosted": true, "kubeClusterID": "'"${kube_cluster_id}"'"}' \
-      "${UPBOUND_API_ENDPOINT}/v1/platforms" | \
+      "https://${UPBOUND_API_ENDPOINT}/v1/platforms" | \
       jq -r .platform.platform.id)
 fi
 echo "Platform created/exists with id ${platform_id}!"
@@ -54,7 +54,7 @@ echo "Creating platform token..."
 platform_token=$(curl -s --cookie /tmp/req.cookie \
   -H "Content-Type: application/json" \
   -d '{"data":{"type":"tokens","attributes":{"name":"a platform token"},"relationships":{"owner":{"data":{"type":"platforms","id":"'"${platform_id}"'"}}}}}' \
-  "${UPBOUND_API_ENDPOINT}/v1/tokens" | \
+  "https://${UPBOUND_API_ENDPOINT}/v1/tokens" | \
   jq -r .data.meta.jwt)
 
 if [ -z "${platform_token}" ]; then

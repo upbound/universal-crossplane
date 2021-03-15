@@ -38,9 +38,9 @@ spec:
           - --graphql-cabundle-file
           - /etc/certs/tenant-gateway/ca.crt
           - --nats-endpoint
-          - {{ .Values.upbound.connectEndpoint }}
+          - "nats://{{ .Values.upbound.connectEndpoint }}:443"
           - --nats-jwt-endpoint
-          - {{ .Values.upbound.apiEndpoint }}
+          - "https://{{ .Values.upbound.apiEndpoint }}"
           - --pod-name
           - $(POD_NAME)
           {{- if .Values.gateway.config.debugMode }}

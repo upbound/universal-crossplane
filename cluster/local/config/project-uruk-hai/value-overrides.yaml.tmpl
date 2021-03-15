@@ -7,7 +7,7 @@ gateway:
     tag: v{{ .Env.GATEWAY_VERSION }}
 
 # values for dev
-# TODO(hasan): remove once https://github.com/upbound/hosted-crossplane-squad/issues/491 fixed
+# TODO(hasan): remove jwtPublicKey once https://github.com/upbound/hosted-crossplane-squad/issues/491 fixed
 jwtPublicKey: {{ .Env.UPBOUND_JWT_PUBLIC_KEY }}
 upbound:
   apiEndpoint: {{ .Env.UPBOUND_API_ENDPOINT }}

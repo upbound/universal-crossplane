@@ -1,11 +1,3 @@
-graphql:
-  image:
-    tag: v{{ .Env.GRAPHQL_VERSION }}
-
-gateway:
-  image:
-    tag: v{{ .Env.GATEWAY_VERSION }}
-
 # values for dev
 # TODO(hasan): remove jwtPublicKey once https://github.com/upbound/hosted-crossplane-squad/issues/491 fixed
 jwtPublicKey: {{ .Env.UPBOUND_JWT_PUBLIC_KEY }}

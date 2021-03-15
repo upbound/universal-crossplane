@@ -16,6 +16,13 @@ PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
 CROSSPLANE_TAG := v1.1.0
 
+GATEWAY_TAG := v0.25.0-alpha1.54.g74ad71e
+GRAPHQL_TAG := v0.25.0-alpha1.26.g63124dc-version-hack-1
+
+export CROSSPLANE_TAG
+export GATEWAY_TAG
+export GRAPHQL_TAG
+
 # ====================================================================================
 # Setup Output
 
@@ -75,6 +82,16 @@ crossplane:
 	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crds
 	@$(OK) Crossplane chart has been fetched
 
-reviewable: crossplane lint
+generate-chart: crossplane
+	@$(INFO) Generating values.yaml for the chart
+	@cp -f $(HELM_CHARTS_DIR)/project-uruk-hai/values.yaml.tmpl $(HELM_CHARTS_DIR)/project-uruk-hai/values.yaml
+	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' values.yaml
+	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%GATEWAY_TAG%%|$(GATEWAY_TAG)|g' values.yaml
+	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%GRAPHQL_TAG%%|$(GRAPHQL_TAG)|g' values.yaml
+	@$(OK) Generating values.yaml for the chart
 
-.PHONY: crossplane submodules fallthrough reviewable
+helm.prepare: generate-chart
+
+reviewable: generate-chart lint
+
+.PHONY: generate-chart crossplane submodules fallthrough reviewable

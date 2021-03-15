@@ -20,7 +20,7 @@ _decode_base64_url() {
   if [ $len -eq 2 ]; then result="$1"'=='
   elif [ $len -eq 3 ]; then result="$1"'='
   fi
-  echo "$result" | tr '_-' '/+' | base64 -D
+  echo "$result" | tr '_-' '/+' | base64 -d
 }
 
 get_token_id() { _decode_base64_url $(echo -n $1 | cut -d "." -f ${2:-2}) | jq -r .jti; }

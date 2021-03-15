@@ -6,7 +6,7 @@ deploymentStrategy: RollingUpdate
 
 image:
   repository: crossplane/crossplane
-  tag: v1.1.0
+  tag: %%CROSSPLANE_TAG%%
   pullPolicy: Always
 
 nodeSelector: {}
@@ -90,7 +90,7 @@ upbound:
 graphql:
   image:
     repository: upbound/crossplane-graphql
-    tag: ""
+    tag: %%GRAPHQL_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
   config:
@@ -101,7 +101,7 @@ graphql:
 gateway:
   image:
     repository: upbound/crossproxy
-    tag: ""
+    tag: %%GATEWAY_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
   config:

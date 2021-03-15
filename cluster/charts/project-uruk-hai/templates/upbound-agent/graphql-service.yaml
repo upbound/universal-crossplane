@@ -13,20 +13,4 @@ spec:
       targetPort: https
       protocol: TCP
       name: https
----
-# legacy service - drop once router uses new one
-apiVersion: v1
-kind: Service
-metadata:
-  name: crossplane-graphql
-  labels:
-    {{- include "labelsGraphql" . | nindent 4 }}
-spec:
-  selector:
-    {{- include "selectorLabelsGraphql" . | nindent 4 }}
-  ports:
-    - port: 443
-      targetPort: https
-      protocol: TCP
-      name: https
 {{- end }}

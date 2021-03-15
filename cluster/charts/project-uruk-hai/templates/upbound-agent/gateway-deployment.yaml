@@ -38,11 +38,13 @@ spec:
           - --graphql-cabundle-file
           - /etc/certs/tenant-gateway/ca.crt
           - --nats-endpoint
-          - "nats://{{ .Values.upbound.connectEndpoint }}:443"
+          - nats://{{ .Values.upbound.connectHost }}:{{ .Values.upbound.connectPort | default "443" }}
           - --nats-jwt-endpoint
-          - "https://{{ .Values.upbound.apiEndpoint }}"
+          - {{ .Values.upbound.apiURL }}
           - --pod-name
           - $(POD_NAME)
+          - --control-plane-token
+          - $(CP-TOKEN)
           {{- if .Values.gateway.config.debugMode }}
           - "--debug"
           {{- end }}
@@ -54,7 +56,7 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          - name: PLATFORM-TOKEN
+          - name: CP-TOKEN
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.upbound.controlPlane.tokenSecret }}

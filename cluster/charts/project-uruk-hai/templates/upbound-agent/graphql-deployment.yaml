@@ -82,5 +82,5 @@ spec:
         - name: certs
           secret:
             defaultMode: 420
-            secretName: graphql-tls
+            secretName: upbound-agent-graphql-tls
 {{- end }}

@@ -1,7 +1,7 @@
 # ====================================================================================
 # Setup Project
 
-PROJECT_NAME := project-uruk-hai
+PROJECT_NAME := crossplane-distro
 PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 
 # -include will silently skip missing files, which allows us
@@ -30,7 +30,17 @@ S3_BUCKET ?= project-uruk-hai.releases
 -include build/makelib/output.mk
 
 # ====================================================================================
+# Setup Go
+
+GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper
+GO_LDFLAGS += -X $(GO_PROJECT)/pkg/version.Version=$(VERSION)
+GO_SUBDIRS += cmd internal
+GO111MODULE = on
+-include build/makelib/golang.mk
+
+# ====================================================================================
 # Setup Kubernetes tools
+
 USE_HELM3 = true
 HELM_CHART_LINT_STRICT = false
 -include build/makelib/k8s_tools.mk
@@ -43,6 +53,16 @@ HELM_S3_BUCKET = upbound.charts
 HELM_CHARTS = project-uruk-hai
 HELM_CHART_LINT_ARGS_project-uruk-hai = --set nameOverride='',imagePullSecrets=''
 -include build/makelib/helm.mk
+
+# ====================================================================================
+# Setup Images
+# Due to the way that the shared build logic works, images should
+# all be in folders at the same level (no additional levels of nesting).
+
+DOCKER_REGISTRY = upbound
+IMAGES = uxp-bootstrap
+OSBASEIMAGE = gcr.io/distroless/static:nonroot
+-include build/makelib/image.mk
 
 # ====================================================================================
 # Setup Local Dev
@@ -82,9 +102,10 @@ crossplane:
 	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crds
 	@$(OK) Crossplane chart has been fetched
 
-generate-chart: crossplane
+generate-chart:
 	@$(INFO) Generating values.yaml for the chart
 	@cp -f $(HELM_CHARTS_DIR)/project-uruk-hai/values.yaml.tmpl $(HELM_CHARTS_DIR)/project-uruk-hai/values.yaml
+	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%VERSION%%|$(VERSION)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%GATEWAY_TAG%%|$(GATEWAY_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%GRAPHQL_TAG%%|$(GRAPHQL_TAG)|g' values.yaml

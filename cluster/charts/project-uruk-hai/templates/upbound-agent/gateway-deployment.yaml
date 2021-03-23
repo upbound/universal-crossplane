@@ -94,5 +94,5 @@ spec:
         - name: certs
           secret:
             defaultMode: 420
-            secretName: gateway-tls
+            secretName: upbound-agent-gateway-tls
 {{- end }}

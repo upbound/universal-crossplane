@@ -53,14 +53,16 @@ var (
 		secretNameGatewayTLS: {
 			CommonName: cnGateway,
 			AltNames: certutil.AltNames{
-				DNSNames: []string{cnGateway},
+				// TODO(hasan): drop "tenant-gateway" once we stop using legacy service
+				DNSNames: []string{cnGateway, "tenant-gateway"},
 			},
 			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		},
 		secretNameGraphqlTLS: {
 			CommonName: cnGraphql,
 			AltNames: certutil.AltNames{
-				DNSNames: []string{cnGraphql},
+				// TODO(hasan): drop "crossplane-graphql" once we stop using legacy service
+				DNSNames: []string{cnGraphql, "crossplane-graphql"},
 			},
 			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		},
@@ -106,6 +108,9 @@ func (t *TLSSecretGeneration) createOrLoadCA(ctx context.Context) error {
 	t.caCert = c
 	t.caKey = k
 	d, err := tlsSecretDataFromCertAndKey(c, k, c)
+	if err != nil {
+		return errors.Wrap(err, "failed to build tls secret data from generated ca")
+	}
 	cas = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretNameCA,
@@ -281,7 +286,7 @@ func certFromTLSSecretData(data map[string][]byte) (cert *x509.Certificate, key 
 		}
 		key, ok = k.(*rsa.PrivateKey)
 		if !ok {
-			err = errors.New(fmt.Sprintf("private key is not in recognized type, expecting RSA"))
+			err = errors.New("private key is not in recognized type, expecting RSA")
 			return
 		}
 	}

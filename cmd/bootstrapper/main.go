@@ -24,7 +24,7 @@ type BootstrapCmd struct {
 var cli struct {
 	Debug bool `help:"Enable debug mode"`
 
-	Bootstrap BootstrapCmd `cmd help:"Bootstraps project uruk hai"`
+	Bootstrap BootstrapCmd `cmd:"" help:"Bootstraps project uruk hai"`
 }
 
 func main() {

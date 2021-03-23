@@ -1,9 +1,11 @@
 # values for dev
 # TODO(hasan): remove jwtPublicKey once https://github.com/upbound/hosted-crossplane-squad/issues/491 fixed
-jwtPublicKey: {{ .Env.UPBOUND_JWT_PUBLIC_KEY }}
+jwtPublicKey: LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0KTUlJQ0lqQU5CZ2txaGtpRzl3MEJBUUVGQUFPQ0FnOEFNSUlDQ2dLQ0FnRUFzYXlMb1ZBcFhhc05jbVIwNmJmeQpKc0VPTWt0ZFRXc0toelVGZUxYV0tlT09SYzIvaExtNnpVVGRWUExXbkNvL3o2SEhqdXN1YWdzaHdlNlBPZnRCCjY5eEVHWmxzdFowMGRvMkk5b2lleTNXTlRkOUhjdGFXbEVRZFRsYWpxaVZ4UmR4dnEyZUtUNk1Ga1ZUd1N6RG8KM0t5VUdhazhzWVVZaUlQV3NKMWFhRklsR1ZvRGx0UHcxcThaQXpUMmJmQXA2bzZGYk03aitiQ0FiQTdRTlJBTQpEVUxvL2xRaVVKNHluVlpaNm9tbkp1TlBLeHNUSExSRHBrZndVditNZ21WbVREa0xUK1d2VjZ3bmlRaDRqemh5CnZ4Y3dENStDeHpqUWNYc01kTEUvcE0zYzY0RWNPWEJ3WVlnbXFzSjhrMjRhN3c4MU9rVXNCQmdVaERtOER2TFAKanNqVTJGOVdjWm9UN040T000a0RCMkFBZHIyNXhMbEtaTDl6dlpXMnF2VDYyVzRGYW5qeVdRMmU5ZGk2QVU2bQovdk4ra2xHMVV5MEJqSXN3ZTdkdEMwK1Jod2Y0ZkVLeW00bHlnOGV4eWhQVEJQWHYxa3dERnd3eitPMFdWcG02CmlKcWFFVVlTL2hqcndtZzJWTitLR3FYRGRwWXo0RGlWM0hYOGRPa3IyRWVSVUNzdUpleElmSEZuYndNYzZRalkKSldxWTB0YUdmNm8zK1IyZjU0Nko4bThpaHlWNDlHU0ZyMGlXd01paUxHNTJBQmVVZ2tyVjlzR2dnS1FnaDUzcgozYjE3Ny9ZMVpDQ2xsSDVVWHJESG1aSDJQNnh5MUtad1lzUjlrNGUrZXZieDdoNzFESlV3VjlITUthbCtBWTZjCjMxRmNhSHBHQ1JhVHlFb05HY1lUckxFQ0F3RUFBUT09Ci0tLS0tRU5EIFBVQkxJQyBLRVktLS0tLQo=
 upbound:
-  apiEndpoint: {{ .Env.UPBOUND_API_ENDPOINT }}
-  connectEndpoint: {{ .Env.UPBOUND_CONNECT_ENDPOINT }}
+  apiURL: http://api-auth.upbound-system:8080
+  #connectEndpoint: {{ .Env.UPBOUND_CONNECT_ENDPOINT }}
+  connectHost: "nats.nats-system.svc.cluster.local"
+  connectPort: "4222"
   controlPlane:
     {{ if eq (env.Getenv "LOCALDEV_CONNECT_TO_UBC" "") "true" }}
     connect: true

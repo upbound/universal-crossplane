@@ -43,7 +43,7 @@ spec:
           - {{ .Values.upbound.apiURL }}
           - --pod-name
           - $(POD_NAME)
-          - --control-plane-token
+          - --platform-token
           - $(CP-TOKEN)
           {{- if .Values.gateway.config.debugMode }}
           - "--debug"

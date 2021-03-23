@@ -13,4 +13,20 @@ spec:
       targetPort: 6443
       protocol: TCP
       name: https
+---
+# TODO: remove this legacy service once the new one used everywhere
+apiVersion: v1
+kind: Service
+metadata:
+  name: tenant-gateway
+  labels:
+    {{- include "labelsGateway" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "selectorLabelsGateway" . | nindent 4 }}
+  ports:
+    - port: 6443
+      targetPort: 6443
+      protocol: TCP
+      name: https
   {{- end }}

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -35,7 +34,6 @@ func main() {
 }
 
 func (b *BootstrapCmd) Run(ctx *Context) error {
-	fmt.Println("bootstrapping...")
 	zl := zap.New(zap.UseDevMode(ctx.Debug))
 	if ctx.Debug {
 		ctrl.SetLogger(zl)
@@ -53,7 +51,7 @@ func (b *BootstrapCmd) Run(ctx *Context) error {
 		return errors.Wrap(err, "cannot create manager")
 	}
 
-	if err := bootstrap.Setup(mgr, logging.NewLogrLogger(zl.WithName("bootstrap"))); err != nil {
+	if err := bootstrap.Setup(mgr, logging.NewLogrLogger(zl.WithName("bootstrap")), b.Namespace); err != nil {
 		return errors.Wrap(err, "cannot add bootstrap controller to manager")
 	}
 

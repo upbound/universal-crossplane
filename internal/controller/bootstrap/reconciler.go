@@ -3,18 +3,18 @@ package bootstrap
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
-	"github.com/upbound/crossplane-distro/internal/controller/bootstrap/operations"
-
-	"github.com/pkg/errors"
-
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/upbound/crossplane-distro/internal/controller/bootstrap/operations"
 )
 
 const (
@@ -28,7 +28,6 @@ const (
 )
 
 type Operation interface {
-	GetName() string
 	Run(ctx context.Context, log logging.Logger, config map[string][]byte) error
 }
 
@@ -49,10 +48,11 @@ type Reconciler struct {
 }
 
 // Setup adds a controller that runs bootstrap operations
-func Setup(mgr ctrl.Manager, l logging.Logger) error {
+func Setup(mgr ctrl.Manager, l logging.Logger, namespace string) error {
 	name := "bootstrap"
 
 	r := NewReconciler(mgr,
+		namespace,
 		WithLogger(l.WithValues("controller", name)),
 	)
 
@@ -63,16 +63,18 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		Complete(r)
 }
 
-func setupOperations() []Operation {
-	ops := make([]Operation, 0, 1)
-	return append(ops, operations.NewTLSSecretOperation())
+func setupOperations(c client.Client, namespace string) []Operation {
+	return []Operation{
+		operations.NewTLSSecretGeneration(c, namespace),
+		operations.NewUBCCertsFetcher(c, namespace),
+	}
 }
 
-func NewReconciler(mgr manager.Manager, opts ...ReconcilerOption) *Reconciler {
+func NewReconciler(mgr manager.Manager, namespace string, opts ...ReconcilerOption) *Reconciler {
 	r := &Reconciler{
 		client:     mgr.GetClient(),
 		log:        logging.NewNopLogger(),
-		operations: setupOperations(),
+		operations: setupOperations(mgr.GetClient(), namespace),
 	}
 
 	for _, f := range opts {
@@ -84,7 +86,6 @@ func NewReconciler(mgr manager.Manager, opts ...ReconcilerOption) *Reconciler {
 
 func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	log := r.log.WithValues("request", req)
-	log.Info("Reconciling")
 	if req.Name != secretNameConfig {
 		return reconcile.Result{}, nil
 	}
@@ -99,9 +100,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	for _, o := range r.operations {
-		if err := o.Run(ctx, log, cfgSecret.Data); err != nil {
-			log.Debug(fmt.Sprintf(errRunOperation, o.GetName()), "error", err)
-			return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf(errRunOperation, o.GetName()))
+		opName := reflect.TypeOf(o).String()
+		if err := o.Run(ctx, log.WithValues("operation", opName), cfgSecret.Data); err != nil {
+			log.Debug(fmt.Sprintf(errRunOperation, opName), "error", err)
+			return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf(errRunOperation, opName))
 		}
 	}
 

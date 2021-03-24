@@ -24,5 +24,4 @@ rules:
   - apiGroups: [""]
     resources: ["groups"]
     verbs: ["impersonate"]
-    resourceNames: ["system:authenticated", "crossplane:masters"]
 {{- end }}

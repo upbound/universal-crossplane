@@ -1,9 +1,6 @@
-# values for dev
 upbound:
-  apiURL: http://api-auth.upbound-system:8080
-  #connectEndpoint: {{ .Env.UPBOUND_CONNECT_ENDPOINT }}
-  connectHost: "nats.nats-system.svc.cluster.local"
-  connectPort: "4222"
+  apiURL: https://{{ .Env.UPBOUND_API_ENDPOINT }}
+  connectHost: {{ .Env.UPBOUND_CONNECT_ENDPOINT}}
   controlPlane:
     {{ if eq (env.Getenv "LOCALDEV_CONNECT_TO_UBC" "") "true" }}
     connect: true

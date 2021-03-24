@@ -83,48 +83,6 @@ func NewTLSSecretGeneration(c client.Client, namespace string) *TLSSecretGenerat
 	}
 }
 
-func (t *TLSSecretGeneration) createOrLoadCA(ctx context.Context) error {
-	cas := &corev1.Secret{}
-	err := t.client.Get(ctx, types.NamespacedName{Name: secretNameCA, Namespace: t.namespace}, cas)
-	if resource.IgnoreNotFound(err) != nil {
-		return errors.Wrap(err, "failed get ca secret")
-	}
-	if err == nil {
-		// load ca from existing secret
-		c, k, _, err := certFromTLSSecretData(cas.Data)
-		if err != nil {
-			return errors.Wrap(err, "failed to parts existing ca secret")
-		}
-		t.caCert = c
-		t.caKey = k
-		return nil
-	}
-
-	// ca secret does not exist, generate and save
-	c, k, err := newCertificateAuthority(caConfig)
-	if err != nil {
-		return errors.Wrap(err, "failed to generate new ca")
-	}
-	t.caCert = c
-	t.caKey = k
-	d, err := tlsSecretDataFromCertAndKey(c, k, c)
-	if err != nil {
-		return errors.Wrap(err, "failed to build tls secret data from generated ca")
-	}
-	cas = &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretNameCA,
-			Namespace: t.namespace,
-			Labels: map[string]string{
-				meta.LabelKeyManagedBy: meta.LabelValueManagedBy,
-			},
-		},
-		Type: corev1.SecretTypeTLS,
-		Data: d,
-	}
-	return errors.Wrap(t.client.Create(ctx, cas), "failed to create ca secret")
-}
-
 func (t *TLSSecretGeneration) Run(ctx context.Context, log logging.Logger, config map[string][]byte) error {
 	log.Debug("Running TLSSecretGeneration")
 	if t.caCert == nil {
@@ -173,6 +131,48 @@ func (t *TLSSecretGeneration) Run(ctx context.Context, log logging.Logger, confi
 	}
 
 	return nil
+}
+
+func (t *TLSSecretGeneration) createOrLoadCA(ctx context.Context) error {
+	cas := &corev1.Secret{}
+	err := t.client.Get(ctx, types.NamespacedName{Name: secretNameCA, Namespace: t.namespace}, cas)
+	if resource.IgnoreNotFound(err) != nil {
+		return errors.Wrap(err, "failed get ca secret")
+	}
+	if err == nil {
+		// load ca from existing secret
+		c, k, _, err := certFromTLSSecretData(cas.Data)
+		if err != nil {
+			return errors.Wrap(err, "failed to parts existing ca secret")
+		}
+		t.caCert = c
+		t.caKey = k
+		return nil
+	}
+
+	// ca secret does not exist, generate and save
+	c, k, err := newCertificateAuthority(caConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to generate new ca")
+	}
+	t.caCert = c
+	t.caKey = k
+	d, err := tlsSecretDataFromCertAndKey(c, k, c)
+	if err != nil {
+		return errors.Wrap(err, "failed to build tls secret data from generated ca")
+	}
+	cas = &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      secretNameCA,
+			Namespace: t.namespace,
+			Labels: map[string]string{
+				meta.LabelKeyManagedBy: meta.LabelValueManagedBy,
+			},
+		},
+		Type: corev1.SecretTypeTLS,
+		Data: d,
+	}
+	return errors.Wrap(t.client.Create(ctx, cas), "failed to create ca secret")
 }
 
 // newCertificateAuthority creates new certificate and private key for the certificate authority

@@ -1,6 +1,6 @@
 module github.com/upbound/crossplane-distro
 
-go 1.14
+go 1.16
 
 require (
 	github.com/alecthomas/kong v0.2.16

@@ -96,13 +96,13 @@ crossplane:
 	@git -C $(WORK_DIR)/crossplane remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true
 	@git -C $(WORK_DIR)/crossplane fetch origin refs/tags/$(CROSSPLANE_TAG):refs/tags/$(CROSSPLANE_TAG)
 	@git -C $(WORK_DIR)/crossplane checkout $(CROSSPLANE_TAG)
-	@rm -rf $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
-	@mkdir -p $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
-	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
-	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crds
+	@rm -rf $(HELM_CHARTS_DIR)/project-uruk-hai/templates/crossplane
+	@mkdir -p $(HELM_CHARTS_DIR)/project-uruk-hai/templates/crossplane
+	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/project-uruk-hai/templates/crossplane
+	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/project-uruk-hai/crds
 	@$(OK) Crossplane chart has been fetched
 
-generate-chart:
+generate-chart: crossplane
 	@$(INFO) Generating values.yaml for the chart
 	@cp -f $(HELM_CHARTS_DIR)/project-uruk-hai/values.yaml.tmpl $(HELM_CHARTS_DIR)/project-uruk-hai/values.yaml
 	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%VERSION%%|$(VERSION)|g' values.yaml
@@ -113,6 +113,6 @@ generate-chart:
 
 helm.prepare: generate-chart
 
-reviewable: generate-chart lint
+reviewable: helm.prepare lint
 
 .PHONY: generate-chart crossplane submodules fallthrough reviewable

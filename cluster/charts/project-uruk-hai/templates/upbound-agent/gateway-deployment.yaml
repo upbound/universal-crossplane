@@ -29,8 +29,6 @@ spec:
           - tenant-gateway
           - --server-port
           - "6443"
-          - --jwt-public-key
-          - {{ .Values.jwtPublicKey }}
           - --tls-cert-file
           - /etc/certs/tenant-gateway/tls.crt
           - --tls-private-key-file
@@ -41,10 +39,12 @@ spec:
           - nats://{{ .Values.upbound.connectHost }}:{{ .Values.upbound.connectPort | default "443" }}
           - --nats-jwt-endpoint
           - {{ .Values.upbound.apiURL }}
+          - --jwt-public-key
+          - $(JWT_PUBLIC_KEY)
           - --pod-name
           - $(POD_NAME)
           - --platform-token
-          - $(CP-TOKEN)
+          - $(CP_TOKEN)
           {{- if .Values.gateway.config.debugMode }}
           - "--debug"
           {{- end }}
@@ -56,11 +56,16 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          - name: CP-TOKEN
+          - name: CP_TOKEN
             valueFrom:
               secretKeyRef:
                 name: {{ .Values.upbound.controlPlane.tokenSecret }}
                 key: token
+          - name: JWT_PUBLIC_KEY
+            valueFrom:
+              secretKeyRef:
+                name: upbound-agent-public-certs
+                key: jwtPublicKey
           imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
           ports:
           - name: gateway

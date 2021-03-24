@@ -66,14 +66,17 @@ spec:
           value: /etc/certs/crossplane-graphql/tls.crt
         - name: KEY_FILE
           value: /etc/certs/crossplane-graphql/tls.key
-        - name: JWT_PUBLIC_KEY
-          value: {{ .Values.jwtPublicKey }}
         - name: GATEWAY_ENDPOINT
           value: {{ printf "https://%s-gateway:6443/k8s" (include "agent-name" . ) }}
         - name: GATEWAY_CA_BUNDLE_FILE
           value:  /etc/certs/crossplane-graphql/ca.crt
         - name: MAX_K8S_CONNECTIONS
           value: {{ .Values.graphql.config.maxK8sConnections | quote }}
+        - name: JWT_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: upbound-agent-public-certs
+              key: jwtPublicKey
         volumeMounts:
           - mountPath: /etc/certs/crossplane-graphql
             name: certs

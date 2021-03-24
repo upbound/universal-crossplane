@@ -39,7 +39,7 @@ const (
 	nameUpbound          = "upbound"
 	cnGateway            = "upbound-agent-gateway"
 	cnGraphql            = "upbound-agent-graphql"
-	secretNameCA         = "upbound-ca"
+	secretNameCA         = "upbound-agent-ca"
 	secretNameGatewayTLS = "upbound-agent-gateway-tls"
 	secretNameGraphqlTLS = "upbound-agent-graphql-tls"
 )

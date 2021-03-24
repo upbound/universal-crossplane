@@ -14,12 +14,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
+	"github.com/upbound/crossplane-distro/internal/clients/upbound"
 	"github.com/upbound/crossplane-distro/internal/controller/bootstrap/operations"
 )
 
 const (
 	reconcileTimeout = 1 * time.Minute
-	secretNameConfig = "uxp-config"
+	secretNameConfig = "upbound-bootstrap-config"
 )
 
 const (
@@ -48,10 +49,11 @@ type Reconciler struct {
 }
 
 // Setup adds a controller that runs bootstrap operations
-func Setup(mgr ctrl.Manager, l logging.Logger, namespace string) error {
+func Setup(mgr ctrl.Manager, l logging.Logger, ubcClient upbound.Client, namespace string) error {
 	name := "bootstrap"
 
 	r := NewReconciler(mgr,
+		ubcClient,
 		namespace,
 		WithLogger(l.WithValues("controller", name)),
 	)
@@ -63,18 +65,15 @@ func Setup(mgr ctrl.Manager, l logging.Logger, namespace string) error {
 		Complete(r)
 }
 
-func setupOperations(c client.Client, namespace string) []Operation {
-	return []Operation{
-		operations.NewTLSSecretGeneration(c, namespace),
-		operations.NewUBCCertsFetcher(c, namespace),
-	}
-}
-
-func NewReconciler(mgr manager.Manager, namespace string, opts ...ReconcilerOption) *Reconciler {
+func NewReconciler(mgr manager.Manager, ubcClient upbound.Client, namespace string, opts ...ReconcilerOption) *Reconciler {
+	kube := mgr.GetClient()
 	r := &Reconciler{
-		client:     mgr.GetClient(),
-		log:        logging.NewNopLogger(),
-		operations: setupOperations(mgr.GetClient(), namespace),
+		client: kube,
+		log:    logging.NewNopLogger(),
+		operations: []Operation{
+			operations.NewTLSSecretGeneration(kube, namespace),
+			operations.NewUBCCertsFetcher(kube, ubcClient, namespace),
+		},
 	}
 
 	for _, f := range opts {
@@ -102,7 +101,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	for _, o := range r.operations {
 		opName := reflect.TypeOf(o).String()
 		if err := o.Run(ctx, log.WithValues("operation", opName), cfgSecret.Data); err != nil {
-			log.Debug(fmt.Sprintf(errRunOperation, opName), "error", err)
+			log.Info(fmt.Sprintf(errRunOperation, opName), "error", err)
 			return reconcile.Result{}, errors.Wrap(err, fmt.Sprintf(errRunOperation, opName))
 		}
 	}

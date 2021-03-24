@@ -28,6 +28,8 @@ spec:
             - bootstrap
             - --namespace
             - {{ .Release.Namespace }}
+            - --upbound-api-url
+            - {{ .Values.upbound.apiURL }}
           {{- if .Values.bootstrapper.config.debugMode }}
           - "--debug"
           {{- end }}

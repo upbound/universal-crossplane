@@ -4,13 +4,14 @@ import (
 	"time"
 
 	"github.com/alecthomas/kong"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/pkg/errors"
-	"github.com/upbound/crossplane-distro/internal/controller/bootstrap"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/upbound/crossplane-distro/internal/clients/upbound"
+	"github.com/upbound/crossplane-distro/internal/controller/bootstrap"
+	"github.com/upbound/crossplane-distro/internal/version"
 )
 
 type Context struct {
@@ -53,9 +54,12 @@ func (b *BootstrapCmd) Run(ctx *Context) error {
 		return errors.Wrap(err, "cannot create manager")
 	}
 
-	if err := bootstrap.Setup(mgr, logging.NewLogrLogger(zl.WithName("bootstrap")), upbound.NewClient(b.UpboundAPIUrl, ctx.Debug), b.Namespace); err != nil {
+	logger := logging.NewLogrLogger(zl.WithName("bootstrap"))
+	if err := bootstrap.Setup(mgr, logger, upbound.NewClient(b.UpboundAPIUrl, ctx.Debug), b.Namespace); err != nil {
 		return errors.Wrap(err, "cannot add bootstrap controller to manager")
 	}
+
+	logger.Info("Starting bootstrapper", "version", version.Version)
 
 	return errors.Wrap(mgr.Start(ctrl.SetupSignalHandler()), "cannot start controller manager")
 }

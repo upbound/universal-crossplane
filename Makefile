@@ -33,7 +33,7 @@ S3_BUCKET ?= project-uruk-hai.releases
 # Setup Go
 
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper
-GO_LDFLAGS += -X $(GO_PROJECT)/pkg/version.Version=$(VERSION)
+GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
 GO_SUBDIRS += cmd internal
 GO111MODULE = on
 -include build/makelib/golang.mk

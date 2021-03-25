@@ -1,4 +1,4 @@
-package operations
+package tlssecrets
 
 import (
 	"context"
@@ -21,13 +21,18 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	certutil "k8s.io/client-go/util/cert"
 	"k8s.io/client-go/util/keyutil"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
 	"github.com/upbound/crossplane-distro/internal/controller/bootstrap/meta"
 )
 
 const (
+	reconcileTimeout = 1 * time.Minute
+
 	certificateBlockType = "CERTIFICATE"
 	rsaKeySize           = 2048
 	certificateValidity  = time.Hour * 24 * 365 * 10
@@ -69,73 +74,107 @@ var (
 	}
 )
 
-type TLSSecretGeneration struct {
-	client    client.Client
-	namespace string
-	caCert    *x509.Certificate
-	caKey     crypto.Signer
-}
+// ReconcilerOption is used to configure the Reconciler.
+type ReconcilerOption func(*Reconciler)
 
-func NewTLSSecretGeneration(c client.Client, namespace string) *TLSSecretGeneration {
-	return &TLSSecretGeneration{
-		client:    c,
-		namespace: namespace,
+// WithLogger specifies how the Reconciler should log messages.
+func WithLogger(log logging.Logger) ReconcilerOption {
+	return func(r *Reconciler) {
+		r.log = log
 	}
 }
 
-func (t *TLSSecretGeneration) Run(ctx context.Context, log logging.Logger, config map[string][]byte) error {
-	log.Debug("Running TLSSecretGeneration")
-	if t.caCert == nil {
-		if err := t.createOrLoadCA(ctx); err != nil {
-			return errors.Wrap(err, "failed to initialize ca")
-		}
+func Setup(mgr ctrl.Manager, l logging.Logger) error {
+	name := "tlsSecretGeneration"
+
+	r := NewReconciler(mgr,
+		WithLogger(l.WithValues("controller", name)),
+	)
+
+	//TODO(hasan): watch secret with specific name
+	return ctrl.NewControllerManagedBy(mgr).
+		Named(name).
+		For(&corev1.Secret{}).
+		Complete(r)
+}
+
+type Reconciler struct {
+	client client.Client
+	log    logging.Logger
+	caCert *x509.Certificate
+	caKey  crypto.Signer
+}
+
+func NewReconciler(mgr manager.Manager, opts ...ReconcilerOption) *Reconciler {
+	r := &Reconciler{
+		client: mgr.GetClient(),
+		log:    logging.NewNopLogger(),
 	}
 
-	for n, cfg := range certConfigs {
-		s := &corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      n,
-				Namespace: t.namespace,
-				Labels: map[string]string{
-					meta.LabelKeyManagedBy: meta.LabelValueManagedBy,
-				},
-			},
-		}
-		err := t.client.Get(ctx, types.NamespacedName{Name: n, Namespace: t.namespace}, s)
-		if resource.IgnoreNotFound(err) != nil {
-			return errors.Wrapf(err, "failed to get cert secret %s", n)
-		}
-		if err == nil {
-			log.Debug(fmt.Sprintf("Certificate secret %s already exists, skipping generation", n))
-			continue
-		}
+	for _, f := range opts {
+		f(r)
+	}
 
-		log.Info(fmt.Sprintf("Generating certificate for %s...", n))
-		_, err = controllerutil.CreateOrUpdate(ctx, t.client, s, func() error {
-			cert, key, err := newSignedCertAndKey(cfg, t.caCert, t.caKey)
-			if err != nil {
-				return err
-			}
-			d, err := tlsSecretDataFromCertAndKey(cert, key, t.caCert)
-			if err != nil {
-				return err
-			}
-			s.Data = d
-			s.Type = corev1.SecretTypeTLS
-			return nil
-		})
+	return r
+}
+
+func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+	log := r.log.WithValues("request", req)
+	if req.Name != secretNameGatewayTLS && req.Name != secretNameGraphqlTLS {
+		return reconcile.Result{}, nil
+	}
+	log.Debug("Reconciling...")
+	ctx, cancel := context.WithTimeout(ctx, reconcileTimeout)
+	defer cancel()
+
+	s := &corev1.Secret{}
+	err := r.client.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, s)
+	if err != nil {
+		return reconcile.Result{}, errors.Wrapf(err, "failed to get cert secret %s", req.Name)
+	}
+
+	// Check if secret has data
+	cert := s.Data[keyTLSCert]
+	if string(cert) != "" {
+		log.Debug(fmt.Sprintf("Secret %s already contains certificate, skipping generation", req.Name))
+		return reconcile.Result{}, nil
+	}
+
+	if r.caCert == nil {
+		if err := r.createOrLoadCA(ctx, req.Namespace); err != nil {
+			return reconcile.Result{}, errors.Wrap(err, "failed to initialize ca")
+		}
+	}
+	s.Name = req.Name
+	s.Namespace = req.Namespace
+	s.Labels = map[string]string{
+		meta.LabelKeyManagedBy: meta.LabelValueManagedBy,
+	}
+	log.Info(fmt.Sprintf("Generating certificate for %s...", req.Name))
+	_, err = controllerutil.CreateOrUpdate(ctx, r.client, s, func() error {
+		cert, key, err := newSignedCertAndKey(certConfigs[req.Name], r.caCert, r.caKey)
 		if err != nil {
 			return err
 		}
-		log.Info(fmt.Sprintf("Certificate generation completed for %s", n))
+		d, err := tlsSecretDataFromCertAndKey(cert, key, r.caCert)
+		if err != nil {
+			return err
+		}
+		s.Data = d
+		s.Type = corev1.SecretTypeTLS
+		return nil
+	})
+	if err != nil {
+		return reconcile.Result{}, err
 	}
+	log.Info(fmt.Sprintf("Certificate generation completed for %s", req.Name))
 
-	return nil
+	return reconcile.Result{}, nil
 }
 
-func (t *TLSSecretGeneration) createOrLoadCA(ctx context.Context) error {
+func (r *Reconciler) createOrLoadCA(ctx context.Context, namespace string) error {
 	cas := &corev1.Secret{}
-	err := t.client.Get(ctx, types.NamespacedName{Name: secretNameCA, Namespace: t.namespace}, cas)
+	err := r.client.Get(ctx, types.NamespacedName{Name: secretNameCA, Namespace: namespace}, cas)
 	if resource.IgnoreNotFound(err) != nil {
 		return errors.Wrap(err, "failed get ca secret")
 	}
@@ -145,8 +184,8 @@ func (t *TLSSecretGeneration) createOrLoadCA(ctx context.Context) error {
 		if err != nil {
 			return errors.Wrap(err, "failed to parts existing ca secret")
 		}
-		t.caCert = c
-		t.caKey = k
+		r.caCert = c
+		r.caKey = k
 		return nil
 	}
 
@@ -155,8 +194,8 @@ func (t *TLSSecretGeneration) createOrLoadCA(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to generate new ca")
 	}
-	t.caCert = c
-	t.caKey = k
+	r.caCert = c
+	r.caKey = k
 	d, err := tlsSecretDataFromCertAndKey(c, k, c)
 	if err != nil {
 		return errors.Wrap(err, "failed to build tls secret data from generated ca")
@@ -164,7 +203,7 @@ func (t *TLSSecretGeneration) createOrLoadCA(ctx context.Context) error {
 	cas = &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      secretNameCA,
-			Namespace: t.namespace,
+			Namespace: namespace,
 			Labels: map[string]string{
 				meta.LabelKeyManagedBy: meta.LabelValueManagedBy,
 			},
@@ -172,7 +211,7 @@ func (t *TLSSecretGeneration) createOrLoadCA(ctx context.Context) error {
 		Type: corev1.SecretTypeTLS,
 		Data: d,
 	}
-	return errors.Wrap(t.client.Create(ctx, cas), "failed to create ca secret")
+	return errors.Wrap(r.client.Create(ctx, cas), "failed to create ca secret")
 }
 
 // newCertificateAuthority creates new certificate and private key for the certificate authority

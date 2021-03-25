@@ -59,7 +59,7 @@ spec:
           - name: CP_TOKEN
             valueFrom:
               secretKeyRef:
-                name: {{ .Values.upbound.controlPlane.tokenSecret }}
+                name: upbound-control-plane-token
                 key: token
           - name: JWT_PUBLIC_KEY
             valueFrom:

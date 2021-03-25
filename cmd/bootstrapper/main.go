@@ -55,7 +55,7 @@ func (b *BootstrapCmd) Run(ctx *Context) error {
 	}
 
 	logger := logging.NewLogrLogger(zl.WithName("bootstrap"))
-	if err := bootstrap.Setup(mgr, logger, upbound.NewClient(b.UpboundAPIUrl, ctx.Debug), b.Namespace); err != nil {
+	if err := bootstrap.Setup(mgr, logger, upbound.NewClient(b.UpboundAPIUrl, ctx.Debug)); err != nil {
 		return errors.Wrap(err, "cannot add bootstrap controller to manager")
 	}
 

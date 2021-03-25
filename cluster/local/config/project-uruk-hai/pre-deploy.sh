@@ -8,7 +8,7 @@ CONTROL_PLANE_ORG="${LOCALDEV_CONNECT_CP_ORG}"
 UPBOUND_PLATFORM_TOKEN_SECRET_NAME="upbound-control-plane-token"
 
 if [ ${LOCALDEV_CONNECT_TO_UBC} != "true" ]; then
-  echo "LOCALDEV_CONNECT_TO_UBC is not set to true, skipping self hosted platform creation"
+  echo "LOCALDEV_CONNECT_TO_UBC is not set to true, skipping self hosted control plane creation"
   return 0
 fi
 
@@ -35,36 +35,36 @@ curl --cookie-jar /tmp/req.cookie \
   "https://${UPBOUND_API_ENDPOINT}/v1/login"
 echo "Logged in!"
 
-echo "Checking if platform ${CONTROL_PLANE_NAME} in org ${CONTROL_PLANE_ORG} already exists..."
-platform_id=$(curl -s --cookie /tmp/req.cookie "https://${UPBOUND_API_ENDPOINT}/v1/namespaces/${CONTROL_PLANE_ORG}/platforms" | \
-  jq -c '.platforms[] | select(.platform.name | contains("'"${CONTROL_PLANE_NAME}"'"))' | \
-  jq -r .platform.id)
+echo "Checking if control plane ${CONTROL_PLANE_NAME} in org ${CONTROL_PLANE_ORG} already exists..."
+cp_id=$(curl -s --cookie /tmp/req.cookie "https://${UPBOUND_API_ENDPOINT}/v1/namespaces/${CONTROL_PLANE_ORG}/controlPlanes" | \
+  jq -c '.controlPlanes[] | select(.controlPlane.name | contains("'"${CONTROL_PLANE_NAME}"'"))' | \
+  jq -r .controlPlane.id)
 
-if [ -z "${platform_id}" ]; then
-    echo "Creating a new platform with name ${CONTROL_PLANE_NAME} in org ${CONTROL_PLANE_ORG}"
-    platform_id=$(curl -s --cookie /tmp/req.cookie \
+if [ -z "${cp_id}" ]; then
+    echo "Creating a new control plane with name ${CONTROL_PLANE_NAME} in org ${CONTROL_PLANE_ORG}"
+    cp_id=$(curl -s --cookie /tmp/req.cookie \
       -H "Content-Type: application/json" \
       -d '{"namespace": "'"${CONTROL_PLANE_ORG}"'","name": "'"${CONTROL_PLANE_NAME}"'","description": " ", "selfHosted": true, "kubeClusterID": "'"${kube_cluster_id}"'"}' \
-      "https://${UPBOUND_API_ENDPOINT}/v1/platforms" | \
-      jq -r .platform.platform.id)
+      "https://${UPBOUND_API_ENDPOINT}/v1/controlPlanes" | \
+      jq -r .controlPlane.controlPlane.id)
 fi
-echo "Platform created/exists with id ${platform_id}!"
+echo "Platform created/exists with id ${cp_id}!"
 
-echo "Creating platform token..."
-platform_token=$(curl -s --cookie /tmp/req.cookie \
+echo "Creating control plane token..."
+cp_token=$(curl -s --cookie /tmp/req.cookie \
   -H "Content-Type: application/json" \
-  -d '{"data":{"type":"tokens","attributes":{"name":"a platform token"},"relationships":{"owner":{"data":{"type":"platforms","id":"'"${platform_id}"'"}}}}}' \
+  -d '{"data":{"type":"tokens","attributes":{"name":"a control plane token"},"relationships":{"owner":{"data":{"type":"controlPlanes","id":"'"${cp_id}"'"}}}}}' \
   "https://${UPBOUND_API_ENDPOINT}/v1/tokens" | \
   jq -r .data.meta.jwt)
 
-if [ -z "${platform_token}" ]; then
+if [ -z "${cp_token}" ]; then
   echo "Token creation failed, obtained token is empty"
   exit 1
 fi
 echo "Platform token created!"
 
-echo "Creating platform token secret..."
+echo "Creating control plane token secret..."
 kubectl -n "${UPBOUND_CROSSPLANE_NAMESPACE}" delete secret "${UPBOUND_PLATFORM_TOKEN_SECRET_NAME}" --ignore-not-found
-kubectl -n "${UPBOUND_CROSSPLANE_NAMESPACE}" create secret generic "${UPBOUND_PLATFORM_TOKEN_SECRET_NAME}" --from-literal token="${platform_token}"
+kubectl -n "${UPBOUND_CROSSPLANE_NAMESPACE}" create secret generic "${UPBOUND_PLATFORM_TOKEN_SECRET_NAME}" --from-literal token="${cp_token}"
 
 echo "Success!"

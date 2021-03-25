@@ -38,9 +38,7 @@ func main() {
 
 func (b *BootstrapCmd) Run(ctx *Context) error {
 	zl := zap.New(zap.UseDevMode(ctx.Debug))
-	if ctx.Debug {
-		ctrl.SetLogger(zl)
-	}
+	ctrl.SetLogger(zl)
 
 	cfg, err := ctrl.GetConfig()
 	if err != nil {

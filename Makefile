@@ -16,8 +16,8 @@ PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
 CROSSPLANE_TAG := v1.1.0
 
-GATEWAY_TAG := v0.25.0-alpha1.54.g74ad71e
-GRAPHQL_TAG := v0.25.0-alpha1.26.g63124dc-version-hack-1
+GATEWAY_TAG := v0.25.0-alpha1.68.gee65fdc-cp-1
+GRAPHQL_TAG := v0.25.0-alpha1.33.gfde4735-version-hack-1
 
 export CROSSPLANE_TAG
 export GATEWAY_TAG

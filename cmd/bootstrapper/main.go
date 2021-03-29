@@ -14,10 +14,12 @@ import (
 	"github.com/upbound/crossplane-distro/internal/version"
 )
 
+// Context represents a cli context
 type Context struct {
 	Debug bool
 }
 
+// BootstrapCmd represents the "bootstrap" command
 type BootstrapCmd struct {
 	SyncPeriod    time.Duration `default:"10m"`
 	Namespace     string        `default:"upbound-system"`
@@ -36,6 +38,7 @@ func main() {
 	ctx.FatalIfErrorf(err)
 }
 
+// Run runs the bootstrap command
 func (b *BootstrapCmd) Run(ctx *Context) error {
 	zl := zap.New(zap.UseDevMode(ctx.Debug))
 	ctrl.SetLogger(zl)

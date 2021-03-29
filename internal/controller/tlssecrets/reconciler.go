@@ -84,6 +84,7 @@ func WithLogger(log logging.Logger) ReconcilerOption {
 	}
 }
 
+// Setup adds a controller that reconciles on tls secrets
 func Setup(mgr ctrl.Manager, l logging.Logger) error {
 	name := "tlsSecretGeneration"
 
@@ -91,13 +92,14 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		WithLogger(l.WithValues("controller", name)),
 	)
 
-	//TODO(hasan): watch secret with specific name
+	// TODO(hasan): watch secret with specific name
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&corev1.Secret{}).
 		Complete(r)
 }
 
+// Reconciler reconciles on tls secrets
 type Reconciler struct {
 	client client.Client
 	log    logging.Logger
@@ -105,6 +107,7 @@ type Reconciler struct {
 	caKey  crypto.Signer
 }
 
+// NewReconciler returns a new reconciler
 func NewReconciler(mgr manager.Manager, opts ...ReconcilerOption) *Reconciler {
 	r := &Reconciler{
 		client: mgr.GetClient(),
@@ -118,6 +121,7 @@ func NewReconciler(mgr manager.Manager, opts ...ReconcilerOption) *Reconciler {
 	return r
 }
 
+// Reconcile reconciles on tls secrets for uxp and fills the secret data with generated certificates
 func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	log := r.log.WithValues("request", req)
 	if req.Name != secretNameGatewayTLS && req.Name != secretNameGraphqlTLS {

@@ -17,14 +17,22 @@ const (
 	keyNATSCA       = "nats_ca"
 )
 
+// PublicCerts keeps the public certificates/keys to interact with Upbound Cloud.
+type PublicCerts struct {
+	JWTPublicKey string
+	NATSCA       string
+}
+
+// Client is the client for upbound api
 type Client interface {
-	GetGatewayCerts(cpToken string) (string, string, error)
+	GetGatewayCerts(cpToken string) (PublicCerts, error)
 }
 
 type client struct {
 	resty *resty.Client
 }
 
+// NewClient returns a new Upbound client
 func NewClient(host string, debug bool) Client {
 	r := resty.New().
 		SetHostURL(host).
@@ -38,30 +46,34 @@ func NewClient(host string, debug bool) Client {
 	}
 }
 
-func (c *client) GetGatewayCerts(cpToken string) (string, string, error) {
+// GetGatewayCerts function returns public certificates to interact with Upbound Cloud.
+func (c *client) GetGatewayCerts(cpToken string) (PublicCerts, error) {
 	req := c.resty.R()
 	req.SetHeader("Authorization", fmt.Sprintf("Bearer %s", cpToken))
 
 	resp, err := req.Get(gwCertsPath)
 	if err != nil {
-		return "", "", errors.Wrap(err, "failed to request gateway certs")
+		return PublicCerts{}, errors.Wrap(err, "failed to request gateway certs")
 	}
 	if resp.StatusCode() != http.StatusOK {
-		return "", "", errors.Errorf("gateway certs request failed with %s - %s", resp.Status(), string(resp.Body()))
+		return PublicCerts{}, errors.Errorf("gateway certs request failed with %s - %s", resp.Status(), string(resp.Body()))
 	}
 	respBody := map[string]string{}
 
 	if err := json.Unmarshal(resp.Body(), &respBody); err != nil {
-		return "", "", errors.Wrap(err, "failed to unmarshall gw certs response")
+		return PublicCerts{}, errors.Wrap(err, "failed to unmarshall gw certs response")
 	}
 	j := respBody[keyJWTPublicKey]
 	n := respBody[keyNATSCA]
 	if j == "" {
-		return "", "", errors.New("empty jwt public key received")
+		return PublicCerts{}, errors.New("empty jwt public key received")
 	}
 	if n == "" {
-		return "", "", errors.New("empty nats ca received")
+		return PublicCerts{}, errors.New("empty nats ca received")
 	}
 
-	return j, n, nil
+	return PublicCerts{
+		JWTPublicKey: j,
+		NATSCA:       n,
+	}, nil
 }

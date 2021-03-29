@@ -5,18 +5,17 @@ import (
 	"fmt"
 	"time"
 
-	ctrl "sigs.k8s.io/controller-runtime"
-
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/pkg/errors"
-	"github.com/upbound/crossplane-distro/internal/clients/upbound"
-	"github.com/upbound/crossplane-distro/internal/meta"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+
+	"github.com/upbound/crossplane-distro/internal/clients/upbound"
+	"github.com/upbound/crossplane-distro/internal/meta"
 )
 
 const (
@@ -39,6 +38,7 @@ func WithLogger(log logging.Logger) ReconcilerOption {
 	}
 }
 
+// Setup adds a controller that reconciles on ubc cert secret
 func Setup(mgr ctrl.Manager, l logging.Logger, ubcClient upbound.Client) error {
 	name := "fetchingUBCCerts"
 
@@ -47,19 +47,21 @@ func Setup(mgr ctrl.Manager, l logging.Logger, ubcClient upbound.Client) error {
 		WithLogger(l.WithValues("controller", name)),
 	)
 
-	//TODO(hasan): watch secret with specific name
+	// TODO(hasan): watch secret with specific name
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&corev1.Secret{}).
 		Complete(r)
 }
 
+// Reconciler reconciles on ubc cert secret
 type Reconciler struct {
 	client    client.Client
 	log       logging.Logger
 	ubcClient upbound.Client
 }
 
+// NewReconciler returns a new reconciler
 func NewReconciler(mgr ctrl.Manager, ubcClient upbound.Client, opts ...ReconcilerOption) *Reconciler {
 	r := &Reconciler{
 		client:    mgr.GetClient(),
@@ -74,6 +76,7 @@ func NewReconciler(mgr ctrl.Manager, ubcClient upbound.Client, opts ...Reconcile
 	return r
 }
 
+// Reconcile reconciles on ubc public certs secret for uxp and fills the secret data with fetched public certs
 func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	log := r.log.WithValues("request", req)
 	if req.Name != secretNamePublicCerts {
@@ -97,7 +100,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	log.Info("Fetching Upbound agent public certs...")
-	j, n, err := r.ubcClient.GetGatewayCerts(cpToken)
+	certs, err := r.ubcClient.GetGatewayCerts(cpToken)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "failed to fetch agent public keys")
 	}
@@ -111,8 +114,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 			},
 		},
 		Data: map[string][]byte{
-			keyJWTPublicKey: []byte(j),
-			keyNATSCA:       []byte(n),
+			keyJWTPublicKey: []byte(certs.JWTPublicKey),
+			keyNATSCA:       []byte(certs.NATSCA),
 		},
 	}
 

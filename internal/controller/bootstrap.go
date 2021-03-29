@@ -1,9 +1,9 @@
-package bootstrap
+package controller
 
 import (
-	"github.com/upbound/crossplane-distro/internal/controller/bootstrap/operations/ubccerts"
+	"github.com/upbound/crossplane-distro/internal/controller/ubccerts"
 
-	"github.com/upbound/crossplane-distro/internal/controller/bootstrap/operations/tlssecrets"
+	"github.com/upbound/crossplane-distro/internal/controller/tlssecrets"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/upbound/crossplane-distro/internal/clients/upbound"

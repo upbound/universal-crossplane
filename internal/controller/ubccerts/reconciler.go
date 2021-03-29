@@ -11,14 +11,12 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/pkg/errors"
+	"github.com/upbound/crossplane-distro/internal/clients/upbound"
+	"github.com/upbound/crossplane-distro/internal/meta"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	"github.com/upbound/crossplane-distro/internal/clients/upbound"
-	"github.com/upbound/crossplane-distro/internal/controller/bootstrap/meta"
 )
 
 const (
@@ -112,18 +110,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 				meta.LabelKeyManagedBy: meta.LabelValueManagedBy,
 			},
 		},
-	}
-
-	_, err = controllerutil.CreateOrUpdate(ctx, r.client, js, func() error {
-		d := map[string][]byte{
+		Data: map[string][]byte{
 			keyJWTPublicKey: []byte(j),
 			keyNATSCA:       []byte(n),
-		}
-		js.Data = d
-		return nil
-	})
-	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "failed to create/update agent public certs secret")
+		},
+	}
+
+	if err := r.client.Update(ctx, js); err != nil {
+		return reconcile.Result{}, errors.Wrap(err, "failed to update agent public certs secret")
 	}
 	log.Info("Fetching Upbound agent public certs completed")
 

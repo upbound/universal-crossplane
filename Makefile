@@ -16,6 +16,7 @@ PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
 CROSSPLANE_TAG := v1.1.0
 
+BOOTSTRAPPER_TAG := $(VERSION)
 GATEWAY_TAG := v0.25.0-alpha1.68.gee65fdc-cp-1
 GRAPHQL_TAG := v0.25.0-alpha1.33.gfde4735-version-hack-1
 
@@ -60,7 +61,7 @@ HELM_CHART_LINT_ARGS_project-uruk-hai = --set nameOverride='',imagePullSecrets='
 # all be in folders at the same level (no additional levels of nesting).
 
 DOCKER_REGISTRY = upbound
-IMAGES = uxp-bootstrap
+IMAGES = uxp-bootstrapper
 OSBASEIMAGE = gcr.io/distroless/static:nonroot
 -include build/makelib/image.mk
 
@@ -105,7 +106,7 @@ crossplane:
 generate-chart: crossplane
 	@$(INFO) Generating values.yaml for the chart
 	@cp -f $(HELM_CHARTS_DIR)/project-uruk-hai/values.yaml.tmpl $(HELM_CHARTS_DIR)/project-uruk-hai/values.yaml
-	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%VERSION%%|$(VERSION)|g' values.yaml
+	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%GATEWAY_TAG%%|$(GATEWAY_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%GRAPHQL_TAG%%|$(GRAPHQL_TAG)|g' values.yaml

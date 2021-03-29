@@ -22,7 +22,7 @@ spec:
       {{- end }}
       {{ end }}
       containers:
-        - name: bootstrap
+        - name: bootstrapper
           image: "{{ .Values.bootstrapper.image.repository }}:{{ .Values.bootstrapper.image.tag }}"
           args:
             - bootstrap

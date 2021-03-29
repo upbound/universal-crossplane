@@ -7,4 +7,12 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["*"]
+    verbs: ["watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "update"]
+    resourceNames:
+    - upbound-agent-ca
+    - upbound-agent-gateway-tls
+    - upbound-agent-graphql-tls
+    - upbound-agent-public-certs

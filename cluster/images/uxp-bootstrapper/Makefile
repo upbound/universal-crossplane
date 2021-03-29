@@ -6,7 +6,7 @@ include ../../../build/makelib/common.mk
 
 # ====================================================================================
 #  Options
-IMAGE = $(BUILD_REGISTRY)/uxp-bootstrap-$(ARCH)
+IMAGE = $(BUILD_REGISTRY)/uxp-bootstrapper-$(ARCH)
 include ../../../build/makelib/image.mk
 
 # ====================================================================================

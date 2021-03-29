@@ -27,7 +27,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/upbound/crossplane-distro/internal/controller/bootstrap/meta"
+	"github.com/upbound/crossplane-distro/internal/meta"
 )
 
 const (
@@ -140,31 +140,28 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, nil
 	}
 
-	if r.caCert == nil {
-		if err := r.createOrLoadCA(ctx, req.Namespace); err != nil {
-			return reconcile.Result{}, errors.Wrap(err, "failed to initialize ca")
-		}
+	if err := r.createOrLoadCA(ctx, req.Namespace); err != nil {
+		return reconcile.Result{}, errors.Wrap(err, "failed to initialize ca")
 	}
-	s.Name = req.Name
-	s.Namespace = req.Namespace
+
+	log.Info(fmt.Sprintf("Generating certificate for %s...", req.Name))
+
+	c, k, err := newSignedCertAndKey(certConfigs[req.Name], r.caCert, r.caKey)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+	d, err := tlsSecretDataFromCertAndKey(c, k, r.caCert)
+	if err != nil {
+		return reconcile.Result{}, err
+	}
+
 	s.Labels = map[string]string{
 		meta.LabelKeyManagedBy: meta.LabelValueManagedBy,
 	}
-	log.Info(fmt.Sprintf("Generating certificate for %s...", req.Name))
-	_, err = controllerutil.CreateOrUpdate(ctx, r.client, s, func() error {
-		cert, key, err := newSignedCertAndKey(certConfigs[req.Name], r.caCert, r.caKey)
-		if err != nil {
-			return err
-		}
-		d, err := tlsSecretDataFromCertAndKey(cert, key, r.caCert)
-		if err != nil {
-			return err
-		}
-		s.Data = d
-		s.Type = corev1.SecretTypeTLS
-		return nil
-	})
-	if err != nil {
+	s.Data = d
+	s.Type = corev1.SecretTypeTLS
+
+	if err = r.client.Update(ctx, s); err != nil {
 		return reconcile.Result{}, err
 	}
 	log.Info(fmt.Sprintf("Certificate generation completed for %s", req.Name))
@@ -178,7 +175,7 @@ func (r *Reconciler) createOrLoadCA(ctx context.Context, namespace string) error
 	if resource.IgnoreNotFound(err) != nil {
 		return errors.Wrap(err, "failed get ca secret")
 	}
-	if err == nil {
+	if err == nil && string(cas.Data[keyTLSKey]) != "" {
 		// load ca from existing secret
 		c, k, _, err := certFromTLSSecretData(cas.Data)
 		if err != nil {
@@ -209,9 +206,13 @@ func (r *Reconciler) createOrLoadCA(ctx context.Context, namespace string) error
 			},
 		},
 		Type: corev1.SecretTypeTLS,
-		Data: d,
 	}
-	return errors.Wrap(r.client.Create(ctx, cas), "failed to create ca secret")
+
+	_, err = controllerutil.CreateOrUpdate(ctx, r.client, cas, func() error {
+		cas.Data = d
+		return nil
+	})
+	return errors.Wrap(err, "failed to create/update ca secret")
 }
 
 // newCertificateAuthority creates new certificate and private key for the certificate authority

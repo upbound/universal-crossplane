@@ -1,7 +1,7 @@
 {{/* vim: set filetype=mustache: */}}
 
 {{- define "bootstrapper-name" -}}
-{{- "upbound-bootstrap" -}}
+{{- "upbound-bootstrapper" -}}
 {{- end -}}
 
 {{/*

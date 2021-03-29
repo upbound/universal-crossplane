@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -51,6 +52,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger, ubcClient upbound.Client) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&corev1.Secret{}).
+		WithEventFilter(resource.NewPredicates(resource.IsNamed(secretNamePublicCerts))).
 		Complete(r)
 }
 
@@ -79,9 +81,6 @@ func NewReconciler(mgr ctrl.Manager, ubcClient upbound.Client, opts ...Reconcile
 // Reconcile reconciles on ubc public certs secret for uxp and fills the secret data with fetched public certs
 func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	log := r.log.WithValues("request", req)
-	if req.Name != secretNamePublicCerts {
-		return reconcile.Result{}, nil
-	}
 
 	log.Debug("Reconciling...")
 	ctx, cancel := context.WithTimeout(ctx, reconcileTimeout)

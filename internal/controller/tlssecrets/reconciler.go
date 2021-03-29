@@ -96,6 +96,10 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&corev1.Secret{}).
+		WithEventFilter(resource.NewPredicates(resource.AnyOf(
+			resource.IsNamed(secretNameGatewayTLS),
+			resource.IsNamed(secretNameGraphqlTLS),
+		))).
 		Complete(r)
 }
 
@@ -124,9 +128,7 @@ func NewReconciler(mgr manager.Manager, opts ...ReconcilerOption) *Reconciler {
 // Reconcile reconciles on tls secrets for uxp and fills the secret data with generated certificates
 func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	log := r.log.WithValues("request", req)
-	if req.Name != secretNameGatewayTLS && req.Name != secretNameGraphqlTLS {
-		return reconcile.Result{}, nil
-	}
+
 	log.Debug("Reconciling...")
 	ctx, cancel := context.WithTimeout(ctx, reconcileTimeout)
 	defer cancel()

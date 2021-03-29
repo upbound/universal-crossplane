@@ -13,6 +13,8 @@ import (
 	"math/big"
 	"time"
 
+	"github.com/crossplane/crossplane-runtime/pkg/event"
+
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
@@ -47,6 +49,14 @@ const (
 	secretNameCA         = "upbound-agent-ca"
 	secretNameGatewayTLS = "upbound-agent-gateway-tls"
 	secretNameGraphqlTLS = "upbound-agent-graphql-tls"
+)
+
+// Event reasons.
+const (
+	reasonCA       event.Reason = "InitializingCA"
+	reasonGenerate event.Reason = "GeneratingCertificates"
+	reasonSync     event.Reason = "SyncCerts"
+	reasonUpdate   event.Reason = "UpdatingSecret"
 )
 
 var (
@@ -84,12 +94,20 @@ func WithLogger(log logging.Logger) ReconcilerOption {
 	}
 }
 
+// WithRecorder specifies how the Reconciler should record Kubernetes events.
+func WithRecorder(er event.Recorder) ReconcilerOption {
+	return func(r *Reconciler) {
+		r.record = er
+	}
+}
+
 // Setup adds a controller that reconciles on tls secrets
 func Setup(mgr ctrl.Manager, l logging.Logger) error {
 	name := "tlsSecretGeneration"
 
 	r := NewReconciler(mgr,
 		WithLogger(l.WithValues("controller", name)),
+		WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 	)
 
 	// TODO(hasan): watch secret with specific name
@@ -107,6 +125,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 type Reconciler struct {
 	client client.Client
 	log    logging.Logger
+	record event.Recorder
 	caCert *x509.Certificate
 	caKey  crypto.Signer
 }
@@ -116,6 +135,7 @@ func NewReconciler(mgr manager.Manager, opts ...ReconcilerOption) *Reconciler {
 	r := &Reconciler{
 		client: mgr.GetClient(),
 		log:    logging.NewNopLogger(),
+		record: event.NewNopRecorder(),
 	}
 
 	for _, f := range opts {
@@ -142,22 +162,33 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	// Check if secret has data
 	cert := s.Data[keyTLSCert]
 	if string(cert) != "" {
-		log.Debug(fmt.Sprintf("Secret %s already contains certificate, skipping generation", req.Name))
+		m := fmt.Sprintf("Secret %s already contains certificate, skipping generation", req.Name)
+		log.Debug(m)
+		r.record.Event(s, event.Normal(reasonSync, m))
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.createOrLoadCA(ctx, req.Namespace); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "failed to initialize ca")
+	if err = r.createOrLoadCA(ctx, req.Namespace); err != nil {
+		err = errors.Wrap(err, "failed to initialize ca")
+		log.Debug(err.Error())
+		r.record.Event(s, event.Warning(reasonCA, err))
+		return reconcile.Result{}, err
 	}
 
 	log.Info(fmt.Sprintf("Generating certificate for %s...", req.Name))
 
 	c, k, err := newSignedCertAndKey(certConfigs[req.Name], r.caCert, r.caKey)
 	if err != nil {
+		err = errors.Wrap(err, "failed to generate signed certificate")
+		log.Debug(err.Error())
+		r.record.Event(s, event.Warning(reasonGenerate, err))
 		return reconcile.Result{}, err
 	}
 	d, err := tlsSecretDataFromCertAndKey(c, k, r.caCert)
 	if err != nil {
+		err = errors.Wrap(err, "failed to build secret data from generated certificate")
+		log.Debug(err.Error())
+		r.record.Event(s, event.Warning(reasonGenerate, err))
 		return reconcile.Result{}, err
 	}
 
@@ -168,10 +199,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	s.Type = corev1.SecretTypeTLS
 
 	if err = r.client.Update(ctx, s); err != nil {
+		err = errors.Wrap(err, "failed to update secret for certificate data")
+		log.Debug(err.Error())
+		r.record.Event(s, event.Warning(reasonUpdate, err))
 		return reconcile.Result{}, err
 	}
-	log.Info(fmt.Sprintf("Certificate generation completed for %s", req.Name))
 
+	m := "Certificate generation completed"
+	log.Info(m)
+	r.record.Event(s, event.Normal(reasonUpdate, m))
 	return reconcile.Result{}, nil
 }
 

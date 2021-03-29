@@ -2,14 +2,13 @@ package ubccerts
 
 import (
 	"context"
-	"fmt"
 	"time"
 
+	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -29,6 +28,13 @@ const (
 	secretNamePublicCerts = "upbound-agent-public-certs"
 )
 
+// Event reasons.
+const (
+	reasonToken  event.Reason = "ReadToken"
+	reasonFetch  event.Reason = "FetchFromUpbound"
+	reasonUpdate event.Reason = "UpdatingSecret"
+)
+
 // ReconcilerOption is used to configure the Reconciler.
 type ReconcilerOption func(*Reconciler)
 
@@ -39,13 +45,21 @@ func WithLogger(log logging.Logger) ReconcilerOption {
 	}
 }
 
+// WithRecorder specifies how the Reconciler should record Kubernetes events.
+func WithRecorder(er event.Recorder) ReconcilerOption {
+	return func(r *Reconciler) {
+		r.record = er
+	}
+}
+
 // Setup adds a controller that reconciles on ubc cert secret
 func Setup(mgr ctrl.Manager, l logging.Logger, ubcClient upbound.Client) error {
-	name := "fetchingUBCCerts"
+	name := "ubcCertsFetcher"
 
 	r := NewReconciler(mgr,
 		ubcClient,
 		WithLogger(l.WithValues("controller", name)),
+		WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 	)
 
 	// TODO(hasan): watch secret with specific name
@@ -61,6 +75,7 @@ type Reconciler struct {
 	client    client.Client
 	log       logging.Logger
 	ubcClient upbound.Client
+	record    event.Recorder
 }
 
 // NewReconciler returns a new reconciler
@@ -68,6 +83,7 @@ func NewReconciler(mgr ctrl.Manager, ubcClient upbound.Client, opts ...Reconcile
 	r := &Reconciler{
 		client:    mgr.GetClient(),
 		log:       logging.NewNopLogger(),
+		record:    event.NewNopRecorder(),
 		ubcClient: ubcClient,
 	}
 
@@ -87,41 +103,54 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	defer cancel()
 
 	s := &corev1.Secret{}
-	err := r.client.Get(ctx, types.NamespacedName{Name: secretNameCPToken, Namespace: req.Namespace}, s)
+	err := r.client.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, s)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "failed to get control plane token secret %s", req.Name)
+		return reconcile.Result{}, errors.Wrapf(err, "failed to get ubc public certs secret %s", req.Name)
 	}
 
-	cpToken := string(s.Data[keyToken])
+	ts := &corev1.Secret{}
+	err = r.client.Get(ctx, types.NamespacedName{Name: secretNameCPToken, Namespace: req.Namespace}, s)
+	if err != nil {
+		err = errors.Wrapf(err, "failed to get control plane token secret %s", secretNameCPToken)
+		log.Debug(err.Error())
+		r.record.Event(s, event.Warning(reasonToken, err))
+		return reconcile.Result{}, err
+	}
+
+	cpToken := string(ts.Data[keyToken])
 	if cpToken == "" {
-		log.Debug(fmt.Sprintf("No token found for key %s in control plane token secret %s, skipping fetching Upbound agent public certs", keyToken, secretNameCPToken))
-		return reconcile.Result{}, nil
+		err = errors.Errorf("No token found for key %s in control plane token secret %s, skipping fetching Upbound agent public certs", keyToken, secretNameCPToken)
+		log.Debug(err.Error())
+		r.record.Event(s, event.Warning(reasonToken, err))
+		return reconcile.Result{}, err
 	}
 
 	log.Info("Fetching Upbound agent public certs...")
 	certs, err := r.ubcClient.GetGatewayCerts(cpToken)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "failed to fetch agent public keys")
+		err = errors.Wrap(err, "failed to fetch agent public keys")
+		log.Debug(err.Error())
+		r.record.Event(s, event.Warning(reasonFetch, err))
+		return reconcile.Result{}, err
 	}
 
-	js := &corev1.Secret{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      secretNamePublicCerts,
-			Namespace: req.Namespace,
-			Labels: map[string]string{
-				meta.LabelKeyManagedBy: meta.LabelValueManagedBy,
-			},
-		},
-		Data: map[string][]byte{
-			keyJWTPublicKey: []byte(certs.JWTPublicKey),
-			keyNATSCA:       []byte(certs.NATSCA),
-		},
+	s.Labels = map[string]string{
+		meta.LabelKeyManagedBy: meta.LabelValueManagedBy,
+	}
+	s.Data = map[string][]byte{
+		keyJWTPublicKey: []byte(certs.JWTPublicKey),
+		keyNATSCA:       []byte(certs.NATSCA),
 	}
 
-	if err := r.client.Update(ctx, js); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "failed to update agent public certs secret")
+	if err = r.client.Update(ctx, s); err != nil {
+		err = errors.Wrap(err, "failed to update agent public certs secret")
+		log.Debug(err.Error())
+		r.record.Event(s, event.Warning(reasonUpdate, err))
+		return reconcile.Result{}, err
 	}
-	log.Info("Fetching Upbound agent public certs completed")
 
+	m := "Successfully updated Upbound agent public certs secret"
+	log.Info(m)
+	r.record.Event(s, event.Normal(reasonUpdate, m))
 	return reconcile.Result{}, nil
 }

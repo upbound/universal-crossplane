@@ -14,7 +14,6 @@ import (
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/event"
-
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
@@ -49,6 +48,14 @@ const (
 	secretNameCA         = "upbound-agent-ca"
 	secretNameGatewayTLS = "upbound-agent-tls"
 	secretNameGraphqlTLS = "upbound-graphql-tls"
+)
+
+const (
+	errGetSecret        = "failed to get cert secret"
+	errGetCASecret      = "failed get ca secret"
+	errInitCA           = "failed to initialize ca"
+	errUpdateCASecret   = "failed to update ca secret"
+	errUpdateCertSecret = "failed to update secret for certificate data"
 )
 
 // Event reasons.
@@ -154,7 +161,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	s := &corev1.Secret{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, s)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "failed to get cert secret %s", req.Name)
+		return reconcile.Result{}, errors.Wrap(err, errGetSecret)
 	}
 
 	// Check if secret has data
@@ -167,7 +174,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	if err = r.createOrLoadCA(ctx, req.Namespace); err != nil {
-		err = errors.Wrap(err, "failed to initialize ca")
+		err = errors.Wrap(err, errInitCA)
 		log.Debug(err.Error())
 		r.record.Event(s, event.Warning(reasonCA, err))
 		return reconcile.Result{}, err
@@ -197,7 +204,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	s.Type = corev1.SecretTypeTLS
 
 	if err = r.client.Update(ctx, s); err != nil {
-		err = errors.Wrap(err, "failed to update secret for certificate data")
+		err = errors.Wrap(err, errUpdateCertSecret)
 		log.Debug(err.Error())
 		r.record.Event(s, event.Warning(reasonUpdate, err))
 		return reconcile.Result{}, err
@@ -213,7 +220,7 @@ func (r *Reconciler) createOrLoadCA(ctx context.Context, namespace string) error
 	cas := &corev1.Secret{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: secretNameCA, Namespace: namespace}, cas)
 	if resource.IgnoreNotFound(err) != nil {
-		return errors.Wrap(err, "failed get ca secret")
+		return errors.Wrap(err, errGetCASecret)
 	}
 	if err == nil && string(cas.Data[keyTLSKey]) != "" {
 		// load ca from existing secret
@@ -252,7 +259,7 @@ func (r *Reconciler) createOrLoadCA(ctx context.Context, namespace string) error
 		cas.Data = d
 		return nil
 	})
-	return errors.Wrap(err, "failed to create/update ca secret")
+	return errors.Wrap(err, errUpdateCASecret)
 }
 
 // newCertificateAuthority creates new certificate and private key for the certificate authority

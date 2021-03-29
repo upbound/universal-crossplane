@@ -24,6 +24,7 @@ type PublicCerts struct {
 }
 
 // Client is the client for upbound api
+//go:generate mockgen -destination ./mocks/upbound.go -package mocks github.com/upbound/crossplane-distro/internal/clients/upbound Client
 type Client interface {
 	GetGatewayCerts(cpToken string) (PublicCerts, error)
 }

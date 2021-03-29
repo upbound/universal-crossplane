@@ -28,6 +28,14 @@ const (
 	secretNamePublicCerts = "upbound-agent-public-certs"
 )
 
+const (
+	errGetSecret        = "failed to get ubc public certs secret"
+	errGetCPTokenSecret = "failed to get control plane token secret %s"
+	errNoTokenInSecret  = "No token found for key %s in control plane token secret %s, skipping fetching Upbound agent public certs"
+	errFetch            = "failed to fetch agent public keys"
+	errUpdateSecret     = "failed to update agent public certs secret"
+)
+
 // Event reasons.
 const (
 	reasonToken  event.Reason = "ReadToken"
@@ -104,13 +112,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	s := &corev1.Secret{}
 	err := r.client.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, s)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "failed to get ubc public certs secret %s", req.Name)
+		return reconcile.Result{}, errors.Wrap(err, errGetSecret)
 	}
 
 	ts := &corev1.Secret{}
 	err = r.client.Get(ctx, types.NamespacedName{Name: secretNameCPToken, Namespace: req.Namespace}, ts)
 	if err != nil {
-		err = errors.Wrapf(err, "failed to get control plane token secret %s", secretNameCPToken)
+		err = errors.Wrapf(err, errGetCPTokenSecret, secretNameCPToken)
 		log.Debug(err.Error())
 		r.record.Event(s, event.Warning(reasonToken, err))
 		return reconcile.Result{}, err
@@ -118,7 +126,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	cpToken := string(ts.Data[keyToken])
 	if cpToken == "" {
-		err = errors.Errorf("No token found for key %s in control plane token secret %s, skipping fetching Upbound agent public certs", keyToken, secretNameCPToken)
+		err = errors.Errorf(errNoTokenInSecret, keyToken, secretNameCPToken)
 		log.Debug(err.Error())
 		r.record.Event(s, event.Warning(reasonToken, err))
 		return reconcile.Result{}, err
@@ -127,7 +135,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	log.Info("Fetching Upbound agent public certs...")
 	certs, err := r.ubcClient.GetGatewayCerts(cpToken)
 	if err != nil {
-		err = errors.Wrap(err, "failed to fetch agent public keys")
+		err = errors.Wrap(err, errFetch)
 		log.Debug(err.Error())
 		r.record.Event(s, event.Warning(reasonFetch, err))
 		return reconcile.Result{}, err
@@ -142,7 +150,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	if err = r.client.Update(ctx, s); err != nil {
-		err = errors.Wrap(err, "failed to update agent public certs secret")
+		err = errors.Wrap(err, errUpdateSecret)
 		log.Debug(err.Error())
 		r.record.Event(s, event.Warning(reasonUpdate, err))
 		return reconcile.Result{}, err

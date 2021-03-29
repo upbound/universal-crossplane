@@ -62,7 +62,6 @@ func Setup(mgr ctrl.Manager, l logging.Logger, ubcClient upbound.Client) error {
 		WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 	)
 
-	// TODO(hasan): watch secret with specific name
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&corev1.Secret{}).
@@ -109,7 +108,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 
 	ts := &corev1.Secret{}
-	err = r.client.Get(ctx, types.NamespacedName{Name: secretNameCPToken, Namespace: req.Namespace}, s)
+	err = r.client.Get(ctx, types.NamespacedName{Name: secretNameCPToken, Namespace: req.Namespace}, ts)
 	if err != nil {
 		err = errors.Wrapf(err, "failed to get control plane token secret %s", secretNameCPToken)
 		log.Debug(err.Error())
@@ -149,7 +148,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	m := "Successfully updated Upbound agent public certs secret"
+	m := "Successfully fetched Upbound agent public certs secret!"
 	log.Info(m)
 	r.record.Event(s, event.Normal(reasonUpdate, m))
 	return reconcile.Result{}, nil

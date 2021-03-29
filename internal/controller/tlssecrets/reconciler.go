@@ -44,11 +44,11 @@ const (
 	keyTLSKey  = "tls.key"
 
 	nameUpbound          = "upbound"
-	cnGateway            = "upbound-agent-gateway"
-	cnGraphql            = "upbound-agent-graphql"
+	cnAgent              = "upbound-agent"
+	cnGraphql            = "crossplane-graphql"
 	secretNameCA         = "upbound-agent-ca"
-	secretNameGatewayTLS = "upbound-agent-gateway-tls"
-	secretNameGraphqlTLS = "upbound-agent-graphql-tls"
+	secretNameGatewayTLS = "upbound-agent-tls"
+	secretNameGraphqlTLS = "upbound-graphql-tls"
 )
 
 // Event reasons.
@@ -66,18 +66,17 @@ var (
 	}
 	certConfigs = map[string]*certutil.Config{
 		secretNameGatewayTLS: {
-			CommonName: cnGateway,
+			CommonName: cnAgent,
 			AltNames: certutil.AltNames{
 				// TODO(hasan): drop "tenant-gateway" once we stop using legacy service
-				DNSNames: []string{cnGateway, "tenant-gateway"},
+				DNSNames: []string{cnAgent, "tenant-gateway"},
 			},
 			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		},
 		secretNameGraphqlTLS: {
 			CommonName: cnGraphql,
 			AltNames: certutil.AltNames{
-				// TODO(hasan): drop "crossplane-graphql" once we stop using legacy service
-				DNSNames: []string{cnGraphql, "crossplane-graphql"},
+				DNSNames: []string{cnGraphql},
 			},
 			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		},
@@ -110,7 +109,6 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))),
 	)
 
-	// TODO(hasan): watch secret with specific name
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&corev1.Secret{}).
@@ -175,7 +173,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	log.Info(fmt.Sprintf("Generating certificate for %s...", req.Name))
+	log.Info("Generating certificate...")
 
 	c, k, err := newSignedCertAndKey(certConfigs[req.Name], r.caCert, r.caKey)
 	if err != nil {
@@ -205,7 +203,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		return reconcile.Result{}, err
 	}
 
-	m := "Certificate generation completed"
+	m := "Successfully generated certificate!"
 	log.Info(m)
 	r.record.Event(s, event.Normal(reasonUpdate, m))
 	return reconcile.Result{}, nil

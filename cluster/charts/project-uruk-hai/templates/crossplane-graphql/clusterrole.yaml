@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ template "agent-name" . }}-graphql
+  name: {{ template "graphql-name" . }}
   labels:
     {{- include "labelsGraphql" . | nindent 4 }}
 rules:

@@ -13,7 +13,7 @@ app.kubernetes.io/component: bootstrapper
 {{- end }}
 
 {{/*
-Selector labels - gateway
+Selector labels - bootstrapper
 */}}
 {{- define "selectorLabelsBootstrapper" -}}
 {{ include "selectorLabels" . }}

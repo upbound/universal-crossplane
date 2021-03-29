@@ -17,11 +17,11 @@ CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
 CROSSPLANE_TAG := v1.1.0
 
 BOOTSTRAPPER_TAG := $(VERSION)
-GATEWAY_TAG := v0.25.0-alpha1.68.gee65fdc-cp-1
+AGENT_TAG := v0.25.0-alpha1.72.gb98967c
 GRAPHQL_TAG := v0.25.0-alpha1.33.gfde4735-version-hack-1
 
 export CROSSPLANE_TAG
-export GATEWAY_TAG
+export AGENT_TAG
 export GRAPHQL_TAG
 
 # ====================================================================================
@@ -108,7 +108,7 @@ generate-chart: crossplane
 	@cp -f $(HELM_CHARTS_DIR)/project-uruk-hai/values.yaml.tmpl $(HELM_CHARTS_DIR)/project-uruk-hai/values.yaml
 	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' values.yaml
-	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%GATEWAY_TAG%%|$(GATEWAY_TAG)|g' values.yaml
+	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/project-uruk-hai && $(SED_CMD) 's|%%GRAPHQL_TAG%%|$(GRAPHQL_TAG)|g' values.yaml
 	@$(OK) Generating values.yaml for the chart
 

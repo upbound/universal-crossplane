@@ -2,20 +2,20 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "agent-name" . }}-gateway
+  name: {{ template "agent-name" . }}
   labels:
-    {{- include "labelsGateway" . | nindent 4 }}
+    {{- include "labelsAgent" . | nindent 4 }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      {{- include "selectorLabelsGateway" . | nindent 6 }}
+      {{- include "selectorLabelsAgent" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "selectorLabelsGateway" . | nindent 8 }}
+        {{- include "selectorLabelsAgent" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ template "agent-name" . }}-gateway
+      serviceAccountName: {{ template "agent-name" . }}
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
       {{- range $index, $secret := .Values.imagePullSecrets }}
@@ -23,18 +23,18 @@ spec:
       {{- end }}
       {{ end }}
       containers:
-        - name: gateway
-          image: "{{ .Values.gateway.image.repository }}:{{ .Values.gateway.image.tag }}"
+        - name: agent
+          image: "{{ .Values.agent.image.repository }}:{{ .Values.agent.image.tag }}"
           args:
-          - tenant-gateway
+          - upbound-agent
           - --server-port
           - "6443"
           - --tls-cert-file
-          - /etc/certs/tenant-gateway/tls.crt
+          - /etc/certs/upbound-agent/tls.crt
           - --tls-private-key-file
-          - /etc/certs/tenant-gateway/tls.key
+          - /etc/certs/upbound-agent/tls.key
           - --graphql-cabundle-file
-          - /etc/certs/tenant-gateway/ca.crt
+          - /etc/certs/upbound-agent/ca.crt
           - --nats-endpoint
           - nats://{{ .Values.upbound.connectHost }}:{{ .Values.upbound.connectPort | default "443" }}
           - --nats-jwt-endpoint
@@ -45,10 +45,10 @@ spec:
           - $(POD_NAME)
           - --platform-token
           - $(CP_TOKEN)
-          {{- if .Values.gateway.config.debugMode }}
+          {{- if .Values.agent.config.debugMode }}
           - "--debug"
           {{- end }}
-          {{- range $arg := .Values.gateway.config.args }}
+          {{- range $arg := .Values.agent.config.args }}
           - {{ $arg }}
           {{- end }}
           env:
@@ -66,17 +66,17 @@ spec:
               secretKeyRef:
                 name: upbound-agent-public-certs
                 key: jwtPublicKey
-          imagePullPolicy: {{ .Values.gateway.image.pullPolicy }}
+          imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           ports:
-          - name: gateway
+          - name: agent
             containerPort: 6443
             protocol: TCP
           resources:
-            {{- toYaml .Values.gateway.resources | nindent 12 }}
+            {{- toYaml .Values.agent.resources | nindent 12 }}
           readinessProbe:
             httpGet:
               scheme: HTTPS
-              path: /svc/tenant-gateway/ready
+              path: /svc/upbound-agent/ready
               port: 6443
             initialDelaySeconds: 5
             timeoutSeconds: 15
@@ -85,19 +85,19 @@ spec:
           livenessProbe:
             httpGet:
               scheme: HTTPS
-              path: /svc/tenant-gateway/up.json
+              path: /svc/upbound-agent/up.json
               port: 6443
             initialDelaySeconds: 10
             timeoutSeconds: 15
             periodSeconds: 30
             failureThreshold: 5
           volumeMounts:
-            - mountPath: /etc/certs/tenant-gateway
+            - mountPath: /etc/certs/upbound-agent
               name: certs
               readOnly: true
       volumes:
         - name: certs
           secret:
             defaultMode: 420
-            secretName: upbound-agent-gateway-tls
+            secretName: upbound-agent-tls
 {{- end }}

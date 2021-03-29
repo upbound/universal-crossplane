@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "agent-name" . }}-graphql
+  name: {{ template "graphql-name" . }}
   labels:
     {{- include "labelsGraphql" . | nindent 4 }}
 spec:

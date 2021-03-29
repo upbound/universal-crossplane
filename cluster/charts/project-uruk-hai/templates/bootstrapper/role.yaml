@@ -6,13 +6,17 @@ metadata:
     {{- include "labelsBootstrapper" . | nindent 4 }}
 rules:
   - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "update", "patch", "delete"]
+  - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["watch"]
+    verbs: ["watch", "list"]
   - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["get", "update"]
     resourceNames:
     - upbound-agent-ca
-    - upbound-agent-gateway-tls
-    - upbound-agent-graphql-tls
+    - upbound-agent-tls
     - upbound-agent-public-certs
+    - upbound-graphql-tls
+    - upbound-control-plane-token

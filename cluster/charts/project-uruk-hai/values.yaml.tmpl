@@ -93,13 +93,13 @@ graphql:
   resources: {}
   config:
     nodeEnv: production
-    # The default maximum number of concurrent requests to the tenant gateway
+    # The default maximum number of concurrent requests to the upbound agent
     maxK8sConnections: 10
 
-gateway:
+agent:
   image:
-    repository: upbound/crossproxy
-    tag: %%GATEWAY_TAG%%
+    repository: upbound/upbound-agent
+    tag: %%AGENT_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
   config:

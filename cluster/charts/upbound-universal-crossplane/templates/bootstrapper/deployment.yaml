@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "bootstrapper-name" . }}
+  labels:
+    {{- include "labelsBootstrapper" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "selectorLabelsBootstrapper" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "selectorLabelsBootstrapper" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ template "bootstrapper-name" . }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range $index, $secret := .Values.imagePullSecrets }}
+      - name: {{ $secret }}
+      {{- end }}
+      {{ end }}
+      containers:
+        - name: bootstrapper
+          image: "{{ .Values.bootstrapper.image.repository }}:{{ .Values.bootstrapper.image.tag }}"
+          args:
+            - bootstrap
+            - --namespace
+            - {{ .Release.Namespace }}
+            - --upbound-api-url
+            - {{ .Values.upbound.apiURL }}
+          {{- if .Values.bootstrapper.config.debugMode }}
+          - "--debug"
+          {{- end }}
+          {{- range $arg := .Values.bootstrapper.config.args }}
+          - {{ $arg }}
+          {{- end }}
+          imagePullPolicy: {{ .Values.bootstrapper.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.bootstrapper.resources | nindent 12 }}

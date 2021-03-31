@@ -1,0 +1,9 @@
+upbound:
+  apiURL: https://{{ .Env.UPBOUND_API_ENDPOINT }}
+  connectHost: {{ .Env.UPBOUND_CONNECT_ENDPOINT}}
+  controlPlane:
+    {{ if eq (env.Getenv "LOCALDEV_CONNECT_TO_UBC" "") "true" }}
+    connect: true
+    {{ else }}
+    connect: false
+    {{ end }}

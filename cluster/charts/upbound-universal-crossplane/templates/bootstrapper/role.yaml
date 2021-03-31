@@ -1,0 +1,22 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ template "bootstrapper-name" . }}
+  labels:
+    {{- include "labelsBootstrapper" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "update", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["watch", "list"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "update"]
+    resourceNames:
+    - upbound-agent-ca
+    - upbound-agent-public-certs
+    - upbound-agent-tls
+    - crossplane-graphql-tls
+    - upbound-control-plane-token

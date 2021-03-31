@@ -39,7 +39,7 @@ The directory structure will look like the following:
 ├── Makefile
 ├── README.md
 └── charts
-    └── project-uruk-hai
+    └── upbound-universal-crossplane
         ├── crossplane
         │   └── templates
         │       ├── NOTES.txt

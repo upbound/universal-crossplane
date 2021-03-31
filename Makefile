@@ -1,8 +1,18 @@
 # ====================================================================================
 # Setup Project
 
-PROJECT_NAME := project-uruk-hai
+PROJECT_NAME := crossplane-distro
 PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
+
+PACKAGE_NAME := upbound-universal-crossplane
+
+BOOTSTRAPPER_TAG := $(VERSION)
+AGENT_TAG := v0.25.0-alpha1.72.gb98967c
+GRAPHQL_TAG := v0.25.0-alpha1.33.gfde4735-version-hack-1
+
+export CROSSPLANE_TAG
+export AGENT_TAG
+export GRAPHQL_TAG
 
 # -include will silently skip missing files, which allows us
 # to load those files with a target in the Makefile. If only
@@ -12,20 +22,29 @@ PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 
 # ====================================================================================
 # Charts
-
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
 CROSSPLANE_TAG := v1.1.0
 
 # ====================================================================================
 # Setup Output
 
-S3_BUCKET ?= project-uruk-hai.releases
+S3_BUCKET ?= $(PACKAGE_NAME).releases
 -include build/makelib/output.mk
+
+# ====================================================================================
+# Setup Go
+
+GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper
+GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
+GO_SUBDIRS += cmd internal
+GO111MODULE = on
+-include build/makelib/golang.mk
 
 # ====================================================================================
 # Setup Kubernetes tools
 
-HELM_VERSION=v2.17.0
+USE_HELM3 = true
+HELM_CHART_LINT_STRICT = false
 -include build/makelib/k8s_tools.mk
 
 # ====================================================================================
@@ -33,11 +52,25 @@ HELM_VERSION=v2.17.0
 
 HELM_BASE_URL = https://charts.upbound.io
 HELM_S3_BUCKET = upbound.charts
-HELM_CHARTS_DIR = $(ROOT_DIR)/charts
-HELM_CHARTS = project-uruk-hai
-HELM_CHART_LINT_ARGS_project-uruk-hai = --set nameOverride='',imagePullSecrets=''
+HELM_CHARTS = $(PACKAGE_NAME)
+HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
 -include build/makelib/helm.mk
 
+# ====================================================================================
+# Setup Images
+# Due to the way that the shared build logic works, images should
+# all be in folders at the same level (no additional levels of nesting).
+
+DOCKER_REGISTRY = upbound
+IMAGES = uxp-bootstrapper
+OSBASEIMAGE = gcr.io/distroless/static:nonroot
+-include build/makelib/image.mk
+
+# ====================================================================================
+# Setup Local Dev
+-include build/makelib/local.mk
+
+local-dev: local.up local.deploy.$(PACKAGE_NAME)
 # ====================================================================================
 # Targets
 
@@ -65,12 +98,23 @@ crossplane:
 	@git -C $(WORK_DIR)/crossplane remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true
 	@git -C $(WORK_DIR)/crossplane fetch origin refs/tags/$(CROSSPLANE_TAG):refs/tags/$(CROSSPLANE_TAG)
 	@git -C $(WORK_DIR)/crossplane checkout $(CROSSPLANE_TAG)
-	@rm -rf $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
-	@mkdir -p $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
-	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/templates/crossplane
-	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/$(PROJECT_NAME)/crds
+	@rm -rf $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
+	@mkdir -p $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
+	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
+	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/crds
 	@$(OK) Crossplane chart has been fetched
 
-reviewable: crossplane lint
+generate-chart: crossplane
+	@$(INFO) Generating values.yaml for the chart
+	@cp -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml.tmpl $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' values.yaml
+	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' values.yaml
+	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' values.yaml
+	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%GRAPHQL_TAG%%|$(GRAPHQL_TAG)|g' values.yaml
+	@$(OK) Generating values.yaml for the chart
 
-.PHONY: crossplane submodules fallthrough reviewable
+helm.prepare: generate-chart
+
+reviewable: helm.prepare lint
+
+.PHONY: generate-chart crossplane submodules fallthrough reviewable

@@ -1,10 +1,12 @@
+nameOverride: "crossplane"
+
 replicas: 1
 
 deploymentStrategy: RollingUpdate
 
 image:
   repository: crossplane/crossplane
-  tag: v1.1.0
+  tag: %%CROSSPLANE_TAG%%
   pullPolicy: Always
 
 nodeSelector: {}
@@ -72,3 +74,46 @@ alpha:
 
 metrics:
   enabled: false
+
+### Agent Values
+
+upbound:
+  apiURL: "https://api.upbound.io"
+  connectHost: "connect.upbound.io"
+  controlPlane:
+    connect: false
+    token: ""
+
+
+graphql:
+  image:
+    repository: upbound/crossplane-graphql
+    tag: %%GRAPHQL_TAG%%
+    pullPolicy: IfNotPresent
+  resources: {}
+  config:
+    nodeEnv: production
+    # The default maximum number of concurrent requests to the upbound agent
+    maxK8sConnections: 10
+
+agent:
+  image:
+    repository: upbound/upbound-agent
+    tag: %%AGENT_TAG%%
+    pullPolicy: IfNotPresent
+  resources: {}
+  config:
+    debugMode: false
+    args: []
+
+### Bootstrapper Values
+
+bootstrapper:
+  image:
+    repository: upbound/uxp-bootstrapper
+    tag: %%BOOTSTRAPPER_TAG%%
+    pullPolicy: IfNotPresent
+  resources: {}
+  config:
+    debugMode: false
+    args: []

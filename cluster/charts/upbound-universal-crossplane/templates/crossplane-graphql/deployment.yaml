@@ -1,0 +1,89 @@
+{{- if .Values.upbound.controlPlane.connect }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "graphql-name" . }}
+  labels:
+    {{- include "labelsGraphql" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "selectorLabelsGraphql" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "selectorLabelsGraphql" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ template "graphql-name" . }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range $index, $secret := .Values.imagePullSecrets }}
+        - name: {{ $secret }}
+      {{- end }}
+      {{ end }}
+      containers:
+      - name: graphql
+        image: "{{ .Values.graphql.image.repository }}:{{ .Values.graphql.image.tag }}"
+        imagePullPolicy: {{ .Values.graphql.image.pullPolicy }}
+        resources:
+          {{- toYaml .Values.graphql.resources | nindent 12 }}
+        ports:
+          - name: https
+            containerPort: 443
+            protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /.well-known/apollo/server-health
+            port: https
+            scheme: HTTPS
+          failureThreshold: 3
+          initialDelaySeconds: 10
+          # Allow sufficient amount of time (90 seconds = periodSeconds * failureThreshold)
+          # for the registered shutdown handlers to run to completion.
+          periodSeconds: 30
+          successThreshold: 1
+          # Setting a very low timeout value (e.g. 1 second) can cause false-positive
+          # checks and service interruption.
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /healthcheck
+            port: https
+            scheme: HTTPS
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          successThreshold: 1
+          timeoutSeconds: 5
+        env:
+        - name: ROARR_LOG
+          value: "true"
+        - name: PORT
+          value: "443"
+        - name: NODE_ENV
+          value: "{{ .Values.graphql.config.nodeEnv }}"
+        - name: CERT_FILE
+          value: /etc/certs/crossplane-graphql/tls.crt
+        - name: KEY_FILE
+          value: /etc/certs/crossplane-graphql/tls.key
+        - name: GATEWAY_ENDPOINT
+          value: {{ printf "https://%s:6443/k8s" (include "agent-name" . ) }}
+        - name: GATEWAY_CA_BUNDLE_FILE
+          value:  /etc/certs/crossplane-graphql/ca.crt
+        - name: MAX_K8S_CONNECTIONS
+          value: {{ .Values.graphql.config.maxK8sConnections | quote }}
+        - name: JWT_PUBLIC_KEY
+          valueFrom:
+            secretKeyRef:
+              name: upbound-agent-public-certs
+              key: jwtPublicKey
+        volumeMounts:
+          - mountPath: /etc/certs/crossplane-graphql
+            name: certs
+            readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            defaultMode: 420
+            secretName: crossplane-graphql-tls
+{{- end }}

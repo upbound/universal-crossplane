@@ -1,0 +1,103 @@
+{{- if .Values.upbound.controlPlane.connect }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "agent-name" . }}
+  labels:
+    {{- include "labelsAgent" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "selectorLabelsAgent" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "selectorLabelsAgent" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ template "agent-name" . }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range $index, $secret := .Values.imagePullSecrets }}
+      - name: {{ $secret }}
+      {{- end }}
+      {{ end }}
+      containers:
+        - name: agent
+          image: "{{ .Values.agent.image.repository }}:{{ .Values.agent.image.tag }}"
+          args:
+          - upbound-agent
+          - --server-port
+          - "6443"
+          - --tls-cert-file
+          - /etc/certs/upbound-agent/tls.crt
+          - --tls-private-key-file
+          - /etc/certs/upbound-agent/tls.key
+          - --graphql-cabundle-file
+          - /etc/certs/upbound-agent/ca.crt
+          - --nats-endpoint
+          - nats://{{ .Values.upbound.connectHost }}:{{ .Values.upbound.connectPort | default "443" }}
+          - --nats-jwt-endpoint
+          - {{ .Values.upbound.apiURL }}
+          - --jwt-public-key
+          - $(JWT_PUBLIC_KEY)
+          - --pod-name
+          - $(POD_NAME)
+          - --platform-token
+          - $(CP_TOKEN)
+          {{- if .Values.agent.config.debugMode }}
+          - "--debug"
+          {{- end }}
+          {{- range $arg := .Values.agent.config.args }}
+          - {{ $arg }}
+          {{- end }}
+          env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: CP_TOKEN
+            valueFrom:
+              secretKeyRef:
+                name: upbound-control-plane-token
+                key: token
+          - name: JWT_PUBLIC_KEY
+            valueFrom:
+              secretKeyRef:
+                name: upbound-agent-public-certs
+                key: jwtPublicKey
+          imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
+          ports:
+          - name: agent
+            containerPort: 6443
+            protocol: TCP
+          resources:
+            {{- toYaml .Values.agent.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /svc/upbound-agent/ready
+              port: 6443
+            initialDelaySeconds: 5
+            timeoutSeconds: 15
+            periodSeconds: 5
+            failureThreshold: 5
+          livenessProbe:
+            httpGet:
+              scheme: HTTPS
+              path: /svc/upbound-agent/up.json
+              port: 6443
+            initialDelaySeconds: 10
+            timeoutSeconds: 15
+            periodSeconds: 30
+            failureThreshold: 5
+          volumeMounts:
+            - mountPath: /etc/certs/upbound-agent
+              name: certs
+              readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            defaultMode: 420
+            secretName: upbound-agent-tls
+{{- end }}

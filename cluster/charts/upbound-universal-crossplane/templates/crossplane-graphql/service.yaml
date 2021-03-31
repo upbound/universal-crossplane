@@ -1,0 +1,16 @@
+{{- if .Values.upbound.controlPlane.connect }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "graphql-name" . }}
+  labels:
+    {{- include "labelsGraphql" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "selectorLabelsGraphql" . | nindent 4 }}
+  ports:
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https
+{{- end }}

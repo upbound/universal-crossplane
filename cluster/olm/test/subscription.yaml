@@ -1,0 +1,10 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: project-uruk-hai
+  namespace: operators
+spec:
+  channel: stable
+  name: project-uruk-hai
+  source: upbound-test-source
+  sourceNamespace: olm

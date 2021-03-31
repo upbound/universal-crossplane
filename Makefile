@@ -45,6 +45,8 @@ GO111MODULE = on
 
 USE_HELM3 = true
 HELM_CHART_LINT_STRICT = false
+CRDS_DIR=$(ROOT_DIR)/cluster/crds
+OLM_DIR=$(ROOT_DIR)/cluster/olm
 -include build/makelib/k8s_tools.mk
 
 # ====================================================================================
@@ -112,6 +114,10 @@ generate-chart: crossplane
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%GRAPHQL_TAG%%|$(GRAPHQL_TAG)|g' values.yaml
 	@$(OK) Generating values.yaml for the chart
+
+olm-bundle: $(HELM) $(OLMBUNDLE) generate-chart
+	@$(INFO) Generating OLM bundle
+	@$(HELM) -n upbound-system template $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) | $(OLMBUNDLE) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
 
 helm.prepare: generate-chart
 

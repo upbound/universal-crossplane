@@ -47,7 +47,7 @@ const (
 	cnGraphql            = "crossplane-graphql"
 	secretNameCA         = "upbound-agent-ca"
 	secretNameGatewayTLS = "upbound-agent-tls"
-	secretNameGraphqlTLS = "upbound-graphql-tls"
+	secretNameGraphqlTLS = "crossplane-graphql-tls"
 )
 
 const (
@@ -175,7 +175,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	if err = r.createOrLoadCA(ctx, req.Namespace); err != nil {
 		err = errors.Wrap(err, errInitCA)
-		log.Debug(err.Error())
+		log.Info(err.Error())
 		r.record.Event(s, event.Warning(reasonCA, err))
 		return reconcile.Result{}, err
 	}
@@ -185,14 +185,14 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	c, k, err := newSignedCertAndKey(certConfigs[req.Name], r.caCert, r.caKey)
 	if err != nil {
 		err = errors.Wrap(err, "failed to generate signed certificate")
-		log.Debug(err.Error())
+		log.Info(err.Error())
 		r.record.Event(s, event.Warning(reasonGenerate, err))
 		return reconcile.Result{}, err
 	}
 	d, err := tlsSecretDataFromCertAndKey(c, k, r.caCert)
 	if err != nil {
 		err = errors.Wrap(err, "failed to build secret data from generated certificate")
-		log.Debug(err.Error())
+		log.Info(err.Error())
 		r.record.Event(s, event.Warning(reasonGenerate, err))
 		return reconcile.Result{}, err
 	}
@@ -205,7 +205,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	if err = r.client.Update(ctx, s); err != nil {
 		err = errors.Wrap(err, errUpdateCertSecret)
-		log.Debug(err.Error())
+		log.Info(err.Error())
 		r.record.Event(s, event.Warning(reasonUpdate, err))
 		return reconcile.Result{}, err
 	}

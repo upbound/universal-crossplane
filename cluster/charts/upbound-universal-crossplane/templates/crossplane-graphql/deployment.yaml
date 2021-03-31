@@ -85,5 +85,5 @@ spec:
         - name: certs
           secret:
             defaultMode: 420
-            secretName: upbound-graphql-tls
+            secretName: crossplane-graphql-tls
 {{- end }}

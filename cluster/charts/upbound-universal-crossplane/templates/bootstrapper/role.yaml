@@ -16,7 +16,7 @@ rules:
     verbs: ["get", "update"]
     resourceNames:
     - upbound-agent-ca
-    - upbound-agent-tls
     - upbound-agent-public-certs
-    - upbound-graphql-tls
+    - upbound-agent-tls
+    - crossplane-graphql-tls
     - upbound-control-plane-token

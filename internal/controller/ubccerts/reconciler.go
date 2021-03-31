@@ -119,7 +119,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	err = r.client.Get(ctx, types.NamespacedName{Name: secretNameCPToken, Namespace: req.Namespace}, ts)
 	if err != nil {
 		err = errors.Wrapf(err, errGetCPTokenSecret, secretNameCPToken)
-		log.Debug(err.Error())
+		log.Info(err.Error())
 		r.record.Event(s, event.Warning(reasonToken, err))
 		return reconcile.Result{}, err
 	}
@@ -127,7 +127,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	cpToken := string(ts.Data[keyToken])
 	if cpToken == "" {
 		err = errors.Errorf(errNoTokenInSecret, keyToken, secretNameCPToken)
-		log.Debug(err.Error())
+		log.Info(err.Error())
 		r.record.Event(s, event.Warning(reasonToken, err))
 		return reconcile.Result{}, err
 	}
@@ -136,7 +136,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	certs, err := r.ubcClient.GetGatewayCerts(cpToken)
 	if err != nil {
 		err = errors.Wrap(err, errFetch)
-		log.Debug(err.Error())
+		log.Info(err.Error())
 		r.record.Event(s, event.Warning(reasonFetch, err))
 		return reconcile.Result{}, err
 	}
@@ -151,7 +151,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	if err = r.client.Update(ctx, s); err != nil {
 		err = errors.Wrap(err, errUpdateSecret)
-		log.Debug(err.Error())
+		log.Info(err.Error())
 		r.record.Event(s, event.Warning(reasonUpdate, err))
 		return reconcile.Result{}, err
 	}

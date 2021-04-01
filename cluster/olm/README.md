@@ -10,6 +10,9 @@ What you need to do when you'd like to release a new version is the following:
   contains metadata that cannot be extracted from `Chart.yaml`, such as `installModes`.
   Make sure new version doesn't make any changes there.
 
+> If you would like to connect to a different Upbound endpoint, you need to change
+> the default one in the `values.yaml.tmpl` in Helm chart.
+
 After all is ready, run the following command:
 ```bash
 make olm
@@ -32,7 +35,7 @@ Install `kind`, `operator-sdk` and `opm` tools.
 Here is a set of commands you can use to build a bundle, add it to a custom
 `CatalogSource` and test.
 
-Specify your image prefix:
+Specify your image prefix to point to your personal organization in the registry:
 ```bash
 IMAGE_PREFIX="docker.io/upbound"
 ```
@@ -60,17 +63,26 @@ operator-sdk olm install
 
 Now install your custom `CatalogSource`:
 ```
-sed "s/IMAGE_PREFIX/${IMAGE_PREFIX}/g" cluster/olm/test/catalogsource.yaml | kubectl create -f -
+cd <root of the repo>
+sed "s|IMAGE_PREFIX|${IMAGE_PREFIX}|g" cluster/olm/test/catalogsource.yaml | kubectl apply -f -
 ```
 
 Wait for it to become ready:
 ```
-kubectl get catalogsource -n olm -w
+kubectl get catalogsource -n olm -o yaml -w
+```
+
+The cluster has a catalog that includes our OLM bundle. Now, we will prepare the
+namespace we'll deploy our bundle to. Note that the namespace has to be `upbound-system`
+and it needs to be configured with a global `OperatorGroup` so that it can watch
+all namespaces.
+```
+kubectl apply -f cluster/olm/test/operatorgroup.yaml
 ```
 
 Now create the `Subscription`:
 ```
-kubectl create -f cluster/olm/test/subscription.yaml
+kubectl apply -f cluster/olm/test/subscription.yaml
 ```
 
 This will install your operator to `operators` namespace. You can watch `Subscription`

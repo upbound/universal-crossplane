@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -aeuo pipefail
 
-UPBOUND_CROSSPLANE_NAMESPACE=${HELM_RELEASE_NAMESPACE}
+#UPBOUND_CROSSPLANE_NAMESPACE=${HELM_RELEASE_NAMESPACE}
 API_TOKEN="${LOCALDEV_CONNECT_API_TOKEN}"
 CONTROL_PLANE_NAME="${LOCALDEV_CONNECT_CP_NAME}"
 CONTROL_PLANE_ORG="${LOCALDEV_CONNECT_CP_ORG}"
-UPBOUND_PLATFORM_TOKEN_SECRET_NAME="upbound-control-plane-token"
+#UPBOUND_PLATFORM_TOKEN_SECRET_NAME="upbound-control-plane-token"
 
-if [ ${LOCALDEV_CONNECT_TO_UBC} != "true" ]; then
-  echo "LOCALDEV_CONNECT_TO_UBC is not set to true, skipping self hosted control plane creation"
-  return 0
-fi
+#if [ ${LOCALDEV_CONNECT_TO_UBC} != "true" ]; then
+#  echo "LOCALDEV_CONNECT_TO_UBC is not set to true, skipping self hosted control plane creation"
+#  return 0
+#fi
 
 # TODO(hasan): replace below with up cli
 
@@ -64,7 +64,9 @@ fi
 echo "Platform token created!"
 
 echo "Creating control plane token secret..."
-kubectl -n "${UPBOUND_CROSSPLANE_NAMESPACE}" delete secret "${UPBOUND_PLATFORM_TOKEN_SECRET_NAME}" --ignore-not-found
-kubectl -n "${UPBOUND_CROSSPLANE_NAMESPACE}" create secret generic "${UPBOUND_PLATFORM_TOKEN_SECRET_NAME}" --from-literal token="${cp_token}"
+#kubectl -n "${UPBOUND_CROSSPLANE_NAMESPACE}" delete secret "${UPBOUND_PLATFORM_TOKEN_SECRET_NAME}" --ignore-not-found
+#kubectl -n "${UPBOUND_CROSSPLANE_NAMESPACE}" create secret generic "${UPBOUND_PLATFORM_TOKEN_SECRET_NAME}" --from-literal token="${cp_token}"
+
+echo "${cp_token}"
 
 echo "Success!"

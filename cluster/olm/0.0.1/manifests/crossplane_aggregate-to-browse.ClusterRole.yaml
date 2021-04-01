@@ -1,0 +1,27 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app: crossplane
+    chart: upbound-universal-crossplane-0.0.1
+    heritage: Helm
+    rbac.crossplane.io/aggregate-to-browse: "true"
+    release: crossplane-distro
+  name: crossplane:aggregate-to-browse
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - events
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apiextensions.crossplane.io
+  resources:
+  - '*'
+  verbs:
+  - get
+  - list
+  - watch

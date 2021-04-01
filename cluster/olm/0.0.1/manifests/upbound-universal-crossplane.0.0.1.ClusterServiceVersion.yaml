@@ -1,0 +1,430 @@
+apiVersion: v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  annotations:
+    operatorframework.io/suggested-namespace: upbound-system
+    operators.operatorframework.io.bundle.channel.default.v1: stable
+    operators.operatorframework.io.bundle.channels.v1: stable
+    operators.operatorframework.io.bundle.manifests.v1: manifests/
+    operators.operatorframework.io.bundle.mediatype.v1: registry+v1
+    operators.operatorframework.io.bundle.metadata.v1: metadata/
+    operators.operatorframework.io.bundle.package.v1: upbound-universal-crossplane
+  creationTimestamp: null
+  name: upbound-universal-crossplane.0.0.1
+spec:
+  apiservicedefinitions: {}
+  cleanup:
+    enabled: false
+  customresourcedefinitions:
+    owned:
+    - displayName: CompositeResourceDefinition
+      kind: CompositeResourceDefinition
+      name: compositeresourcedefinitions.apiextensions.crossplane.io
+      version: v1
+    - displayName: Composition
+      kind: Composition
+      name: compositions.apiextensions.crossplane.io
+      version: v1
+    - displayName: ConfigurationRevision
+      kind: ConfigurationRevision
+      name: configurationrevisions.pkg.crossplane.io
+      version: v1
+    - displayName: Configuration
+      kind: Configuration
+      name: configurations.pkg.crossplane.io
+      version: v1
+    - displayName: ControllerConfig
+      kind: ControllerConfig
+      name: controllerconfigs.pkg.crossplane.io
+      version: v1alpha1
+    - displayName: Lock
+      kind: Lock
+      name: locks.pkg.crossplane.io
+      version: v1alpha1
+    - displayName: ProviderRevision
+      kind: ProviderRevision
+      name: providerrevisions.pkg.crossplane.io
+      version: v1
+    - displayName: Provider
+      kind: Provider
+      name: providers.pkg.crossplane.io
+      version: v1
+  description: Upbound Universal Crossplane allows you to connect your Crossplane-enabled cluster to Upbound Cloud.
+  displayName: upbound-universal-crossplane
+  icon:
+  - base64data: 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
+    mediatype: image/png
+  install:
+    spec:
+      deployments:
+      - name: upbound-bootstrapper
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app.kubernetes.io/component: bootstrapper
+              app.kubernetes.io/instance: crossplane-distro
+              app.kubernetes.io/name: crossplane
+          strategy: {}
+          template:
+            metadata:
+              creationTimestamp: null
+              labels:
+                app.kubernetes.io/component: bootstrapper
+                app.kubernetes.io/instance: crossplane-distro
+                app.kubernetes.io/name: crossplane
+            spec:
+              containers:
+              - args:
+                - bootstrap
+                - --namespace
+                - upbound-system
+                - --upbound-api-url
+                - https://api.upbound.io
+                image: upbound/uxp-bootstrapper:v0.0.0-44.gdf1e359b.dirty
+                imagePullPolicy: IfNotPresent
+                name: bootstrapper
+                resources: {}
+              imagePullSecrets:
+              - name: dockerhub
+              serviceAccountName: upbound-bootstrapper
+      - name: crossplane-graphql
+        spec:
+          selector:
+            matchLabels:
+              app.kubernetes.io/component: graphql
+              app.kubernetes.io/instance: crossplane-distro
+              app.kubernetes.io/name: crossplane
+          strategy: {}
+          template:
+            metadata:
+              creationTimestamp: null
+              labels:
+                app.kubernetes.io/component: graphql
+                app.kubernetes.io/instance: crossplane-distro
+                app.kubernetes.io/name: crossplane
+            spec:
+              containers:
+              - env:
+                - name: ROARR_LOG
+                  value: "true"
+                - name: PORT
+                  value: "443"
+                - name: NODE_ENV
+                  value: production
+                - name: CERT_FILE
+                  value: /etc/certs/crossplane-graphql/tls.crt
+                - name: KEY_FILE
+                  value: /etc/certs/crossplane-graphql/tls.key
+                - name: GATEWAY_ENDPOINT
+                  value: https://upbound-agent:6443/k8s
+                - name: GATEWAY_CA_BUNDLE_FILE
+                  value: /etc/certs/crossplane-graphql/ca.crt
+                - name: MAX_K8S_CONNECTIONS
+                  value: "10"
+                - name: JWT_PUBLIC_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: jwtPublicKey
+                      name: upbound-agent-public-certs
+                image: upbound/crossplane-graphql:v0.25.0-alpha1.33.gfde4735-version-hack-1
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /.well-known/apollo/server-health
+                    port: https
+                    scheme: HTTPS
+                  initialDelaySeconds: 10
+                  periodSeconds: 30
+                  successThreshold: 1
+                  timeoutSeconds: 5
+                name: graphql
+                ports:
+                - containerPort: 443
+                  name: https
+                  protocol: TCP
+                readinessProbe:
+                  failureThreshold: 3
+                  httpGet:
+                    path: /healthcheck
+                    port: https
+                    scheme: HTTPS
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  successThreshold: 1
+                  timeoutSeconds: 5
+                resources: {}
+                volumeMounts:
+                - mountPath: /etc/certs/crossplane-graphql
+                  name: certs
+                  readOnly: true
+              imagePullSecrets:
+              - name: dockerhub
+              serviceAccountName: crossplane-graphql
+              volumes:
+              - name: certs
+                secret:
+                  defaultMode: 420
+                  secretName: crossplane-graphql-tls
+      - name: crossplane
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: crossplane
+              release: crossplane-distro
+          strategy:
+            type: RollingUpdate
+          template:
+            metadata:
+              creationTimestamp: null
+              labels:
+                app: crossplane
+                release: crossplane-distro
+            spec:
+              containers:
+              - args:
+                - core
+                - start
+                env:
+                - name: POD_NAMESPACE
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.namespace
+                - name: LEADER_ELECTION
+                  value: "true"
+                image: crossplane/crossplane:v1.2.0-rc.0-106-gdb33bb23
+                imagePullPolicy: Always
+                name: upbound-universal-crossplane
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 512Mi
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsGroup: 2000
+                  runAsUser: 2000
+                volumeMounts:
+                - mountPath: /cache
+                  name: package-cache
+              initContainers:
+              - args:
+                - core
+                - init
+                image: crossplane/crossplane:v1.2.0-rc.0-106-gdb33bb23
+                imagePullPolicy: Always
+                name: upbound-universal-crossplane-init
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 512Mi
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+                  runAsGroup: 2000
+                  runAsUser: 2000
+              serviceAccountName: crossplane
+              volumes:
+              - emptyDir:
+                  sizeLimit: 5Mi
+                name: package-cache
+      - name: crossplane-rbac-manager
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app: crossplane-rbac-manager
+              release: crossplane-distro
+          strategy:
+            type: RollingUpdate
+          template:
+            metadata:
+              creationTimestamp: null
+              labels:
+                app: crossplane-rbac-manager
+                release: crossplane-distro
+            spec:
+              containers:
+              - args:
+                - rbac
+                - start
+                - --manage=All
+                - --provider-clusterrole=crossplane:allowed-provider-permissions
+                env:
+                - name: LEADER_ELECTION
+                  value: "true"
+                image: crossplane/crossplane:v1.2.0-rc.0-106-gdb33bb23
+                imagePullPolicy: Always
+                name: upbound-universal-crossplane
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 512Mi
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+              initContainers:
+              - args:
+                - rbac
+                - init
+                image: crossplane/crossplane:v1.2.0-rc.0-106-gdb33bb23
+                imagePullPolicy: Always
+                name: upbound-universal-crossplane-init
+                resources:
+                  limits:
+                    cpu: 100m
+                    memory: 512Mi
+                  requests:
+                    cpu: 100m
+                    memory: 256Mi
+                securityContext:
+                  allowPrivilegeEscalation: false
+                  readOnlyRootFilesystem: true
+              serviceAccountName: rbac-manager
+      - name: upbound-agent
+        spec:
+          replicas: 1
+          selector:
+            matchLabels:
+              app.kubernetes.io/component: agent
+              app.kubernetes.io/instance: crossplane-distro
+              app.kubernetes.io/name: crossplane
+          strategy: {}
+          template:
+            metadata:
+              creationTimestamp: null
+              labels:
+                app.kubernetes.io/component: agent
+                app.kubernetes.io/instance: crossplane-distro
+                app.kubernetes.io/name: crossplane
+            spec:
+              containers:
+              - args:
+                - upbound-agent
+                - --server-port
+                - "6443"
+                - --tls-cert-file
+                - /etc/certs/upbound-agent/tls.crt
+                - --tls-private-key-file
+                - /etc/certs/upbound-agent/tls.key
+                - --graphql-cabundle-file
+                - /etc/certs/upbound-agent/ca.crt
+                - --nats-endpoint
+                - nats://connect.upbound.io:443
+                - --nats-jwt-endpoint
+                - https://api.upbound.io
+                - --jwt-public-key
+                - $(JWT_PUBLIC_KEY)
+                - --pod-name
+                - $(POD_NAME)
+                - --platform-token
+                - $(CP_TOKEN)
+                env:
+                - name: POD_NAME
+                  valueFrom:
+                    fieldRef:
+                      fieldPath: metadata.name
+                - name: CP_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      key: token
+                      name: upbound-control-plane-token
+                - name: JWT_PUBLIC_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      key: jwtPublicKey
+                      name: upbound-agent-public-certs
+                image: upbound/upbound-agent:v0.25.0-alpha1.72.gb98967c
+                imagePullPolicy: IfNotPresent
+                livenessProbe:
+                  failureThreshold: 5
+                  httpGet:
+                    path: /svc/upbound-agent/up.json
+                    port: 6443
+                    scheme: HTTPS
+                  initialDelaySeconds: 10
+                  periodSeconds: 30
+                  timeoutSeconds: 15
+                name: agent
+                ports:
+                - containerPort: 6443
+                  name: agent
+                  protocol: TCP
+                readinessProbe:
+                  failureThreshold: 5
+                  httpGet:
+                    path: /svc/upbound-agent/ready
+                    port: 6443
+                    scheme: HTTPS
+                  initialDelaySeconds: 5
+                  periodSeconds: 5
+                  timeoutSeconds: 15
+                resources: {}
+                volumeMounts:
+                - mountPath: /etc/certs/upbound-agent
+                  name: certs
+                  readOnly: true
+              imagePullSecrets:
+              - name: dockerhub
+              serviceAccountName: upbound-agent
+              volumes:
+              - name: certs
+                secret:
+                  defaultMode: 420
+                  secretName: upbound-agent-tls
+    strategy: deployment
+  installModes:
+  - supported: false
+    type: OwnNamespace
+  - supported: false
+    type: SingleNamespace
+  - supported: false
+    type: MultiNamespace
+  - supported: true
+    type: AllNamespaces
+  keywords:
+  - cloud
+  - infrastructure
+  - services
+  - application
+  - database
+  - cache
+  - bucket
+  - infra
+  - app
+  - ops
+  - oam
+  - gcp
+  - azure
+  - aws
+  - alibaba
+  - cloudsql
+  - rds
+  - s3
+  - azuredatabase
+  - asparadb
+  - gke
+  - aks
+  - eks
+  maintainers:
+  - email: info@upbound.io
+    name: Upbound Inc.
+  maturity: stable
+  minKubeVersion: 1.16.0
+  provider:
+    name: upbound-universal-crossplane
+    url: https://upbound.io
+  version: 0.0.1
+status:
+  cleanup: {}

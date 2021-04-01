@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app.kubernetes.io/component: graphql
+    app.kubernetes.io/instance: crossplane-distro
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: crossplane
+    app.kubernetes.io/version: 0.0.1
+    helm.sh/chart: upbound-universal-crossplane-0.0.1
+  name: crossplane-graphql
+spec:
+  ports:
+  - name: https
+    port: 443
+    protocol: TCP
+    targetPort: https
+  selector:
+    app.kubernetes.io/component: graphql
+    app.kubernetes.io/instance: crossplane-distro
+    app.kubernetes.io/name: crossplane

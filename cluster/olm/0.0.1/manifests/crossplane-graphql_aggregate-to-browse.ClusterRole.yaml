@@ -1,0 +1,30 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/component: graphql
+    app.kubernetes.io/instance: crossplane-distro
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: crossplane
+    app.kubernetes.io/version: 0.0.1
+    helm.sh/chart: upbound-universal-crossplane-0.0.1
+    rbac.crossplane.io/aggregate-to-browse: "true"
+  name: crossplane-graphql:aggregate-to-browse
+rules:
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - pkg.crossplane.io
+  resources:
+  - configurations
+  - providers
+  verbs:
+  - get
+  - list
+  - watch

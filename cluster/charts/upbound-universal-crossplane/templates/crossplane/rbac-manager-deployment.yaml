@@ -32,10 +32,22 @@ spec:
       priorityClassName: {{ .Values.priorityClassName | quote }}
       {{- end }}
       serviceAccountName: rbac-manager
+      initContainers:
+      - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+        args:
+        - rbac
+        - init
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: {{ .Chart.Name }}-init
+        resources:
+          {{- toYaml .Values.resourcesRBACManager | nindent 12 }}
+        securityContext:
+          {{- toYaml .Values.securityContextRBACManager | nindent 12 }}
       containers:
       - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         args:
         - rbac
+        - start
         {{- if .Values.rbacManager.managementPolicy }}
         - --manage={{ .Values.rbacManager.managementPolicy }}
         {{- end }}
@@ -57,6 +69,10 @@ spec:
         env:
           - name: LEADER_ELECTION
             value: "{{ .Values.rbacManager.leaderElection }}"
+        {{- range $key, $value := .Values.extraEnvVarsRBACManager }}
+          - name: {{ $key | replace "." "_" }}
+            value: {{ $value | quote }}
+        {{- end}}
       {{- if .Values.rbacManager.nodeSelector }}
       nodeSelector: {{ toYaml .Values.rbacManager.nodeSelector | nindent 8 }}
       {{- end }}

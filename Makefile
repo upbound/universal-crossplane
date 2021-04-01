@@ -23,7 +23,7 @@ export GRAPHQL_TAG
 # ====================================================================================
 # Charts
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
-CROSSPLANE_TAG := v1.1.0
+CROSSPLANE_TAG := db33bb23442fa6b3e8a3a943a8579b968613182a
 
 # ====================================================================================
 # Setup Output
@@ -98,12 +98,13 @@ crossplane:
 	@mkdir -p $(WORK_DIR)/crossplane
 	@git -C $(WORK_DIR)/crossplane init
 	@git -C $(WORK_DIR)/crossplane remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true
-	@git -C $(WORK_DIR)/crossplane fetch origin refs/tags/$(CROSSPLANE_TAG):refs/tags/$(CROSSPLANE_TAG)
+	@git -C $(WORK_DIR)/crossplane fetch --depth 1 origin $(CROSSPLANE_TAG)
 	@git -C $(WORK_DIR)/crossplane checkout $(CROSSPLANE_TAG)
-	@rm -rf $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
 	@mkdir -p $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
+	@rm -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane/*
 	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
-	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/crds
+	@rm -f $(CRDS_DIR)/*
+	@cp -a $(WORK_DIR)/crossplane/cluster/crds/* $(CRDS_DIR)
 	@$(OK) Crossplane chart has been fetched
 
 generate-chart: crossplane
@@ -115,9 +116,16 @@ generate-chart: crossplane
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%GRAPHQL_TAG%%|$(GRAPHQL_TAG)|g' values.yaml
 	@$(OK) Generating values.yaml for the chart
 
+# We have to give a static namespace for OLM bundle because it does not interpret
+# and change the namespace of the subjects of ClusterRoleBindings to the namespace
+# where the operator is deployed. See https://github.com/operator-framework/operator-lifecycle-manager/issues/1361
+# and https://github.com/operator-framework/operator-lifecycle-manager/issues/2039
+
 olm-bundle: $(HELM) $(OLMBUNDLE) generate-chart
 	@$(INFO) Generating OLM bundle
-	@$(HELM) -n upbound-system template $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) | $(OLMBUNDLE) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
+	@$(HELM) -n upbound-system template $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) > $(WORK_DIR)/olm.yaml
+	@$(SED_CMD) 's|RELEASE-NAME|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
+	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
 
 helm.prepare: generate-chart
 

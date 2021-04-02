@@ -1,0 +1,19 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  labels:
+    app.kubernetes.io/component: graphql
+    app.kubernetes.io/instance: crossplane-distro
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: crossplane
+    app.kubernetes.io/version: 0.0.1
+    helm.sh/chart: upbound-universal-crossplane-0.0.1
+  name: crossplane-graphql
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: crossplane-graphql
+subjects:
+- kind: ServiceAccount
+  name: crossplane-graphql
+  namespace: upbound-system

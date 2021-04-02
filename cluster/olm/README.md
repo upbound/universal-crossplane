@@ -11,12 +11,15 @@ What you need to do when you'd like to release a new version is the following:
   Make sure new version doesn't make any changes there.
 
 > If you would like to connect to a different Upbound endpoint, you need to change
-> the default one in the `values.yaml.tmpl` in Helm chart.
+> the default one in the `values.yaml.tmpl` in Helm chart in `cluster/charts`.
 
-After all is ready, run the following command:
+After all is ready, run the following command to get the current bundle generated:
 ```bash
 make olm
 ```
+
+> YAML of ClusterServiceVersion is not committed to git because the image tag
+> in that file is generated using the hash of the last commit.
 
 A new folder will be created here named with the version number. After making sure
 it all looks good, open PRs to the following targets to publish it:

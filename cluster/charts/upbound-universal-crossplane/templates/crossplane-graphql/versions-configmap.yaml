@@ -4,7 +4,7 @@ kind: ConfigMap
 metadata:
   name: upbound-universal-crossplane-config
   labels:
-    { { - include "labelsGraphql" . | nindent 4 } }
+    {{- include "labelsGraphql" . | nindent 4 }}
 data:
   crossplaneVersion: {{ (trimPrefix "v" .Values.image.tag) }}
   graphQLVersion: {{ (trimPrefix "v" .Values.graphql.image.tag) }}

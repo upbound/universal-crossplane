@@ -43,7 +43,7 @@ spec:
           - $(JWT_PUBLIC_KEY)
           - --pod-name
           - $(POD_NAME)
-          - --platform-token
+          - --control-plane-token
           - $(CP_TOKEN)
           {{- if .Values.agent.config.debugMode }}
           - "--debug"

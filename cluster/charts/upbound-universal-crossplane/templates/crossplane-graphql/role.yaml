@@ -9,5 +9,5 @@ rules:
   - apiGroups: [""]
     resources: ["configmaps"]
     resourceNames: ["upbound-universal-crossplane-config"]
-    verbs: ["get", "update", "patch"]
+    verbs: ["get"]
 {{- end }}

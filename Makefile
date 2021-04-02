@@ -7,7 +7,7 @@ PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 PACKAGE_NAME := upbound-universal-crossplane
 
 BOOTSTRAPPER_TAG := $(VERSION)
-AGENT_TAG := v0.25.0-alpha1.72.gb98967c
+AGENT_TAG := v0.25.0-alpha1.76.g1ef3599
 GRAPHQL_TAG := v0.25.0-alpha1.33.gfde4735-version-hack-1
 
 export CROSSPLANE_TAG

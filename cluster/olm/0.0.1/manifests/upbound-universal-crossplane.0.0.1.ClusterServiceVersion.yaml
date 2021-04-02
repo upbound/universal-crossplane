@@ -81,7 +81,7 @@ spec:
                 - upbound-system
                 - --upbound-api-url
                 - https://api.upbound.io
-                image: upbound/uxp-bootstrapper:v0.0.0-44.gdf1e359b.dirty
+                image: upbound/uxp-bootstrapper:v0.0.0-45.geae2c11b
                 imagePullPolicy: IfNotPresent
                 name: bootstrapper
                 resources: {}

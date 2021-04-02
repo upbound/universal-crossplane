@@ -6,14 +6,6 @@ PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 
 PACKAGE_NAME := upbound-universal-crossplane
 
-BOOTSTRAPPER_TAG := $(VERSION)
-AGENT_TAG := v0.25.0-alpha1.76.g1ef3599
-GRAPHQL_TAG := v0.25.0-alpha1.39.gcf9772d
-
-export CROSSPLANE_TAG
-export AGENT_TAG
-export GRAPHQL_TAG
-
 # -include will silently skip missing files, which allows us
 # to load those files with a target in the Makefile. If only
 # "include" was used, the make command would fail and refuse
@@ -21,9 +13,18 @@ export GRAPHQL_TAG
 -include build/makelib/common.mk
 
 # ====================================================================================
-# Charts
+# Versions
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
-CROSSPLANE_TAG := db33bb23442fa6b3e8a3a943a8579b968613182a
+CROSSPLANE_TAG := v1.2.0-rc.0-106-gdb33bb23
+
+BOOTSTRAPPER_TAG := $(VERSION)
+AGENT_TAG := v0.25.0-alpha1.76.g1ef3599
+GRAPHQL_TAG := v0.25.0-alpha1.39.gcf9772d
+
+export BOOTSTRAPPER_TAG
+export AGENT_TAG
+export GRAPHQL_TAG
+export CROSSPLANE_TAG
 
 # ====================================================================================
 # Setup Output
@@ -47,6 +48,7 @@ USE_HELM3 = true
 HELM_CHART_LINT_STRICT = false
 CRDS_DIR=$(ROOT_DIR)/cluster/crds
 OLM_DIR=$(ROOT_DIR)/cluster/olm
+OLMBUNDLE_VERSION=v0.2.0
 -include build/makelib/k8s_tools.mk
 
 # ====================================================================================
@@ -92,14 +94,14 @@ submodules:
 	@git submodule sync
 	@git submodule update --init --recursive
 
-# TODO(muvaf): we don't need to handle crds folder after this PR is merged https://github.com/crossplane/crossplane/pull/2160
+GITCP_CMD?=git -C $(WORK_DIR)/crossplane
 crossplane:
 	@$(INFO) Fetching Crossplane chart $(CROSSPLANE_TAG)
 	@mkdir -p $(WORK_DIR)/crossplane
-	@git -C $(WORK_DIR)/crossplane init
-	@git -C $(WORK_DIR)/crossplane remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true
-	@git -C $(WORK_DIR)/crossplane fetch --depth 1 origin $(CROSSPLANE_TAG)
-	@git -C $(WORK_DIR)/crossplane checkout $(CROSSPLANE_TAG)
+	@$(GITCP_CMD) init
+	@$(GITCP_CMD) remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true
+	@$(GITCP_CMD) fetch --depth 1 origin $$($(GITCP_CMD) rev-parse $(CROSSPLANE_TAG))
+	@$(GITCP_CMD) checkout $(CROSSPLANE_TAG)
 	@mkdir -p $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
 	@rm -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane/*
 	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane

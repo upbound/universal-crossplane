@@ -49,7 +49,7 @@ USE_HELM3 = true
 HELM_CHART_LINT_STRICT = false
 CRDS_DIR=$(ROOT_DIR)/cluster/crds
 OLM_DIR=$(ROOT_DIR)/cluster/olm
-OLMBUNDLE_VERSION=v0.2.0
+OLMBUNDLE_VERSION=v0.3.0
 -include build/makelib/k8s_tools.mk
 
 # ====================================================================================

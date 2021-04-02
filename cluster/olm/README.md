@@ -45,8 +45,7 @@ IMAGE_PREFIX="docker.io/upbound"
 
 Building a bundle:
 ```bash
-cd <version directory>
-docker build -t "${IMAGE_PREFIX}/uxp-test:0.0.1" .
+docker build cluster/olm/bundle -f cluster/olm/bundle/Dockerfile -t "${IMAGE_PREFIX}/uxp-test:0.0.1"
 docker push "${IMAGE_PREFIX}/uxp-test:0.0.1"
 ```
 
@@ -65,13 +64,12 @@ operator-sdk olm install
 ```
 
 Now install your custom `CatalogSource`:
-```
-cd <root of the repo>
+```bash
 sed "s|IMAGE_PREFIX|${IMAGE_PREFIX}|g" cluster/olm/test/catalogsource.yaml | kubectl apply -f -
 ```
 
 Wait for it to become ready:
-```
+```bash
 kubectl get catalogsource -n olm -o yaml -w
 ```
 
@@ -79,12 +77,12 @@ The cluster has a catalog that includes our OLM bundle. Now, we will prepare the
 namespace we'll deploy our bundle to. Note that the namespace has to be `upbound-system`
 and it needs to be configured with a global `OperatorGroup` so that it can watch
 all namespaces.
-```
+```bash
 kubectl apply -f cluster/olm/test/operatorgroup.yaml
 ```
 
 Now create the `Subscription`:
-```
+```bash
 kubectl apply -f cluster/olm/test/subscription.yaml
 ```
 

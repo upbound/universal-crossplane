@@ -201,7 +201,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		meta.LabelKeyManagedBy: meta.LabelValueManagedBy,
 	}
 	s.Data = d
-	s.Type = corev1.SecretTypeTLS
 
 	if err = r.client.Update(ctx, s); err != nil {
 		err = errors.Wrap(err, errUpdateCertSecret)

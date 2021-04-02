@@ -14,8 +14,9 @@ PACKAGE_NAME := upbound-universal-crossplane
 
 # ====================================================================================
 # Versions
+
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
-CROSSPLANE_TAG := v1.2.0-rc.0-106-gdb33bb23
+CROSSPLANE_TAG := v1.2.0-rc.0.106.gdb33bb23
 
 BOOTSTRAPPER_TAG := $(VERSION)
 AGENT_TAG := v0.25.0-alpha1.76.g1ef3599
@@ -95,13 +96,15 @@ submodules:
 	@git submodule update --init --recursive
 
 GITCP_CMD?=git -C $(WORK_DIR)/crossplane
+CROSSPLANE_COMMIT := $(shell echo $(CROSSPLANE_TAG) | sed -E 's/(.*)\./\1-/' | sed -E 's/(.*)\./\1-/')
+
 crossplane:
 	@$(INFO) Fetching Crossplane chart $(CROSSPLANE_TAG)
 	@mkdir -p $(WORK_DIR)/crossplane
 	@$(GITCP_CMD) init
 	@$(GITCP_CMD) remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true
-	@$(GITCP_CMD) fetch --depth 1 origin $$($(GITCP_CMD) rev-parse $(CROSSPLANE_TAG))
-	@$(GITCP_CMD) checkout $(CROSSPLANE_TAG)
+	@$(GITCP_CMD) fetch origin
+	@$(GITCP_CMD) checkout $(CROSSPLANE_COMMIT)
 	@mkdir -p $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
 	@rm -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane/*
 	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane

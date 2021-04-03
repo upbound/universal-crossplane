@@ -4,6 +4,9 @@ go 1.16
 
 require (
 	github.com/alecthomas/kong v0.2.16
+	github.com/aws/aws-sdk-go-v2 v1.3.1
+	github.com/aws/aws-sdk-go-v2/config v1.1.4 // indirect
+	github.com/aws/aws-sdk-go-v2/service/marketplacemetering v1.2.1
 	github.com/crossplane/crossplane-runtime v0.13.1-0.20210329140831-9f8833ba7151
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-resty/resty/v2 v2.5.0

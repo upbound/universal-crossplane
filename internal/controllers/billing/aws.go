@@ -18,11 +18,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+// These constants are given by AWS Marketplace.
 const (
 	AWSProductCode      = "todo"
 	AWSPublicKey        = "BEGIN RSA public key"
 	AWSPublicKeyVersion = 1
+)
 
+// Constants used for in-cluster operations.
+const (
 	SecretNameAWSMarketplace = "upbound-aws-marketplace"
 	SecretKeyAWSUsageToken   = "token"
 )
@@ -31,6 +35,7 @@ type marketplaceClient interface {
 	RegisterUsage(ctx context.Context, params *marketplacemetering.RegisterUsageInput, optFns ...func(*marketplacemetering.Options)) (*marketplacemetering.RegisterUsageOutput, error)
 }
 
+// NewAWSMarketplace returns a new AWSMarketplace object that can register usage.
 func NewAWSMarketplace(cl client.Client, mcl marketplaceClient) *AWSMarketplace {
 	return &AWSMarketplace{
 		client:   cl,
@@ -38,11 +43,13 @@ func NewAWSMarketplace(cl client.Client, mcl marketplaceClient) *AWSMarketplace 
 	}
 }
 
+// AWSMarketplace implements Registerer for AWS Marketplace API.
 type AWSMarketplace struct {
 	client   client.Client
 	metering marketplaceClient
 }
 
+// Register makes sure user is entitled for this usage in an idempotent way.
 func (am *AWSMarketplace) Register(ctx context.Context, uid string) (string, error) {
 	s := &v1.Secret{}
 	nn := types.NamespacedName{Name: SecretNameAWSMarketplace}
@@ -71,10 +78,11 @@ func (am *AWSMarketplace) Register(ctx context.Context, uid string) (string, err
 	return aws.ToString(resp.Signature), errors.Wrap(err, "cannot update aws marketplace secret")
 }
 
+// Verify makes sure the signature is signed by AWS Marketplace.
 func (am *AWSMarketplace) Verify(token, uid string) (bool, error) {
 	l := strings.Split(token, ".")
 	if len(l) != 3 {
-		return false, errors.New("jwt token has to be made up of 3 parts seperated by periods")
+		return false, errors.New("jwt token has to be made up of 3 parts separated by periods")
 	}
 	t, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) {
 		return AWSPublicKey, nil

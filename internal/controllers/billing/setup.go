@@ -9,12 +9,14 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
-	"github.com/upbound/crossplane-distro/internal/meta"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	"github.com/upbound/crossplane-distro/internal/meta"
 )
 
-// Setup adds a controller that reconciles on tls secrets
+// SetupAWSMarketplace adds the AWS Marketplace controller that registers this
+// instance with AWS Marketplace.
 func SetupAWSMarketplace(mgr ctrl.Manager, l logging.Logger) error {
 	name := "aws-marketplace"
 	cfg, err := config.LoadDefaultConfig(context.TODO())

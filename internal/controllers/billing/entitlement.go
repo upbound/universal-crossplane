@@ -24,7 +24,7 @@ const (
 // ReconcilerOption is used to configure the Reconciler.
 type ReconcilerOption func(*Reconciler)
 
-// WithLogger specifies how the Reconciler should log messages.
+// WithRegisterer specifies the Registerer to use.
 func WithRegisterer(reg Registerer) ReconcilerOption {
 	return func(r *Reconciler) {
 		r.entitlement = reg

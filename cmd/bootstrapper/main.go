@@ -10,7 +10,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/upbound/universal-crossplane/internal/clients/upbound"
-	"github.com/upbound/universal-crossplane/internal/controller"
+	"github.com/upbound/universal-crossplane/internal/controllers"
 	"github.com/upbound/universal-crossplane/internal/version"
 )
 
@@ -56,7 +56,7 @@ func (b *BootstrapCmd) Run(ctx *Context) error {
 	}
 
 	logger := logging.NewLogrLogger(zl.WithName("bootstrap"))
-	if err := controller.Setup(mgr, logger, upbound.NewClient(b.UpboundAPIUrl, ctx.Debug)); err != nil {
+	if err := controllers.Setup(mgr, logger, upbound.NewClient(b.UpboundAPIUrl, ctx.Debug)); err != nil {
 		return errors.Wrap(err, "cannot add bootstrap controller to manager")
 	}
 

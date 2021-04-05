@@ -4,7 +4,7 @@ import "context"
 
 // Registerer can register usage of crossplane-distro with idempotent calls.
 type Registerer interface {
-	Register(ctx context.Context, uid string) (string, error)
+	Register(ctx context.Context, namespace, uid string) (string, error)
 	Verify(token, uid string) (bool, error)
 }
 
@@ -17,11 +17,11 @@ func NewNopRegisterer() NopRegisterer {
 type NopRegisterer struct{}
 
 // Register does nothing.
-func (np NopRegisterer) Register(_ context.Context, _ string) (string, error) {
+func (np NopRegisterer) Register(_ context.Context, _, _ string) (string, error) {
 	return "", nil
 }
 
 // Verify does nothing.
-func (np NopRegisterer) Verify(token, uid string) (bool, error) {
+func (np NopRegisterer) Verify(_, _ string) (bool, error) {
 	return true, nil
 }

@@ -6,6 +6,8 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
@@ -34,10 +36,13 @@ func main() {
 	ctx := kong.Parse(&cli)
 	zl := zap.New(zap.UseDevMode(cli.Debug))
 	ctrl.SetLogger(zl)
+	s := runtime.NewScheme()
+	ctx.FatalIfErrorf(corev1.AddToScheme(s), "cannot add client-go scheme")
 
 	cfg, err := ctrl.GetConfig()
 	ctx.FatalIfErrorf(errors.Wrap(err, "cannot get config"))
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
+		Scheme:     s,
 		SyncPeriod: &cli.Bootstrap.SyncPeriod,
 		Namespace:  cli.Bootstrap.Namespace,
 	})

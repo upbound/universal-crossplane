@@ -21,3 +21,6 @@ rules:
     - crossplane-graphql-tls
     - xgql-tls
     - upbound-control-plane-token
+    {{- if .Values.bootstrapper.billing.awsMarketplace }}
+    - upbound-aws-marketplace
+    {{- end}}

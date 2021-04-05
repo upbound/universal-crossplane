@@ -93,7 +93,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	}
 	uid := string(kubeNS.GetUID())
 
-	token, err := r.entitlement.Register(ctx, uid)
+	token, err := r.entitlement.Register(ctx, req.Namespace, uid)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "cannot register entitlement")
 	}

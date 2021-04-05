@@ -1,0 +1,24 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ template "bootstrapper-name" . }}
+  labels:
+    {{- include "labelsBootstrapper" . | nindent 4 }}
+rules:
+  # Bootstrapper needs to identify the cluster uniquely and it does that by using
+  # UID of kube-system namespace.
+  - apiGroups:
+    - ""
+    resources:
+    - namespaces
+    verbs:
+    - "watch"
+    - "list"
+  - apiGroups:
+    - ""
+    resources:
+    - namespaces
+    resourceNames:
+    - "kube-system"
+    verbs:
+    - "get"

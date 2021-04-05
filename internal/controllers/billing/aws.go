@@ -50,9 +50,9 @@ type AWSMarketplace struct {
 }
 
 // Register makes sure user is entitled for this usage in an idempotent way.
-func (am *AWSMarketplace) Register(ctx context.Context, uid string) (string, error) {
+func (am *AWSMarketplace) Register(ctx context.Context, namespace, uid string) (string, error) {
 	s := &v1.Secret{}
-	nn := types.NamespacedName{Name: SecretNameAWSMarketplace}
+	nn := types.NamespacedName{Name: SecretNameAWSMarketplace, Namespace: namespace}
 	if err := am.client.Get(ctx, nn, s); err != nil {
 		return "", errors.Wrap(err, "cannot get aws marketplace secret")
 	}

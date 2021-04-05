@@ -32,47 +32,31 @@ var cli struct {
 
 func main() {
 	ctx := kong.Parse(&cli)
-	err := ctx.Run(cli.Debug, cli.Bootstrap.Controllers)
-	ctx.FatalIfErrorf(err)
-}
-
-// Run sets up and starts the bootstrapper.
-func (b *BootstrapCmd) Run(debug bool, controllers []string) error {
-	zl := zap.New(zap.UseDevMode(debug))
+	zl := zap.New(zap.UseDevMode(cli.Debug))
 	ctrl.SetLogger(zl)
 
 	cfg, err := ctrl.GetConfig()
-	if err != nil {
-		return errors.Wrap(err, "cannot get config")
-	}
+	ctx.FatalIfErrorf(errors.Wrap(err, "cannot get config"))
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		SyncPeriod: &b.SyncPeriod,
-		Namespace:  b.Namespace,
+		SyncPeriod: &cli.Bootstrap.SyncPeriod,
+		Namespace:  cli.Bootstrap.Namespace,
 	})
-	if err != nil {
-		return errors.Wrap(err, "cannot create manager")
-	}
+	ctx.FatalIfErrorf(errors.Wrap(err, "cannot create manager"))
 
 	logger := logging.NewLogrLogger(zl.WithName("bootstrapper"))
-	for _, c := range controllers {
+	for _, c := range cli.Bootstrap.Controllers {
 		switch c {
 		case "tls-secrets":
-			if err := tlssecrets.Setup(mgr, logger); err != nil {
-				return err
-			}
+			ctx.FatalIfErrorf(errors.Wrapf(tlssecrets.Setup(mgr, logger), "cannot start %s controller", c))
 		case "ubc-certs":
-			if err := ubccerts.Setup(mgr, logger, upbound.NewClient(b.UpboundAPIUrl, debug)); err != nil {
-				return err
-			}
+			ctx.FatalIfErrorf(errors.Wrapf(ubccerts.Setup(mgr, logger, upbound.NewClient(cli.Bootstrap.UpboundAPIUrl, cli.Debug)), "cannot setup %s controller", c))
 		case "aws-marketplace":
-			if err := billing.SetupAWSMarketplace(mgr, logger); err != nil {
-				return err
-			}
+			ctx.FatalIfErrorf(errors.Wrapf(billing.SetupAWSMarketplace(mgr, logger), "cannot setup %s controller", c))
 		default:
-			return errors.Errorf("unknown controller name: %s", c)
+			ctx.Errorf("unknown controller name: %s", c)
 		}
 	}
 
 	logger.Info("Starting bootstrapper", "version", version.Version)
-	return errors.Wrap(mgr.Start(ctrl.SetupSignalHandler()), "cannot start controller manager")
+	ctx.FatalIfErrorf(errors.Wrap(mgr.Start(ctrl.SetupSignalHandler()), "cannot start controller manager"))
 }

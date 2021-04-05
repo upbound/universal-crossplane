@@ -25,16 +25,24 @@ spec:
         - name: bootstrapper
           image: "{{ .Values.bootstrapper.image.repository }}:{{ .Values.bootstrapper.image.tag }}"
           args:
-            - bootstrap
+            - start
             - --namespace
             - {{ .Release.Namespace }}
             - --upbound-api-url
             - {{ .Values.upbound.apiURL }}
+            - --controller
+            - ubc-certs
+            - --controller
+            - tls-secrets
+          {{- if .Values.bootstrapper.billing.awsMarketplace }}
+            - --controller
+            - aws-marketplace
+          {{- end }}
           {{- if .Values.bootstrapper.config.debugMode }}
-          - "--debug"
+            - "--debug"
           {{- end }}
           {{- range $arg := .Values.bootstrapper.config.args }}
-          - {{ $arg }}
+            - {{ $arg }}
           {{- end }}
           imagePullPolicy: {{ .Values.bootstrapper.image.pullPolicy }}
           resources:

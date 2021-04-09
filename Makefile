@@ -8,7 +8,7 @@ PACKAGE_NAME := upbound-universal-crossplane
 
 BOOTSTRAPPER_TAG := $(VERSION)
 AGENT_TAG := v0.25.0-alpha1.76.g1ef3599
-GRAPHQL_TAG := v0.25.0-alpha1.33.gfde4735-version-hack-1
+GRAPHQL_TAG := v0.25.0-alpha1.39.gcf9772d
 
 export CROSSPLANE_TAG
 export AGENT_TAG

@@ -49,7 +49,7 @@ USE_HELM3 = true
 HELM_CHART_LINT_STRICT = false
 CRDS_DIR=$(ROOT_DIR)/cluster/crds
 OLM_DIR=$(ROOT_DIR)/cluster/olm
-OLMBUNDLE_VERSION=v0.3.0
+OLMBUNDLE_VERSION=v0.4.0
 -include build/makelib/k8s_tools.mk
 
 # ====================================================================================
@@ -131,7 +131,7 @@ olm: $(HELM) $(OLMBUNDLE) generate-chart
 	@$(HELM) -n upbound-system template $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) --set upbound.controlPlane.connect=true > $(WORK_DIR)/olm.yaml
 	@$(SED_CMD) 's|RELEASE-NAME|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
 	@rm -rf $(OLM_DIR)/bundle
-	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
+	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --version $(HELM_CHART_VERSION) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
 
 helm.prepare: generate-chart
 

@@ -130,6 +130,7 @@ olm: $(HELM) $(OLMBUNDLE) generate-chart
 	@$(INFO) Generating OLM bundle
 	@$(HELM) -n upbound-system template $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) --set upbound.controlPlane.connect=true > $(WORK_DIR)/olm.yaml
 	@$(SED_CMD) 's|RELEASE-NAME|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
+	@rm -rf $(OLM_DIR)/bundle
 	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
 
 helm.prepare: generate-chart

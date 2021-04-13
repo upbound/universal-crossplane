@@ -1,22 +1,20 @@
-
----
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.3.0
   creationTimestamp: null
-  name: providers.pkg.crossplane.io
+  name: configurations.pkg.crossplane.io
 spec:
   group: pkg.crossplane.io
   names:
     categories:
     - crossplane
     - pkg
-    kind: Provider
-    listKind: ProviderList
-    plural: providers
-    singular: provider
+    kind: Configuration
+    listKind: ConfigurationList
+    plural: configurations
+    singular: configuration
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -35,7 +33,7 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: Provider is the CRD type for a request to add a provider to Crossplane.
+        description: Configuration is the CRD type for a request to add a configuration to Crossplane.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -46,17 +44,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: ProviderSpec specifies details about a request to install a provider to Crossplane.
+            description: ConfigurationSpec specifies details about a request to install a configuration to Crossplane.
             properties:
-              controllerConfigRef:
-                description: ControllerConfigRef references a ControllerConfig resource that will be used to configure the packaged controller Deployment.
-                properties:
-                  name:
-                    description: Name of the referenced object.
-                    type: string
-                required:
-                - name
-                type: object
               ignoreCrossplaneConstraints:
                 default: false
                 description: IgnoreCrossplaneConstraints indicates to the package manager whether to honor Crossplane version constrains specified by the package. Default is false.
@@ -95,7 +84,7 @@ spec:
             - package
             type: object
           status:
-            description: ProviderStatus represents the observed state of a Provider.
+            description: ConfigurationStatus represents the observed state of a Configuration.
             properties:
               conditions:
                 description: Conditions of the resource.
@@ -153,7 +142,7 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: Provider is the CRD type for a request to add a provider to Crossplane.
+        description: Configuration is the CRD type for a request to add a configuration to Crossplane.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -164,17 +153,8 @@ spec:
           metadata:
             type: object
           spec:
-            description: ProviderSpec specifies details about a request to install a provider to Crossplane.
+            description: ConfigurationSpec specifies details about a request to install a configuration to Crossplane.
             properties:
-              controllerConfigRef:
-                description: ControllerConfigRef references a ControllerConfig resource that will be used to configure the packaged controller Deployment.
-                properties:
-                  name:
-                    description: Name of the referenced object.
-                    type: string
-                required:
-                - name
-                type: object
               ignoreCrossplaneConstraints:
                 default: false
                 description: IgnoreCrossplaneConstraints indicates to the package manager whether to honor Crossplane version constrains specified by the package. Default is false.
@@ -213,7 +193,7 @@ spec:
             - package
             type: object
           status:
-            description: ProviderStatus represents the observed state of a Provider.
+            description: ConfigurationStatus represents the observed state of a Configuration.
             properties:
               conditions:
                 description: Conditions of the resource.

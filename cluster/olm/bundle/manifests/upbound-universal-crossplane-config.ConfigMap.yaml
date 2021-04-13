@@ -1,0 +1,15 @@
+apiVersion: v1
+data:
+  agentVersion: 0.25.0-alpha1.76.g1ef3599
+  crossplaneVersion: 1.2.0-rc.0.106.gdb33bb23
+  graphQLVersion: 0.25.0-alpha1.39.gcf9772d
+kind: ConfigMap
+metadata:
+  labels:
+    app.kubernetes.io/component: graphql
+    app.kubernetes.io/instance: crossplane-distro
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: crossplane
+    app.kubernetes.io/version: 0.0.1
+    helm.sh/chart: upbound-universal-crossplane-0.0.1
+  name: upbound-universal-crossplane-config

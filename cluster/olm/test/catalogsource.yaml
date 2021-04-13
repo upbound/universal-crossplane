@@ -1,0 +1,8 @@
+apiVersion: operators.coreos.com/v1alpha1
+kind: CatalogSource
+metadata:
+  name: upbound-test-source
+  namespace: olm
+spec:
+  sourceType: grpc
+  image: IMAGE_PREFIX/uxp-test-catalog:0.0.1

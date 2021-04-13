@@ -6,14 +6,6 @@ PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 
 PACKAGE_NAME := upbound-universal-crossplane
 
-BOOTSTRAPPER_TAG := $(VERSION)
-AGENT_TAG := v0.25.0-alpha1.76.g1ef3599
-GRAPHQL_TAG := v0.25.0-alpha1.39.gcf9772d
-
-export CROSSPLANE_TAG
-export AGENT_TAG
-export GRAPHQL_TAG
-
 # -include will silently skip missing files, which allows us
 # to load those files with a target in the Makefile. If only
 # "include" was used, the make command would fail and refuse
@@ -21,9 +13,19 @@ export GRAPHQL_TAG
 -include build/makelib/common.mk
 
 # ====================================================================================
-# Charts
+# Versions
+
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
-CROSSPLANE_TAG := v1.1.0
+CROSSPLANE_TAG := v1.2.0-rc.0.106.gdb33bb23
+
+BOOTSTRAPPER_TAG := $(VERSION)
+AGENT_TAG := v0.25.0-alpha1.76.g1ef3599
+GRAPHQL_TAG := v0.25.0-alpha1.39.gcf9772d
+
+export BOOTSTRAPPER_TAG
+export AGENT_TAG
+export GRAPHQL_TAG
+export CROSSPLANE_TAG
 
 # ====================================================================================
 # Setup Output
@@ -45,6 +47,8 @@ GO111MODULE = on
 
 USE_HELM3 = true
 HELM_CHART_LINT_STRICT = false
+CRDS_DIR=$(ROOT_DIR)/cluster/crds
+OLM_DIR=$(ROOT_DIR)/cluster/olm
 -include build/makelib/k8s_tools.mk
 
 # ====================================================================================
@@ -90,18 +94,21 @@ submodules:
 	@git submodule sync
 	@git submodule update --init --recursive
 
-# TODO(muvaf): we don't need to handle crds folder after this PR is merged https://github.com/crossplane/crossplane/pull/2160
+GITCP_CMD?=git -C $(WORK_DIR)/crossplane
+CROSSPLANE_COMMIT := $(shell echo $(CROSSPLANE_TAG) | sed -E 's/(.*)\./\1-/' | sed -E 's/(.*)\./\1-/')
+
 crossplane:
 	@$(INFO) Fetching Crossplane chart $(CROSSPLANE_TAG)
 	@mkdir -p $(WORK_DIR)/crossplane
-	@git -C $(WORK_DIR)/crossplane init
-	@git -C $(WORK_DIR)/crossplane remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true
-	@git -C $(WORK_DIR)/crossplane fetch origin refs/tags/$(CROSSPLANE_TAG):refs/tags/$(CROSSPLANE_TAG)
-	@git -C $(WORK_DIR)/crossplane checkout $(CROSSPLANE_TAG)
-	@rm -rf $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
+	@$(GITCP_CMD) init
+	@$(GITCP_CMD) remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true
+	@$(GITCP_CMD) fetch origin
+	@$(GITCP_CMD) checkout $(CROSSPLANE_COMMIT)
 	@mkdir -p $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
+	@rm -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane/*
 	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
-	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/crds/* $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/crds
+	@rm -f $(CRDS_DIR)/*
+	@cp -a $(WORK_DIR)/crossplane/cluster/crds/* $(CRDS_DIR)
 	@$(OK) Crossplane chart has been fetched
 
 generate-chart: crossplane
@@ -112,6 +119,18 @@ generate-chart: crossplane
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%GRAPHQL_TAG%%|$(GRAPHQL_TAG)|g' values.yaml
 	@$(OK) Generating values.yaml for the chart
+
+# We have to give a static namespace for OLM bundle because it does not interpret
+# and change the namespace of the subjects of ClusterRoleBindings to the namespace
+# where the operator is deployed. See https://github.com/operator-framework/operator-lifecycle-manager/issues/1361
+# and https://github.com/operator-framework/operator-lifecycle-manager/issues/2039
+
+olm: $(HELM) $(OLMBUNDLE) generate-chart
+	@$(INFO) Generating OLM bundle
+	@$(HELM) -n upbound-system template $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) --set upbound.controlPlane.connect=true > $(WORK_DIR)/olm.yaml
+	@$(SED_CMD) 's|RELEASE-NAME|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
+	@rm -rf $(OLM_DIR)/bundle
+	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --version $(HELM_CHART_VERSION) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
 
 helm.prepare: generate-chart
 

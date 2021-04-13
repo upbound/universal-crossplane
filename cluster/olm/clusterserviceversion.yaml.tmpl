@@ -1,0 +1,18 @@
+apiVersion: v1alpha1
+kind: ClusterServiceVersion
+metadata:
+  creationTimestamp: null
+  annotations:
+    operatorframework.io/suggested-namespace: upbound-system
+spec:
+  minKubeVersion: 1.16.0
+  maturity: stable
+  installModes:
+    - supported: false
+      type: OwnNamespace
+    - supported: false
+      type: SingleNamespace
+    - supported: false
+      type: MultiNamespace
+    - supported: true
+      type: AllNamespaces

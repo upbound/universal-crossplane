@@ -30,7 +30,7 @@ export CROSSPLANE_TAG
 # ====================================================================================
 # Setup Output
 
-S3_BUCKET ?= $(PACKAGE_NAME).releases
+S3_BUCKET ?= upbound.releases/$(PACKAGE_NAME)
 -include build/makelib/output.mk
 
 # ====================================================================================

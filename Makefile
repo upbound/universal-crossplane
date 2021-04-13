@@ -4,6 +4,8 @@
 PROJECT_NAME := crossplane-distro
 PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 
+PLATFORMS ?= linux_amd64 linux_arm64
+
 PACKAGE_NAME := upbound-universal-crossplane
 
 # -include will silently skip missing files, which allows us

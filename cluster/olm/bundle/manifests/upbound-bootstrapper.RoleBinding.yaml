@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: crossplane
     app.kubernetes.io/version: 0.0.1
-    helm.sh/chart: upbound-universal-crossplane-0.0.1
+    helm.sh/chart: universal-crossplane-0.0.1
   name: upbound-bootstrapper
 roleRef:
   apiGroup: rbac.authorization.k8s.io

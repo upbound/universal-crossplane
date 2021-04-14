@@ -1,10 +1,10 @@
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
 metadata:
-  name: upbound-universal-crossplane
+  name: universal-crossplane
   namespace: upbound-system
 spec:
   channel: stable
-  name: upbound-universal-crossplane
+  name: universal-crossplane
   source: upbound-test-source
   sourceNamespace: olm

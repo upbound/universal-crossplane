@@ -8,6 +8,6 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
-    resourceNames: ["upbound-universal-crossplane-config"]
+    resourceNames: ["universal-crossplane-config"]
     verbs: ["get"]
 {{- end }}

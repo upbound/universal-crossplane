@@ -9,9 +9,9 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/upbound/crossplane-distro/internal/clients/upbound"
-	"github.com/upbound/crossplane-distro/internal/controller"
-	"github.com/upbound/crossplane-distro/internal/version"
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
+	"github.com/upbound/universal-crossplane/internal/controller"
+	"github.com/upbound/universal-crossplane/internal/version"
 )
 
 // Context represents a cli context
@@ -29,7 +29,7 @@ type BootstrapCmd struct {
 var cli struct {
 	Debug bool `help:"Enable debug mode"`
 
-	Bootstrap BootstrapCmd `cmd:"" help:"Bootstraps project uruk hai"`
+	Bootstrap BootstrapCmd `cmd:"" help:"Bootstraps Universal Crossplane"`
 }
 
 func main() {

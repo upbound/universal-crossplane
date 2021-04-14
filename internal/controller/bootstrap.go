@@ -4,9 +4,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/upbound/crossplane-distro/internal/clients/upbound"
-	"github.com/upbound/crossplane-distro/internal/controller/tlssecrets"
-	"github.com/upbound/crossplane-distro/internal/controller/ubccerts"
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
+	"github.com/upbound/universal-crossplane/internal/controller/tlssecrets"
+	"github.com/upbound/universal-crossplane/internal/controller/ubccerts"
 )
 
 // Setup creates controllers that runs bootstrap operations

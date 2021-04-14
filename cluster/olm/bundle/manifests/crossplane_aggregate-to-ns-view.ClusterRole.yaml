@@ -7,7 +7,7 @@ metadata:
     heritage: Helm
     rbac.crossplane.io/aggregate-to-ns-view: "true"
     rbac.crossplane.io/base-of-ns-view: "true"
-    release: crossplane-distro
+    release: universal-crossplane
   name: crossplane:aggregate-to-ns-view
 rules:
 - apiGroups:

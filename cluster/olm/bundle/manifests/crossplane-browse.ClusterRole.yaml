@@ -9,5 +9,5 @@ metadata:
     app: crossplane
     chart: upbound-universal-crossplane-0.0.1
     heritage: Helm
-    release: crossplane-distro
+    release: universal-crossplane
   name: crossplane-browse

@@ -17,8 +17,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/upbound/crossplane-distro/internal/clients/upbound"
-	upboundmocks "github.com/upbound/crossplane-distro/internal/clients/upbound/mocks"
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
+	upboundmocks "github.com/upbound/universal-crossplane/internal/clients/upbound/mocks"
 )
 
 func TestReconcile(t *testing.T) {

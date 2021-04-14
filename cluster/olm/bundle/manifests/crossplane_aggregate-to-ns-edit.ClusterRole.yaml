@@ -7,7 +7,7 @@ metadata:
     heritage: Helm
     rbac.crossplane.io/aggregate-to-ns-edit: "true"
     rbac.crossplane.io/base-of-ns-edit: "true"
-    release: crossplane-distro
+    release: universal-crossplane
   name: crossplane:aggregate-to-ns-edit
 rules:
 - apiGroups:

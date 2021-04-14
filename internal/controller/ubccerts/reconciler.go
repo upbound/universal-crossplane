@@ -14,8 +14,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/upbound/crossplane-distro/internal/clients/upbound"
-	"github.com/upbound/crossplane-distro/internal/meta"
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
+	"github.com/upbound/universal-crossplane/internal/meta"
 )
 
 const (

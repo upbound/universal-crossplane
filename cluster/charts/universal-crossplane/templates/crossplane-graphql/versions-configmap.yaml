@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: upbound-universal-crossplane-config
+  name: universal-crossplane-config
   labels:
     {{- include "labelsGraphql" . | nindent 4 }}
 data:

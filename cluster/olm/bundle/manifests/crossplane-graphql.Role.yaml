@@ -7,13 +7,13 @@ metadata:
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: crossplane
     app.kubernetes.io/version: 0.0.1
-    helm.sh/chart: upbound-universal-crossplane-0.0.1
+    helm.sh/chart: universal-crossplane-0.0.1
   name: crossplane-graphql
 rules:
 - apiGroups:
   - ""
   resourceNames:
-  - upbound-universal-crossplane-config
+  - universal-crossplane-config
   resources:
   - configmaps
   verbs:

@@ -3,7 +3,7 @@ kind: ClusterRole
 metadata:
   labels:
     app: crossplane
-    chart: upbound-universal-crossplane-0.0.1
+    chart: universal-crossplane-0.0.1
     heritage: Helm
     rbac.crossplane.io/aggregate-to-admin: "true"
     release: universal-crossplane

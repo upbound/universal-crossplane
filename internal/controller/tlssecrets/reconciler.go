@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/upbound/crossplane-distro/internal/meta"
+	"github.com/upbound/universal-crossplane/internal/meta"
 )
 
 const (

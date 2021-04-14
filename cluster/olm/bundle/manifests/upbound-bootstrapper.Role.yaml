@@ -3,7 +3,7 @@ kind: Role
 metadata:
   labels:
     app.kubernetes.io/component: bootstrapper
-    app.kubernetes.io/instance: crossplane-distro
+    app.kubernetes.io/instance: universal-crossplane
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: crossplane
     app.kubernetes.io/version: 0.0.1

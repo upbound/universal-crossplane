@@ -1,4 +1,4 @@
-module github.com/upbound/crossplane-distro
+module github.com/upbound/universal-crossplane
 
 go 1.16
 

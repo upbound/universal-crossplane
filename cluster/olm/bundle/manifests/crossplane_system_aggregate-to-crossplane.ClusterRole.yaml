@@ -7,7 +7,7 @@ metadata:
     crossplane.io/scope: system
     heritage: Helm
     rbac.crossplane.io/aggregate-to-crossplane: "true"
-    release: crossplane-distro
+    release: universal-crossplane
   name: crossplane:system:aggregate-to-crossplane
 rules:
 - apiGroups:

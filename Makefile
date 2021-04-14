@@ -1,7 +1,7 @@
 # ====================================================================================
 # Setup Project
 
-PROJECT_NAME := crossplane-distro
+PROJECT_NAME := universal-crossplane
 PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 
 PLATFORMS ?= linux_amd64 linux_arm64

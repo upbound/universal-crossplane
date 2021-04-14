@@ -4,6 +4,8 @@
 PROJECT_NAME := crossplane-distro
 PROJECT_REPO := github.com/upbound/$(PROJECT_NAME)
 
+PLATFORMS ?= linux_amd64 linux_arm64
+
 PACKAGE_NAME := upbound-universal-crossplane
 
 # -include will silently skip missing files, which allows us
@@ -134,6 +136,13 @@ olm: $(HELM) $(OLMBUNDLE) generate-chart
 
 helm.prepare: generate-chart
 
+# Ensure a PR is ready for review.
 reviewable: helm.prepare lint
+
+# Ensure branch is clean.
+check-diff: reviewable
+	@$(INFO) checking that branch is clean
+	@test -z "$$(git status --porcelain)" || $(FAIL)
+	@$(OK) branch is clean
 
 .PHONY: generate-chart crossplane submodules fallthrough reviewable

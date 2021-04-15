@@ -20,6 +20,7 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["users"]
+    resourceNames: ["upbound-cloud-user"]
     verbs: ["impersonate"]
     resourceNames: ["upbound-cloud-user"]
   - apiGroups: ["authentication.k8s.io"]
@@ -27,5 +28,6 @@ rules:
     verbs: ["impersonate"]
   - apiGroups: [""]
     resources: ["groups"]
+    resourceNames: ["upbound:admin", "upbound:edit", "upbound:view"]
     verbs: ["impersonate"]
 {{- end }}

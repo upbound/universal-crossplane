@@ -75,8 +75,6 @@ OSBASEIMAGE = gcr.io/distroless/static:nonroot
 # ====================================================================================
 # Setup Local Dev
 -include build/makelib/local.mk
-
-local-dev: local.up local.deploy.$(PACKAGE_NAME)
 # ====================================================================================
 # Targets
 
@@ -144,5 +142,7 @@ check-diff: reviewable
 	@$(INFO) checking that branch is clean
 	@test -z "$$(git status --porcelain)" || $(FAIL)
 	@$(OK) branch is clean
+
+local-dev: local.up local.deploy.$(PACKAGE_NAME)
 
 .PHONY: generate-chart crossplane submodules fallthrough reviewable

@@ -20,7 +20,6 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["users"]
-    resourceNames: ["upbound-cloud-user"]
     verbs: ["impersonate"]
     resourceNames: ["upbound-cloud-user"]
   - apiGroups: ["authentication.k8s.io"]
@@ -30,7 +29,7 @@ rules:
     resources: ["groups"]
     resourceNames:
     - "upbound:view"
-{{- if .Values.upbound.controlPlane.permission "Edit" }}
+{{- if eq .Values.upbound.controlPlane.permission "Edit" }}
     - "upbound:admin"
     - "upbound:edit"
 {{- end }}

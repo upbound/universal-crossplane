@@ -1,4 +1,4 @@
-{{- if .Values.upbound.controlPlane.connect }}
+{{- if or (eq .Values.upbound.controlPlane.permission "View") (eq .Values.upbound.controlPlane.permission "Edit") }}
 apiVersion: v1
 kind: ConfigMap
 metadata:

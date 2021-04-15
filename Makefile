@@ -21,7 +21,7 @@ CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
 CROSSPLANE_TAG := v1.2.0-rc.0.106.gdb33bb23
 
 BOOTSTRAPPER_TAG := $(VERSION)
-AGENT_TAG := v0.25.0-alpha1.76.g1ef3599
+AGENT_TAG := v0.25.0-alpha1.101.g7111c6a
 GRAPHQL_TAG := v0.25.0-alpha1.41.g119b42a
 
 export BOOTSTRAPPER_TAG

@@ -12,7 +12,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/upbound/crossplane-distro/internal/meta"
+	"github.com/upbound/universal-crossplane/internal/meta"
 )
 
 // SetupAWSMarketplace adds the AWS Marketplace controller that registers this

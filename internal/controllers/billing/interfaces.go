@@ -2,7 +2,7 @@ package billing
 
 import "context"
 
-// Registerer can register usage of crossplane-distro with idempotent calls.
+// Registerer can register usage of universal-crossplane with idempotent calls.
 type Registerer interface {
 	Register(ctx context.Context, namespace, uid string) (string, error)
 	Verify(token, uid string) (bool, error)

@@ -2,10 +2,6 @@ package billing
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/json"
-	"strconv"
-	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/marketplacemetering"
@@ -19,9 +15,11 @@ import (
 )
 
 // These constants are given by AWS Marketplace.
+// TODO(muvaf): Consider fetching them from an Upbound API but keep the latest
+// ones hard-coded as fallback for air-gapped environments.
 const (
-	AWSProductCode      = "todo"
-	AWSPublicKey        = "BEGIN RSA public key"
+	AWSProductCode      = "1fszvu527waovqeuhpkyx2b5d"
+	AWSPublicKey        = "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAyu7Xq7XTBRgFWCL+DXj8\nXyc/fPLWNQ1adPDf8zqkJ1H1JCTg6fUo7HUvNu0BAbPwIME4aDEzteJkhPq9IzS8\nHlrZT/7DqSPV9bXnR9OkqugfbFPyHGyd9afHyfDJfGwfqBP5r8oBuGwmCw5Ia088\nAcePfkVEisAo+8KiBAE16bqvDw0v5YzDrDVpHH9YdK1q9eG5WRTt0h7lYFj8dydr\nh+OyONGyWTkAWbs3JpsQLZgRdU6Klj5aZzO6FeUc2kOz2Hs+QvKgbNSpgV0000KK\n2on4L1+WJau7sj8EFquFdk2C0MhucIy6ceWXGB3YAOb8c0H9FT0eSY5rtX154otW\njmV9vMLLX1gajtQD0iOLBLRQ3WliP7fGc6o3StjMrbKh+ErXGVzzJnjK2eQhgkg/\n/DgcKjUptZ21gdbqbQBGwvfitBEJX7VCwF4VMhFM8JQiAxCVBZ7kkY5ZlGjvN2gO\nAMFKarvAWRwrZisxKWe+RFBU1EI5WS75X7owU/IehIabAgMBAAE=\n-----END PUBLIC KEY-----\n"
 	AWSPublicKeyVersion = 1
 )
 
@@ -72,6 +70,9 @@ func (am *AWSMarketplace) Register(ctx context.Context, namespace, uid string) (
 		if err := am.client.Get(ctx, nn, s); err != nil {
 			return err
 		}
+		if s.Data == nil {
+			s.Data = map[string][]byte{}
+		}
 		s.Data[SecretKeyAWSUsageToken] = []byte(aws.ToString(resp.Signature))
 		return am.client.Update(ctx, s)
 	})
@@ -80,34 +81,23 @@ func (am *AWSMarketplace) Register(ctx context.Context, namespace, uid string) (
 
 // Verify makes sure the signature is signed by AWS Marketplace.
 func (am *AWSMarketplace) Verify(token, uid string) (bool, error) {
-	l := strings.Split(token, ".")
-	if len(l) != 3 {
-		return false, errors.New("jwt token has to be made up of 3 parts separated by periods")
-	}
-	t, err := jwt.Parse(token, func(_ *jwt.Token) (interface{}, error) {
-		return AWSPublicKey, nil
+	t, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(_ *jwt.Token) (interface{}, error) {
+		return jwt.ParseRSAPublicKeyFromPEM([]byte(AWSPublicKey))
 	})
 	if err != nil {
 		return false, errors.Wrap(err, "cannot parse token")
 	}
 	if !t.Valid {
-		return false, nil
+		return false, errors.New("token is invalid")
 	}
-	p, err := base64.URLEncoding.DecodeString(l[1])
-	if err != nil {
-		return false, errors.Wrap(err, "cannot decode jwt payload")
-	}
-	payload := map[string]string{}
-	if err := json.Unmarshal(p, &payload); err != nil {
-		return false, errors.Wrap(err, "cannot unmarshal jwt payload into string map")
-	}
+	claims := t.Claims.(jwt.MapClaims)
 	switch {
-	case payload["productCode"] != AWSProductCode:
-		return false, nil
-	case payload["nonce"] != uid:
-		return false, nil
-	case payload["publicKeyVersion"] != strconv.Itoa(AWSPublicKeyVersion):
-		return false, nil
+	case claims["productCode"] != AWSProductCode:
+		return false, errors.Errorf("productCode %s does not match expected %s", claims["productCode"], AWSProductCode)
+	case claims["nonce"] != uid:
+		return false, errors.Errorf("nonce %s does not match expected %s", claims["nonce"], uid)
+	case claims["publicKeyVersion"] != float64(AWSPublicKeyVersion):
+		return false, errors.Errorf("publicKeyVersion %s does not match expected %f", claims["publicKeyVersion"], float64(AWSPublicKeyVersion))
 	}
 	return true, nil
 }

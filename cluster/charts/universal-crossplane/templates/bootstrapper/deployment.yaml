@@ -15,6 +15,11 @@ spec:
         {{- include "selectorLabelsBootstrapper" . | nindent 8 }}
     spec:
       serviceAccountName: {{ template "bootstrapper-name" . }}
+      securityContext:
+        runAsGroup: 2000
+        runAsNonRoot: true
+        runAsUser: 2000
+        fsGroup: 2000
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
       {{- range $index, $secret := .Values.imagePullSecrets }}
@@ -34,7 +39,7 @@ spec:
             - ubc-certs
             - --controller
             - tls-secrets
-          {{- if .Values.bootstrapper.billing.awsMarketplace }}
+          {{- if .Values.billing.awsMarketplace.enabled }}
             - --controller
             - aws-marketplace
           {{- end }}

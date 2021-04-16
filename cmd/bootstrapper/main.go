@@ -29,7 +29,7 @@ type BootstrapCmd struct {
 var cli struct {
 	Debug bool `help:"Enable debug mode"`
 
-	Bootstrap BootstrapCmd `cmd:"" help:"Bootstraps Universal Crossplane"`
+	Bootstrap BootstrapCmd `cmd:"" name:"start" help:"Bootstraps Universal Crossplane"`
 }
 
 func main() {

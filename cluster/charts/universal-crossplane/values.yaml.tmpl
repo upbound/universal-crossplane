@@ -127,8 +127,11 @@ bootstrapper:
     tag: %%BOOTSTRAPPER_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
-  billing:
-    awsMarketplace: false
   config:
     debugMode: false
     args: []
+
+billing:
+  awsMarketplace:
+    enabled: false
+    iamRoleARN: arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>

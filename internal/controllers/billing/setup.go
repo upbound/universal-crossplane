@@ -19,7 +19,7 @@ import (
 // instance with AWS Marketplace.
 func SetupAWSMarketplace(mgr ctrl.Manager, l logging.Logger) error {
 	name := "aws-marketplace"
-	cfg, err := config.LoadDefaultConfig(context.TODO())
+	cfg, err := config.LoadDefaultConfig(context.TODO(), config.WithEC2IMDSRegion())
 	if err != nil {
 		return errors.Wrap(err, "cannot load default AWS config")
 	}

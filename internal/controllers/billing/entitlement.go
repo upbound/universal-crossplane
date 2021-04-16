@@ -106,5 +106,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		log.Info("entitlement signature is not valid")
 		return reconcile.Result{RequeueAfter: syncPeriod}, nil
 	}
+	log.Info("entitlement has been confirmed")
 	return reconcile.Result{}, nil
 }

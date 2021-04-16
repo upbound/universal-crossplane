@@ -37,7 +37,7 @@ echo "Logged in!"
 
 echo "Checking if control plane ${CONTROL_PLANE_NAME} in org ${CONTROL_PLANE_ORG} already exists..."
 cp_id=$(curl -s --cookie /tmp/req.cookie "https://${UPBOUND_API_ENDPOINT}/v1/namespaces/${CONTROL_PLANE_ORG}/controlPlanes" | \
-  jq -c '.controlPlanes[] | select(.controlPlane.name | contains("'"${CONTROL_PLANE_NAME}"'"))' | \
+  jq -c '.[] | select(.controlPlane.name | contains("'"${CONTROL_PLANE_NAME}"'"))' | \
   jq -r .controlPlane.id)
 
 if [ -z "${cp_id}" ]; then
@@ -46,7 +46,7 @@ if [ -z "${cp_id}" ]; then
       -H "Content-Type: application/json" \
       -d '{"namespace": "'"${CONTROL_PLANE_ORG}"'","name": "'"${CONTROL_PLANE_NAME}"'","description": " ", "selfHosted": true, "kubeClusterID": "'"${kube_cluster_id}"'"}' \
       "https://${UPBOUND_API_ENDPOINT}/v1/controlPlanes" | \
-      jq -r .controlPlane.controlPlane.id)
+      jq -r .controlPlane.id)
 fi
 echo "Platform created/exists with id ${cp_id}!"
 

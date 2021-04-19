@@ -6,16 +6,15 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"path/filepath"
 	"strings"
+
+	"github.com/alecthomas/kong"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/upbound/upbound-runtime/pkg/monitoring"
 	"github.com/upbound/upbound-runtime/pkg/monitoring/metrics"
 	"github.com/upbound/upbound-runtime/pkg/service"
@@ -32,20 +31,6 @@ import (
 const (
 	serviceName = "upbound-agent"
 
-	flagDebug               = "debug"
-	flagPodName             = "pod-name"
-	flagServerPort          = "server-port"
-	flagTLSCertFile         = "tls-cert-file"
-	flagTLSKeyFile          = "tls-private-key-file"
-	flagGraphqlCABundleFile = "graphql-cabundle-file"
-	flagControlPlaneToken   = "control-plane-token"
-	flagNATSEndpoint        = "nats-endpoint"
-	flagNATSJWTEndpoint     = "nats-jwt-endpoint"
-	flagJWTPublicKey        = "jwt-public-key"
-	flagEnableMetrics       = "enable-metrics"
-	flagTraceSampleFraction = "trace-sample-fraction"
-
-	defaultServerPort          = "6443"
 	prefixPlatformTokenSubject = "controlPlane|"
 )
 
@@ -56,203 +41,134 @@ const (
 	errCPIDInTokenNotValidUUID   = "control plane id in token is not a valid UUID: %s"
 )
 
-func main() {
-	if err := run(); err != nil {
-		log.Fatal(err)
-	}
+// Context represents a cli context
+type Context struct {
+	Debug bool
 }
 
-func run() error { // nolint:gocyclo
-	var cmd = &cobra.Command{
-		Use:   serviceName,
-		Short: "Upbound agent",
-		Run: func(command *cobra.Command, args []string) {
-			debug := viper.GetBool(flagDebug)
-			podName := viper.GetString(flagPodName)
-			serverPort := viper.GetString(flagServerPort)
-			tlsCertFile := viper.GetString(flagTLSCertFile)
-			tlsKeyFile := viper.GetString(flagTLSKeyFile)
-			graphqlCABundleFile := viper.GetString(flagGraphqlCABundleFile)
+// AgentCmd represents the "upbound-agent" command
+type AgentCmd struct {
+	PodName             string `help:"Name of the agent pod."`
+	ServerPort          string `default:"6443" help:"Port to serve agent service."`
+	TLSCertFile         string `help:"File containing the default x509 Certificate for HTTPS."`
+	TLSKeyFile          string `help:"File containing the default x509 private key matching provided cert"`
+	GraphqlCABundleFile string `help:"CA bundle file for graphql server"`
+	NATSEndpoint        string `help:"Endpoint for nats"`
+	NATSJwtEndpoint     string `help:"Endpoint for nats jwt tokens"`
+	ControlPlaneToken   string `help:"Platform token to access Upbound Cloud connect endpoint"`
+	JWTPublicKey        string `help:"BASE64 encoded rsa public key to validate jwt tokens."`
+}
 
-			natsEndpoint := viper.GetString(flagNATSEndpoint)
-			natsJWTEndpoint := viper.GetString(flagNATSJWTEndpoint)
+var cli struct {
+	Debug bool `help:"Enable debug mode"`
 
-			cpToken := viper.GetString(flagControlPlaneToken)
-			jwtPublicKey := viper.GetString(flagJWTPublicKey)
+	Agent AgentCmd `cmd:"" help:"Runs Upbound Agent"`
+}
 
-			enableMetrics := viper.GetBool(flagEnableMetrics)
-			traceSampleFraction := viper.GetFloat64(flagTraceSampleFraction)
+func main() {
+	ctx := kong.Parse(&cli)
+	err := ctx.Run(&Context{Debug: cli.Debug})
+	ctx.FatalIfErrorf(err)
+}
 
-			// Logging config
-			logrus.SetFormatter(monitoring.NewFormatterWithServiceVersion(serviceName, version.Version))
-			if debug {
-				logrus.SetLevel(logrus.DebugLevel)
-			}
+// Run runs the agent command
+func (a *AgentCmd) Run(ctx *Context) error {
+	debug := ctx.Debug
+	podName := a.PodName
+	serverPort := a.ServerPort
+	tlsCertFile := a.TLSCertFile
+	tlsKeyFile := a.TLSKeyFile
+	graphqlCABundleFile := a.GraphqlCABundleFile
 
-			logrus.Debug("Command flag values: ",
-				fmt.Sprintf("%s: %v, ", flagDebug, debug),
-				fmt.Sprintf("%s: %v, ", flagPodName, podName),
-				fmt.Sprintf("%s: %v, ", flagServerPort, serverPort),
-				fmt.Sprintf("%s: %v, ", flagTLSCertFile, tlsCertFile),
-				fmt.Sprintf("%s: %v, ", flagTLSKeyFile, tlsKeyFile),
-				fmt.Sprintf("%s: %v, ", flagGraphqlCABundleFile, graphqlCABundleFile),
-				fmt.Sprintf("%s: %v, ", flagNATSEndpoint, natsEndpoint),
-				fmt.Sprintf("%s: %v, ", flagNATSJWTEndpoint, natsJWTEndpoint),
-				fmt.Sprintf("%s: %v, ", flagEnableMetrics, enableMetrics),
-				fmt.Sprintf("%s: %v", flagTraceSampleFraction, traceSampleFraction))
+	natsEndpoint := a.NATSEndpoint
+	natsJWTEndpoint := a.NATSJwtEndpoint
 
-			cpID, err := readCPIDFromToken(cpToken)
-			if err != nil {
-				logrus.Fatal(errors.Wrap(err, "failed to read control plane id from token"))
-			}
+	cpToken := a.ControlPlaneToken
+	jwtPublicKey := a.JWTPublicKey
 
-			pem, err := base64.StdEncoding.DecodeString(jwtPublicKey)
-			if err != nil {
-				logrus.Fatal(errors.Wrap(err, "failed to base64 decode provided jwt public key"))
-			}
-			pk, err := jwt.ParseRSAPublicKeyFromPEM(pem)
-			if err != nil {
-				logrus.Fatal(errors.Wrap(err, "failed to parse public key"))
-			}
-
-			var nc *upboundagent.NATSClientConfig
-			if viper.GetString(flagNATSEndpoint) != "" {
-				logrus.Info("Enabling NATS")
-				nc = &upboundagent.NATSClientConfig{
-					Name:              podName,
-					Endpoint:          natsEndpoint,
-					JWTEndpoint:       natsJWTEndpoint,
-					ControlPlaneToken: cpToken,
-				}
-			}
-			var graphqlCertPool *x509.CertPool
-			if graphqlCABundleFile != "" {
-				b, err := ioutil.ReadFile(filepath.Clean(graphqlCABundleFile))
-				if err != nil {
-					logrus.Fatal(errors.Wrap(err, "failed to read graphql ca bundle file"))
-				}
-				graphqlCertPool, err = generateTrustedCertPool(b)
-				if err != nil {
-					logrus.Fatal(errors.Wrap(err, "failed to generate graphql ca cert pool"))
-				}
-			}
-
-			tgConfig := &upboundagent.Config{
-				DebugMode:         debug,
-				EnvID:             cpID,
-				TokenRSAPublicKey: pk,
-				GraphQLHost:       "https://crossplane-graphql",
-				GraphQLCACertPool: graphqlCertPool,
-				NATS:              nc,
-			}
-
-			restConfig, err := config.GetConfig()
-			if err != nil {
-				logrus.Fatal(errors.Wrap(err, "failed to get rest config"))
-			}
-			kubeClusterID, err := readKubeClusterID(restConfig)
-			if err != nil {
-				logrus.Fatal(errors.Wrap(err, "failed to read kube cluster ID"))
-			}
-			metricsAddr := "0"
-			if enableMetrics {
-				metricsAddr = ""
-			}
-			tc := metrics.TelemetryConfig{
-				MetricServerAddr:  metricsAddr,
-				HTTPClientMetrics: true,
-				HTTPServerMetrics: true,
-			}
-			pxy := upboundagent.NewProxy(tgConfig, restConfig, kubeClusterID)
-
-			logrus.Info("Starting the Upbound agent", "controlPlaneID", cpID)
-
-			serverAddr := fmt.Sprintf(":%s", serverPort)
-			s := service.NewService(pxy, debug, serviceName, "", serverAddr,
-				"", version.Version, traceSampleFraction, 200, 400,
-				false, tlsCertFile, tlsKeyFile, true, tc)
-			s.Run()
-		},
-	}
-	flags := cmd.Flags()
-	flagData := []struct {
-		key          string
-		usage        string
-		defaultValue string
-		required     bool
-	}{
-		{
-			key:   flagDebug,
-			usage: "true or false",
-		},
-		{
-			key:      flagPodName,
-			usage:    "name of the agent pod",
-			required: true,
-		},
-		{
-			key:          flagServerPort,
-			defaultValue: defaultServerPort,
-			usage:        "port to serve agent service",
-		},
-		{
-			key:      flagTLSCertFile,
-			usage:    "file containing the default x509 Certificate for HTTPS.",
-			required: true,
-		},
-		{
-			key:      flagTLSKeyFile,
-			usage:    "file containing the default x509 private key matching provided cert",
-			required: true,
-		},
-		{
-			key:   flagGraphqlCABundleFile,
-			usage: "ca bundle file for graphql server",
-		},
-		{
-			key:   flagControlPlaneToken,
-			usage: "platform token to access Upbound Cloud connect endpoint",
-		},
-		{
-			key:   flagNATSEndpoint,
-			usage: "endpoint for nats",
-		},
-		{
-			key:   flagNATSJWTEndpoint,
-			usage: "endpoint for nats jwt tokens",
-		},
-		{
-			key:      flagJWTPublicKey,
-			usage:    "base64 encoded rsa public key to validate jwt tokens",
-			required: true,
-		},
-		{
-			key:      flagEnableMetrics,
-			usage:    "enable exporting metrics to Prometheus",
-			required: false,
-		},
-		{
-			key:      flagTraceSampleFraction,
-			usage:    "tracing sample fraction for trace.ProbabilitySampler. Default value = 0, i.e. tracing disabled",
-			required: false,
-		},
+	// Logging config
+	logrus.SetFormatter(monitoring.NewFormatterWithServiceVersion(serviceName, version.Version))
+	if debug {
+		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	viper.AutomaticEnv()
-	for _, data := range flagData {
-		flags.String(data.key, data.defaultValue, data.usage)
-		flag := flags.Lookup(data.key)
-		if err := viper.BindPFlag(data.key, flag); err != nil {
-			return err
+	logrus.Debug("Command flag values: ",
+		fmt.Sprintf("%s: %v, ", "debug", debug),
+		fmt.Sprintf("%s: %v, ", "pod-name", podName),
+		fmt.Sprintf("%s: %v, ", "server-port", serverPort),
+		fmt.Sprintf("%s: %v, ", "tls-cert-file", tlsCertFile),
+		fmt.Sprintf("%s: %v, ", "tls-private-key-file", tlsKeyFile),
+		fmt.Sprintf("%s: %v, ", "graphql-cabundle-file", graphqlCABundleFile),
+		fmt.Sprintf("%s: %v, ", "nats-endpoint", natsEndpoint),
+		fmt.Sprintf("%s: %v, ", "nats-jwt-endpoint", natsJWTEndpoint))
+
+	cpID, err := readCPIDFromToken(cpToken)
+	if err != nil {
+		return errors.Wrap(err, "failed to read control plane id from token")
+	}
+
+	pem, err := base64.StdEncoding.DecodeString(jwtPublicKey)
+	if err != nil {
+		return errors.Wrap(err, "failed to base64 decode provided jwt public key")
+	}
+	pk, err := jwt.ParseRSAPublicKeyFromPEM(pem)
+	if err != nil {
+		return errors.Wrap(err, "failed to parse public key")
+	}
+
+	nc := &upboundagent.NATSClientConfig{
+		Name:              podName,
+		Endpoint:          natsEndpoint,
+		JWTEndpoint:       natsJWTEndpoint,
+		ControlPlaneToken: cpToken,
+	}
+
+	var graphqlCertPool *x509.CertPool
+	if graphqlCABundleFile != "" {
+		b, err := ioutil.ReadFile(filepath.Clean(graphqlCABundleFile))
+		if err != nil {
+			return errors.Wrap(err, "failed to read graphql ca bundle file")
 		}
-		if data.required && viper.GetString(flag.Name) == "" {
-			if err := cmd.MarkFlagRequired(flag.Name); err != nil {
-				return errors.Wrapf(err, "failed to set flag %s as required", flag.Name)
-			}
-
+		graphqlCertPool, err = generateTrustedCertPool(b)
+		if err != nil {
+			return errors.Wrap(err, "failed to generate graphql ca cert pool")
 		}
 	}
-	return cmd.Execute()
+
+	tgConfig := &upboundagent.Config{
+		DebugMode:         debug,
+		EnvID:             cpID,
+		TokenRSAPublicKey: pk,
+		GraphQLHost:       "https://crossplane-graphql",
+		GraphQLCACertPool: graphqlCertPool,
+		NATS:              nc,
+	}
+
+	restConfig, err := config.GetConfig()
+	if err != nil {
+		return errors.Wrap(err, "failed to get rest config")
+	}
+	kubeClusterID, err := readKubeClusterID(restConfig)
+	if err != nil {
+		return errors.Wrap(err, "failed to read kube cluster ID")
+	}
+	metricsAddr := "0"
+	tc := metrics.TelemetryConfig{
+		MetricServerAddr:  metricsAddr,
+		HTTPClientMetrics: true,
+		HTTPServerMetrics: true,
+	}
+	pxy := upboundagent.NewProxy(tgConfig, restConfig, kubeClusterID)
+
+	logrus.Info("Starting the Upbound agent", "controlPlaneID", cpID)
+
+	serverAddr := fmt.Sprintf(":%s", serverPort)
+	s := service.NewService(pxy, debug, serviceName, "", serverAddr,
+		"", version.Version, 0.0, 200, 400,
+		false, tlsCertFile, tlsKeyFile, true, tc)
+	s.Run()
+
+	return nil
 }
 
 func generateTrustedCertPool(b []byte) (*x509.CertPool, error) {
@@ -266,7 +182,7 @@ func generateTrustedCertPool(b []byte) (*x509.CertPool, error) {
 }
 
 func readCPIDFromToken(t string) (string, error) {
-	// Read env id from platform token
+	// Read control-plane id from the token
 	token, err := jwt.Parse(t, nil)
 	if err.(*jwt.ValidationError).Errors == jwt.ValidationErrorMalformed {
 		return "", errors.Wrap(err, errMalformedCPToken)

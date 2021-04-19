@@ -17,8 +17,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/upbound/upbound-runtime/pkg/handlers"
-	"github.com/upbound/upbound-runtime/pkg/validators"
 	"k8s.io/client-go/transport"
 
 	"github.com/upbound/universal-crossplane/internal/upboundagent/internal"
@@ -293,8 +291,6 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 			w := CloseNotifyWrapper{rec}
 
 			e := echo.New()
-			e.Validator = validators.NewValidator()
-			e.HTTPErrorHandler = handlers.NewTestErrorHandler()
 			req := httptest.NewRequest(http.MethodGet, "https://proxy.tgw.upbound.io/k8s/proxypathinfo", nil)
 			req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 			e.Any(k8sHandlerPath, p.k8s())

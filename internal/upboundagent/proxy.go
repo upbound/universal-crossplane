@@ -150,8 +150,7 @@ func (p *Proxy) SetupRoutes(engine *echo.Echo) {
 
 	agent := natsproxy.NewAgent(p.nc, agentID, engine, getSubjectForAgent(agentID), keepAliveInterval)
 	err = agent.Listen()
-	// we need to connect closing this subscription
-	// with graceful shutdown signal handling/event in upbound-runtime.
+
 	if err != nil {
 		logrus.WithError(err).Panic("failed to listen to nats")
 	}

@@ -13,7 +13,6 @@ import (
 	"github.com/nats-io/nkeys"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	uhttp "github.com/upbound/upbound-runtime/pkg/http"
 )
 
 const (
@@ -32,7 +31,7 @@ type natsConnManager struct {
 }
 
 func newNATSConnManager(cID, ubcNATSEndpoint, ubcNATSEndpointToken string, debug bool) (*natsConnManager, error) {
-	r := uhttp.NewRestyClient(ubcNATSEndpoint, false, debug)
+	r := newRestyClient(ubcNATSEndpoint, debug)
 	kp, err := nkeys.CreateUser()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create nats user")

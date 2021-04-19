@@ -116,13 +116,6 @@ func (a *AgentCmd) Run(ctx *Context) error {
 		return errors.Wrap(err, "failed to parse public key")
 	}
 
-	nc := &upboundagent.NATSClientConfig{
-		Name:              podName,
-		Endpoint:          natsEndpoint,
-		JWTEndpoint:       natsJWTEndpoint,
-		ControlPlaneToken: cpToken,
-	}
-
 	var graphqlCertPool *x509.CertPool
 	if graphqlCABundleFile != "" {
 		b, err := ioutil.ReadFile(filepath.Clean(graphqlCABundleFile))
@@ -141,7 +134,12 @@ func (a *AgentCmd) Run(ctx *Context) error {
 		TokenRSAPublicKey: pk,
 		GraphQLHost:       "https://crossplane-graphql",
 		GraphQLCACertPool: graphqlCertPool,
-		NATS:              nc,
+		NATS: &upboundagent.NATSClientConfig{
+			Name:              podName,
+			Endpoint:          natsEndpoint,
+			JWTEndpoint:       natsJWTEndpoint,
+			ControlPlaneToken: cpToken,
+		},
 	}
 
 	restConfig, err := config.GetConfig()
@@ -163,6 +161,7 @@ func (a *AgentCmd) Run(ctx *Context) error {
 	logrus.Info("Starting the Upbound agent", "controlPlaneID", cpID)
 
 	serverAddr := fmt.Sprintf(":%s", serverPort)
+
 	s := service.NewService(pxy, debug, serviceName, "", serverAddr,
 		"", version.Version, 0.0, 200, 400,
 		false, tlsCertFile, tlsKeyFile, true, tc)

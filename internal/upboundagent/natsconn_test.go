@@ -7,11 +7,9 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-
 	"github.com/jarcoal/httpmock"
 	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
-	uhttp "github.com/upbound/upbound-runtime/pkg/http"
 )
 
 func Test_fetchCA(t *testing.T) {
@@ -85,7 +83,7 @@ func Test_fetchCA(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			rc := uhttp.NewRestyClient(endpoint, false, false)
+			rc := newRestyClient(endpoint, false)
 
 			httpmock.ActivateNonDefault(rc.GetClient())
 
@@ -186,7 +184,7 @@ func Test_fetchNewJWT(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			rc := uhttp.NewRestyClient(endpoint, false, false)
+			rc := newRestyClient(endpoint, false)
 
 			httpmock.ActivateNonDefault(rc.GetClient())
 

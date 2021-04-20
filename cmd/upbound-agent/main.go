@@ -6,18 +6,19 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/alecthomas/kong"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
-	"github.com/upbound/upbound-runtime/pkg/monitoring"
-	"github.com/upbound/upbound-runtime/pkg/monitoring/metrics"
-	"github.com/upbound/upbound-runtime/pkg/service"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/rest"
@@ -29,9 +30,10 @@ import (
 )
 
 const (
-	serviceName = "upbound-agent"
-
 	prefixPlatformTokenSubject = "controlPlane|"
+
+	readHeaderTimeout = time.Second * 5
+	readTimeout       = time.Second * 10
 )
 
 const (
@@ -41,8 +43,8 @@ const (
 	errCPIDInTokenNotValidUUID   = "control plane id in token is not a valid UUID: %s"
 )
 
-// Context represents a cli context
-type Context struct {
+// CliContext represents a cli context
+type CliContext struct {
 	Debug bool
 }
 
@@ -67,13 +69,13 @@ var cli struct {
 
 func main() {
 	ctx := kong.Parse(&cli)
-	err := ctx.Run(&Context{Debug: cli.Debug})
+	err := ctx.Run(&CliContext{Debug: cli.Debug})
 	ctx.FatalIfErrorf(err)
 }
 
 // Run runs the agent command
-func (a *AgentCmd) Run(ctx *Context) error {
-	debug := ctx.Debug
+func (a *AgentCmd) Run(cli *CliContext) error { // nolint:gocyclo
+	debug := cli.Debug
 	podName := a.PodName
 	serverPort := a.ServerPort
 	tlsCertFile := a.TLSCertFile
@@ -86,13 +88,11 @@ func (a *AgentCmd) Run(ctx *Context) error {
 	cpToken := a.ControlPlaneToken
 	jwtPublicKey := a.JWTPublicKey
 
-	// Logging config
-	logrus.SetFormatter(monitoring.NewFormatterWithServiceVersion(serviceName, version.Version))
 	if debug {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
-
-	logrus.Debug("Command flag values: ",
+	logrus.Debug("Starting Upbound Agent with: ",
+		fmt.Sprintf("%s: %v, ", "version", version.Version),
 		fmt.Sprintf("%s: %v, ", "debug", debug),
 		fmt.Sprintf("%s: %v, ", "pod-name", podName),
 		fmt.Sprintf("%s: %v, ", "server-port", serverPort),
@@ -150,22 +150,45 @@ func (a *AgentCmd) Run(ctx *Context) error {
 	if err != nil {
 		return errors.Wrap(err, "failed to read kube cluster ID")
 	}
-	metricsAddr := "0"
-	tc := metrics.TelemetryConfig{
-		MetricServerAddr:  metricsAddr,
-		HTTPClientMetrics: true,
-		HTTPServerMetrics: true,
-	}
+
 	pxy := upboundagent.NewProxy(tgConfig, restConfig, kubeClusterID)
 
-	logrus.Info("Starting the Upbound agent", "controlPlaneID", cpID)
+	e := pxy.SetupRouter()
 
-	serverAddr := fmt.Sprintf(":%s", serverPort)
+	logrus.Infof("Starting the Upbound agent with controlPlaneID %s", cpID)
+	s := &http.Server{
+		Handler:           e,
+		Addr:              fmt.Sprintf(":%s", serverPort),
+		ReadTimeout:       readTimeout,
+		ReadHeaderTimeout: readHeaderTimeout,
+		// Note(turkenh): WriteTimeout intentionally left as "0" since setting a write timeout breaks k8s watch requests.
+		WriteTimeout: 0,
+	}
 
-	s := service.NewService(pxy, debug, serviceName, "", serverAddr,
-		"", version.Version, 0.0, 200, 400,
-		false, tlsCertFile, tlsKeyFile, true, tc)
-	s.Run()
+	go func() {
+		if err := s.ListenAndServeTLS(tlsCertFile, tlsKeyFile); err != nil && err != http.ErrServerClosed {
+			logrus.WithError(err).Fatal("service stopped unexpectedly")
+		}
+	}()
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	// interrupt signal sent from terminal
+	signal.Notify(quit, syscall.SIGINT)
+	// sigterm signal sent from kubernetes
+	signal.Notify(quit, syscall.SIGTERM)
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := pxy.Drain(); err != nil {
+		// Error from draining listeners, or context timeout:
+		logrus.WithError(err).Error("unable to drain service")
+	}
+	// TODO(turkenh): wait with timeout until IsDraining false.
+	if err := s.Shutdown(ctx); err != nil {
+		logrus.WithError(err).Fatal("unable to shutdown service")
+	}
 
 	return nil
 }

@@ -6,13 +6,16 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
+	"github.com/labstack/echo-contrib/jaegertracing"
+	"github.com/labstack/echo-contrib/prometheus"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -24,10 +27,12 @@ import (
 )
 
 const (
-	proxyPathArg             = "*"
-	k8sHandlerPath           = "/k8s/*"
-	graphqlHandlerPath       = "/graphql"
-	natsLivenessHandlerPath  = "/natz"
+	proxyPathArg = "*"
+
+	k8sHandlerPath      = "/k8s/*"
+	graphqlHandlerPath  = "/graphql"
+	livenessHandlerPath = "/livez"
+
 	headerAuthorization      = "Authorization"
 	groupCrossplaneOwner     = "crossplane:masters"
 	groupSystemAuthenticated = "system:authenticated"
@@ -47,8 +52,7 @@ const (
 	// serviceGraphQL is the name of the graphql kubernetes service
 	serviceGraphQL = "crossplane-graphql"
 
-	// watchFlushInterval the time for the ReverseProxy to flush it's data to the response, -1 = immediate.
-	watchFlushInterval = -1
+	keepAliveInterval = time.Second * 5
 )
 
 var (
@@ -81,8 +85,6 @@ type TokenClaims struct {
 
 // NewProxy returns a new Proxy
 func NewProxy(config *Config, restConfig *rest.Config, clusterID string) *Proxy { // nolint:gocyclo
-	logrus.Info("starting upbound agent proxy server...")
-
 	if config.DebugMode {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
@@ -137,30 +139,41 @@ func getSubjectForAgent(agentID uuid.UUID) string {
 	return fmt.Sprintf("platforms.%s.gateway", agentID.String())
 }
 
-// SetupRoutes satisfies RouteInitializer Interface from Upbound Runtime to setup a service.
-func (p *Proxy) SetupRoutes(engine *echo.Echo) {
-	// TODO: plumb this in a more intuitive way. In routeNatsRequest we use this reference to ServeHTTP response.
-	// This is here because UpboundAgent serves incoming nats requests via echo.ServeHTTP
-	// We need to do cleanup on subscription returned from us.Listen and this seems like a bad place.
+// SetupRouter setup an echo instance as a router.
+func (p *Proxy) SetupRouter() *echo.Echo {
+	e := echo.New()
+
+	e.Logger.SetLevel(log.ERROR)
+	if p.config.DebugMode {
+		e.Use(middleware.Logger())
+		e.Logger.SetLevel(log.DEBUG)
+	}
+
+	e.Use(middleware.Recover())
+
+	prm := prometheus.NewPrometheus("upbound_agent", nil)
+	prm.Use(e)
+
+	jt := jaegertracing.New(e, nil)
+	defer jt.Close() // nolint:errcheck
+
+	e.Any(k8sHandlerPath, p.k8s())
+	e.Any(graphqlHandlerPath, p.graphql())
+	e.Any(livenessHandlerPath, p.livez())
 
 	agentID, err := uuid.Parse(p.config.EnvID)
 	if err != nil {
 		logrus.Fatal(err)
 	}
-	keepAliveInterval := time.Second * 5
-
-	agent := natsproxy.NewAgent(p.nc, agentID, engine, getSubjectForAgent(agentID), keepAliveInterval)
+	agent := natsproxy.NewAgent(p.nc, agentID, e, getSubjectForAgent(agentID), keepAliveInterval)
 	err = agent.Listen()
 
 	if err != nil {
 		logrus.WithError(err).Panic("failed to listen to nats")
 	}
-
 	p.agent = agent
 
-	engine.Any(k8sHandlerPath, p.k8s())
-	engine.Any(graphqlHandlerPath, p.graphql())
-	engine.Any(natsLivenessHandlerPath, p.natz())
+	return e
 }
 
 // Drain the agent
@@ -175,15 +188,14 @@ func (p *Proxy) IsDraining() bool {
 	return p.agent.IsDraining()
 }
 
-// TODO(hasan): needs testing as a liveness/readyness check
-func (p *Proxy) natz() echo.HandlerFunc {
+func (p *Proxy) livez() echo.HandlerFunc {
 	logrus.Debug("Proxy.nc.Status()")
 
 	return func(c echo.Context) error {
-		if p.nc.Status() == nats.CLOSED || p.nc.Status() == nats.DISCONNECTED {
-			return c.JSON(http.StatusServiceUnavailable, echo.Map{"status": http.StatusServiceUnavailable, "nats-status": p.nc.Status()})
+		if p.nc.Status() == nats.CONNECTED {
+			return c.JSON(http.StatusOK, echo.Map{"status": http.StatusOK, "nats-status": p.nc.Status()})
 		}
-		return c.JSON(http.StatusOK, echo.Map{"status": http.StatusOK, "nats-status": p.nc.Status()})
+		return c.JSON(http.StatusServiceUnavailable, echo.Map{"status": http.StatusServiceUnavailable, "nats-status": p.nc.Status()})
 	}
 }
 
@@ -242,14 +254,6 @@ func (p *Proxy) k8s() echo.HandlerFunc {
 		k8sProxy := httputil.NewSingleHostReverseProxy(p.kubeHost)
 		k8sProxy.Transport = irt
 		k8sProxy.ErrorHandler = p.error
-		if isWatchRequest(c) {
-			// ?watch needs headers returned to client because it's an http streaming connection.
-			// https://golang.org/src/net/http/httputil/reverseproxy.go - Line 374 shows -1 for
-			// Conent-Type = "text/event-stream"
-			// TODO: confirm the exact ideal behavior here for network. Should it be 200 ms like
-			// https://github.com/kubernetes/kubernetes/blob/323f34858de18b862d43c40b2cced65ad8e24052/staging/src/k8s.io/apimachinery/pkg/util/proxy/upgradeaware.go#L85
-			k8sProxy.FlushInterval = watchFlushInterval
-		}
 
 		k8sProxy.ServeHTTP(c.Response(), reqCopy)
 		return nil
@@ -288,9 +292,7 @@ func CloneAllowedHeaders(in http.Header) http.Header {
 }
 
 func (p *Proxy) error(rw http.ResponseWriter, r *http.Request, err error) {
-	// TODO(soorena776): there is not a `Error` method in the new logging
-	// interface. We might want to change this and use a different logger.
-	logrus.Warn("unknown error", "err", err, "remote-addr", r.RemoteAddr)
+	logrus.Error("unknown error", "err", err, "remote-addr", r.RemoteAddr)
 	http.Error(rw, "", http.StatusInternalServerError)
 }
 
@@ -367,14 +369,4 @@ func impersonationConfigForUser(u internal.CrossplaneAccessor) (transport.Impers
 			keyUpboundUser: {user},
 		},
 	}, nil
-}
-
-// isWatchRequest detects k8s requests that include the ?watch=true param indicating that we should stream response data
-func isWatchRequest(c echo.Context) bool {
-	if queryParam := c.QueryParam("watch"); queryParam != "" {
-		if isWatch, _ := strconv.ParseBool(queryParam); isWatch {
-			return true
-		}
-	}
-	return false
 }

@@ -27,6 +27,7 @@ const (
 	proxyPathArg             = "*"
 	k8sHandlerPath           = "/k8s/*"
 	graphqlHandlerPath       = "/graphql"
+	natsLivenessHandlerPath  = "/natz"
 	headerAuthorization      = "Authorization"
 	groupCrossplaneOwner     = "crossplane:masters"
 	groupSystemAuthenticated = "system:authenticated"
@@ -159,6 +160,7 @@ func (p *Proxy) SetupRoutes(engine *echo.Echo) {
 
 	engine.Any(k8sHandlerPath, p.k8s())
 	engine.Any(graphqlHandlerPath, p.graphql())
+	engine.Any(natsLivenessHandlerPath, p.natz())
 }
 
 // Drain the agent
@@ -171,6 +173,18 @@ func (p *Proxy) Drain() error {
 func (p *Proxy) IsDraining() bool {
 	logrus.Debug("Proxy.IsDraining()")
 	return p.agent.IsDraining()
+}
+
+// TODO(hasan): needs testing as a liveness/readyness check
+func (p *Proxy) natz() echo.HandlerFunc {
+	logrus.Debug("Proxy.nc.Status()")
+
+	return func(c echo.Context) error {
+		if p.nc.Status() == nats.CLOSED || p.nc.Status() == nats.DISCONNECTED {
+			return c.JSON(http.StatusServiceUnavailable, echo.Map{"status": http.StatusServiceUnavailable, "nats-status": p.nc.Status()})
+		}
+		return c.JSON(http.StatusOK, echo.Map{"status": http.StatusOK, "nats-status": p.nc.Status()})
+	}
 }
 
 func (p *Proxy) graphql() echo.HandlerFunc {

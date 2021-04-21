@@ -17,5 +17,17 @@ func newRestyClient(host string, debug bool) *resty.Client {
 
 	c.SetTransport(&ochttp.Transport{})
 
+	c.OnRequestLog(func(r *resty.RequestLog) error {
+		// masking authorization header
+		r.Header.Set("Authorization", "[REDACTED]")
+		r.Body = "[REDACTED]"
+		return nil
+	})
+
+	c.OnResponseLog(func(r *resty.ResponseLog) error {
+		r.Body = "[REDACTED]"
+		return nil
+	})
+
 	return c
 }

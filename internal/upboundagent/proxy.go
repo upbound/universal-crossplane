@@ -406,7 +406,7 @@ func impersonationConfigForUser(u internal.CrossplaneAccessor) (transport.Impers
 	groups := u.TeamIDs
 	isOwner := u.IsOwner
 
-	logrus.Debug("User info", "isowner", isOwner, "user", user, "groups", groups)
+	logrus.Debugf("User info: isowner %v user %s groups %v", isOwner, user, groups)
 
 	if user == "" {
 		return transport.ImpersonationConfig{}, errors.New(errUsernameMissing)

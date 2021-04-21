@@ -24,7 +24,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.4.1 // indirect
-	github.com/upbound/nats-proxy v0.1.1
+	github.com/upbound/nats-proxy v0.1.4
 	go.opencensus.io v0.22.5
 	golang.org/x/tools v0.0.0-20200916195026-c9a70fc28ce3 // indirect
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect

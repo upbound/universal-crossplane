@@ -18,6 +18,10 @@ rules:
   - apiGroups: [""]
     resources: [namespaces]
     verbs: [get, list, watch]
+  # Universal Crossplane viewers may see CRDs installed in the cluster.
+  - apiGroups: [apiextensions.k8s.io]
+    resources: [customresourcedefinitions]
+    verbs: [get, list, watch]
   # Universal Crossplane viewers have read-only access to built in Crossplane types.
   - apiGroups:
       - apiextensions.crossplane.io
@@ -44,6 +48,10 @@ rules:
   # Universal Crossplane editors may see which namespaces exist, but not edit them.
   - apiGroups: [""]
     resources: [namespaces]
+    verbs: [get, list, watch]
+  # Universal Crossplane viewers may see CRDs installed in the cluster.
+  - apiGroups: [apiextensions.k8s.io]
+    resources: [customresourcedefinitions]
     verbs: [get, list, watch]
   # Universal Crossplane editors have full access to built in Crossplane types.
   - apiGroups:

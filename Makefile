@@ -18,7 +18,7 @@ PACKAGE_NAME := universal-crossplane
 # Versions
 
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
-CROSSPLANE_TAG := v1.2.0-rc.0-129-g55b38632
+CROSSPLANE_TAG := v1.2.0-rc.0-133-g2e227c16
 
 BOOTSTRAPPER_TAG := $(VERSION)
 AGENT_TAG := $(VERSION)

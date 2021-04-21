@@ -1,12 +1,17 @@
 package upboundagent
 
 import (
+	"context"
 	"crypto/tls"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
+	"os/signal"
 	"strings"
+	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -29,9 +34,10 @@ import (
 const (
 	proxyPathArg = "*"
 
-	k8sHandlerPath      = "/k8s/*"
-	graphqlHandlerPath  = "/graphql"
-	livenessHandlerPath = "/livez"
+	readynessHandlerPath = "/readyz"
+	livenessHandlerPath  = "/livez"
+	k8sHandlerPath       = "/k8s/*"
+	graphqlHandlerPath   = "/graphql"
 
 	headerAuthorization      = "Authorization"
 	groupCrossplaneOwner     = "crossplane:masters"
@@ -40,6 +46,16 @@ const (
 	keyUpboundUser   = "user-on-upbound-cloud"
 	userUpboundCloud = "upbound-cloud-user"
 
+	serviceGraphQL = "crossplane-graphql"
+
+	readHeaderTimeout = 5 * time.Second
+	readTimeout       = 10 * time.Second
+	keepAliveInterval = 5 * time.Second
+	drainTimeout      = 20 * time.Second
+	shutdownTimeout   = 20 * time.Second
+)
+
+const (
 	errUnableToValidateToken          = "unable to validate token"
 	errUsernameMissing                = "username is missing"
 	errMissingAuthHeader              = "missing authorization header"
@@ -48,11 +64,6 @@ const (
 	errInvalidEnvID                   = "invalid environment id: %s, expecting: %s"
 	errUnexpectedSigningMethod        = "unexpected signing method, expecting RS256 but found: %v"
 	errFailedToGetImpersonationConfig = "failed to get impersonation config"
-
-	// serviceGraphQL is the name of the graphql kubernetes service
-	serviceGraphQL = "crossplane-graphql"
-
-	keepAliveInterval = time.Second * 5
 )
 
 var (
@@ -66,7 +77,7 @@ var (
 	}
 )
 
-// Proxy is a Kubernetes Apiserver proxy
+// Proxy is an Upbound Agent Proxy
 type Proxy struct {
 	config   *Config
 	kubeHost *url.URL
@@ -75,26 +86,18 @@ type Proxy struct {
 	nc            *nats.Conn
 	graphQLHost   *url.URL
 	agent         *natsproxy.Agent
-}
-
-// TokenClaims is the struct for custom claims of JWT token
-type TokenClaims struct {
-	User internal.CrossplaneAccessor `json:"payload"`
-	jwt.StandardClaims
+	server        *http.Server
+	isReady       *atomic.Value
 }
 
 // NewProxy returns a new Proxy
-func NewProxy(config *Config, restConfig *rest.Config, clusterID string) *Proxy { // nolint:gocyclo
-	if config.DebugMode {
-		logrus.SetLevel(logrus.DebugLevel)
-	}
-
+func NewProxy(config *Config, restConfig *rest.Config, clusterID string) *Proxy {
 	krt, err := roundTripperForRestConfig(restConfig)
 	if err != nil {
 		panic(err)
 	}
 
-	// get API server url
+	// get k8s API server url
 	kubeHost, err := url.Parse(restConfig.Host)
 	if err != nil {
 		logrus.WithError(err).Panic("failed to parse kube url")
@@ -106,16 +109,13 @@ func NewProxy(config *Config, restConfig *rest.Config, clusterID string) *Proxy 
 	}
 
 	var nc *nats.Conn
-
 	natsConn, err := newNATSConnManager(clusterID, config.NATS.JWTEndpoint, config.NATS.ControlPlaneToken, true)
 	if err != nil {
 		logrus.Fatal(err)
 	}
-
-	opts := []nats.Option{nats.Name(fmt.Sprintf("%s-%s", config.EnvID, config.NATS.Name))}
+	opts := []nats.Option{nats.Name(fmt.Sprintf("%s-%s", config.ControlPlaneID, config.NATS.Name))}
 	opts = natsproxy.SetupConnOptions(opts)
 	opts = append(opts, natsConn.setupAuthOption(), natsConn.setupTLSOption())
-
 	// Connect to NATS
 	nc, err = nats.Connect(config.NATS.Endpoint, opts...)
 	if err != nil {
@@ -129,18 +129,77 @@ func NewProxy(config *Config, restConfig *rest.Config, clusterID string) *Proxy 
 		kubeTransport: krt,
 		config:        config,
 		graphQLHost:   graphQLHost,
+		isReady:       &atomic.Value{},
 	}
 
 	return pxy
 }
 
-// getSubjectForAgent returns the NATS subject for agent for a given control plane
-func getSubjectForAgent(agentID uuid.UUID) string {
-	return fmt.Sprintf("platforms.%s.gateway", agentID.String())
+// Run runs Upbound Agent Proxy.
+func (p *Proxy) Run(addr, certFile, keyFile string) error {
+	p.isReady.Store(true)
+
+	e := p.setupRouter()
+
+	s := &http.Server{
+		Handler:           e,
+		Addr:              addr,
+		ReadTimeout:       readTimeout,
+		ReadHeaderTimeout: readHeaderTimeout,
+		// Note(turkenh): WriteTimeout intentionally left as "0" since setting a write timeout breaks k8s watch requests.
+		WriteTimeout: 0,
+	}
+	p.server = s
+	go func() {
+		if err := s.ListenAndServeTLS(certFile, keyFile); err != nil && err != http.ErrServerClosed {
+			logrus.WithError(err).Fatal("service stopped unexpectedly")
+		}
+	}()
+
+	// Graceful shutdown
+	quit := make(chan os.Signal, 1)
+	// interrupt signal sent from terminal
+	signal.Notify(quit, syscall.SIGINT)
+	// sigterm signal sent from kubernetes
+	signal.Notify(quit, syscall.SIGTERM)
+	<-quit
+
+	return p.shutdown()
 }
 
-// SetupRouter setup an echo instance as a router.
-func (p *Proxy) SetupRouter() *echo.Echo {
+func (p *Proxy) shutdown() error {
+	p.isReady.Store(false)
+
+	logrus.Debug("proxy shutdown: draining nats agent")
+	dtc, cancel := context.WithTimeout(context.Background(), drainTimeout)
+	defer cancel()
+	err := p.agent.Drain()
+	if err != nil {
+		logrus.WithError(err).Error("error on drain")
+		return err
+	}
+
+draining:
+	for p.agent.IsDraining() {
+		select {
+		case <-dtc.Done():
+			logrus.Error("proxy shutdown: drain timed out")
+			break draining
+		default:
+			logrus.Debug("proxy shutdown: still draining")
+			time.Sleep(100 * time.Millisecond)
+		}
+	}
+
+	logrus.Debug("proxy shutdown: shutting down server")
+	stc, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	return p.server.Shutdown(stc)
+}
+
+// setupRouter setup an echo instance as a router.
+func (p *Proxy) setupRouter() *echo.Echo {
 	e := echo.New()
 
 	e.Logger.SetLevel(log.ERROR)
@@ -159,9 +218,10 @@ func (p *Proxy) SetupRouter() *echo.Echo {
 
 	e.Any(k8sHandlerPath, p.k8s())
 	e.Any(graphqlHandlerPath, p.graphql())
+	e.Any(readynessHandlerPath, p.readyz())
 	e.Any(livenessHandlerPath, p.livez())
 
-	agentID, err := uuid.Parse(p.config.EnvID)
+	agentID, err := uuid.Parse(p.config.ControlPlaneID)
 	if err != nil {
 		logrus.Fatal(err)
 	}
@@ -176,26 +236,21 @@ func (p *Proxy) SetupRouter() *echo.Echo {
 	return e
 }
 
-// Drain the agent
-func (p *Proxy) Drain() error {
-	logrus.Debug("Proxy.Drain() will drain agent")
-	return p.agent.Drain()
-}
-
-// IsDraining checks if agent is still draining
-func (p *Proxy) IsDraining() bool {
-	logrus.Debug("Proxy.IsDraining()")
-	return p.agent.IsDraining()
-}
-
 func (p *Proxy) livez() echo.HandlerFunc {
-	logrus.Debug("Proxy.nc.Status()")
-
 	return func(c echo.Context) error {
 		if p.nc.Status() == nats.CONNECTED {
 			return c.JSON(http.StatusOK, echo.Map{"status": http.StatusOK, "nats-status": p.nc.Status()})
 		}
 		return c.JSON(http.StatusServiceUnavailable, echo.Map{"status": http.StatusServiceUnavailable, "nats-status": p.nc.Status()})
+	}
+}
+
+func (p *Proxy) readyz() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if p.isReady.Load().(bool) {
+			return c.JSON(http.StatusOK, echo.Map{"status": http.StatusOK})
+		}
+		return c.JSON(http.StatusServiceUnavailable, echo.Map{"status": http.StatusServiceUnavailable})
 	}
 }
 
@@ -226,18 +281,18 @@ func (p *Proxy) k8s() echo.HandlerFunc {
 
 		tc, err := p.reviewToken(c.Request().Header)
 		if err != nil {
-			logrus.WithError(err).Warnf("Failed to fetch ca ca token")
+			logrus.WithError(err).Warnf("Failed to fetch ca token")
 			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": fmt.Sprintf("%s - %s", errUnableToValidateToken, err)})
 		}
 
 		// Work on a copy of the request, RoundTrip should never modify the request:
 		// https://golang.org/src/net/http/client.go#L103
-		reqCopy := SanitizeRequest(c.Request())
+		reqCopy := sanitizeRequest(c.Request())
 		reqCopy.URL.Path = parseDestinationPath(c) // k8s/path -> path
 
 		cid := tc.Audience
-		if cid != p.config.EnvID {
-			message := fmt.Sprintf(errInvalidEnvID, cid, p.config.EnvID)
+		if cid != p.config.ControlPlaneID {
+			message := fmt.Sprintf(errInvalidEnvID, cid, p.config.ControlPlaneID)
 			logrus.Warnf(message)
 			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": message})
 		}
@@ -265,21 +320,21 @@ func parseDestinationPath(c echo.Context) string {
 	return c.Param(proxyPathArg)
 }
 
-// SanitizeRequest creates a shallow copy of the request along with a deep copy of the allowed Headers.
-func SanitizeRequest(req *http.Request) *http.Request {
+// sanitizeRequest creates a shallow copy of the request along with a deep copy of the allowed Headers.
+func sanitizeRequest(req *http.Request) *http.Request {
 	r := new(http.Request)
 
 	// shallow clone
 	*r = *req
 
 	// deep copy headers
-	r.Header = CloneAllowedHeaders(req.Header)
+	r.Header = cloneAllowedHeaders(req.Header)
 
 	return r
 }
 
-// CloneAllowedHeaders deep copies allowed headers
-func CloneAllowedHeaders(in http.Header) http.Header {
+// cloneAllowedHeaders deep copies allowed headers
+func cloneAllowedHeaders(in http.Header) http.Header {
 	out := http.Header{}
 	var val string
 	for i := 0; i < len(allowedHeaders); i++ {
@@ -296,7 +351,7 @@ func (p *Proxy) error(rw http.ResponseWriter, r *http.Request, err error) {
 	http.Error(rw, "", http.StatusInternalServerError)
 }
 
-func (p *Proxy) reviewToken(requestHeaders http.Header) (*TokenClaims, error) {
+func (p *Proxy) reviewToken(requestHeaders http.Header) (*internal.TokenClaims, error) {
 	auth := strings.TrimSpace(requestHeaders.Get(headerAuthorization))
 	if auth == "" {
 		return nil, errors.New(errMissingAuthHeader)
@@ -307,7 +362,7 @@ func (p *Proxy) reviewToken(requestHeaders http.Header) (*TokenClaims, error) {
 	}
 
 	tokenStr := parts[1]
-	tcs := &TokenClaims{}
+	tcs := &internal.TokenClaims{}
 	token, err := jwt.ParseWithClaims(tokenStr, tcs, func(token *jwt.Token) (interface{}, error) {
 		if sm, ok := token.Method.(*jwt.SigningMethodRSA); !ok || sm.Name != "RS256" {
 			return nil, errors.New(fmt.Sprintf(errUnexpectedSigningMethod, token.Header["alg"]))
@@ -369,4 +424,9 @@ func impersonationConfigForUser(u internal.CrossplaneAccessor) (transport.Impers
 			keyUpboundUser: {user},
 		},
 	}, nil
+}
+
+// getSubjectForAgent returns the NATS subject for agent for a given control plane
+func getSubjectForAgent(agentID uuid.UUID) string {
+	return fmt.Sprintf("platforms.%s.gateway", agentID.String())
 }

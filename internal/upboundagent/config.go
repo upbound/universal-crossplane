@@ -9,20 +9,19 @@ import (
 type NATSClientConfig struct {
 	Name     string
 	Endpoint string
-	// JWTEndpoint is the Upbound api endpoint for fetching NATS JWT for platforms
+	// JWTEndpoint is the Upbound API endpoint for fetching NATS JWT for control planes
 	JWTEndpoint string
 	// ControlPlaneToken is the token to authenticate against JWTEndpoint
 	ControlPlaneToken string
 	CABundleFile      string
 }
 
-// Config maintains the configurations for the upbound agent
+// Config maintains the configurations for the Upbound Agent
 type Config struct {
 	// DebugMode enables debug level logging
 	DebugMode         bool
-	EnvID             string
+	ControlPlaneID    string
 	TokenRSAPublicKey *rsa.PublicKey
-	GraphQLHost       string
 	GraphQLCACertPool *x509.CertPool
 	NATS              *NATSClientConfig
 }

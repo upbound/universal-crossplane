@@ -6,13 +6,8 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
-	"net/http"
-	"os"
-	"os/signal"
 	"path/filepath"
 	"strings"
-	"syscall"
-	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/dgrijalva/jwt-go"
@@ -31,9 +26,6 @@ import (
 
 const (
 	prefixPlatformTokenSubject = "controlPlane|"
-
-	readHeaderTimeout = time.Second * 5
-	readTimeout       = time.Second * 10
 )
 
 const (
@@ -43,8 +35,8 @@ const (
 	errCPIDInTokenNotValidUUID   = "control plane id in token is not a valid UUID: %s"
 )
 
-// CliContext represents a cli context
-type CliContext struct {
+// Context represents a cli context
+type Context struct {
 	Debug bool
 }
 
@@ -69,13 +61,13 @@ var cli struct {
 
 func main() {
 	ctx := kong.Parse(&cli)
-	err := ctx.Run(&CliContext{Debug: cli.Debug})
+	err := ctx.Run(&Context{Debug: cli.Debug})
 	ctx.FatalIfErrorf(err)
 }
 
 // Run runs the agent command
-func (a *AgentCmd) Run(cli *CliContext) error { // nolint:gocyclo
-	debug := cli.Debug
+func (a *AgentCmd) Run(ctx *Context) error {
+	debug := ctx.Debug
 	podName := a.PodName
 	serverPort := a.ServerPort
 	tlsCertFile := a.TLSCertFile
@@ -91,16 +83,6 @@ func (a *AgentCmd) Run(cli *CliContext) error { // nolint:gocyclo
 	if debug {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
-	logrus.Debug("Starting Upbound Agent with: ",
-		fmt.Sprintf("%s: %v, ", "version", version.Version),
-		fmt.Sprintf("%s: %v, ", "debug", debug),
-		fmt.Sprintf("%s: %v, ", "pod-name", podName),
-		fmt.Sprintf("%s: %v, ", "server-port", serverPort),
-		fmt.Sprintf("%s: %v, ", "tls-cert-file", tlsCertFile),
-		fmt.Sprintf("%s: %v, ", "tls-private-key-file", tlsKeyFile),
-		fmt.Sprintf("%s: %v, ", "graphql-cabundle-file", graphqlCABundleFile),
-		fmt.Sprintf("%s: %v, ", "nats-endpoint", natsEndpoint),
-		fmt.Sprintf("%s: %v, ", "nats-jwt-endpoint", natsJWTEndpoint))
 
 	cpID, err := readCPIDFromToken(cpToken)
 	if err != nil {
@@ -130,9 +112,8 @@ func (a *AgentCmd) Run(cli *CliContext) error { // nolint:gocyclo
 
 	tgConfig := &upboundagent.Config{
 		DebugMode:         debug,
-		EnvID:             cpID,
+		ControlPlaneID:    cpID,
 		TokenRSAPublicKey: pk,
-		GraphQLHost:       "https://crossplane-graphql",
 		GraphQLCACertPool: graphqlCertPool,
 		NATS: &upboundagent.NATSClientConfig{
 			Name:              podName,
@@ -153,44 +134,20 @@ func (a *AgentCmd) Run(cli *CliContext) error { // nolint:gocyclo
 
 	pxy := upboundagent.NewProxy(tgConfig, restConfig, kubeClusterID)
 
-	e := pxy.SetupRouter()
+	logrus.Info("Starting Upbound Agent ",
+		fmt.Sprintf("%s: %v, ", "version", version.Version),
+		fmt.Sprintf("%s: %v, ", "control-plane-id", cpID),
+		fmt.Sprintf("%s: %v, ", "debug", debug),
+		fmt.Sprintf("%s: %v, ", "pod-name", podName),
+		fmt.Sprintf("%s: %v, ", "server-port", serverPort),
+		fmt.Sprintf("%s: %v, ", "tls-cert-file", tlsCertFile),
+		fmt.Sprintf("%s: %v, ", "tls-private-key-file", tlsKeyFile),
+		fmt.Sprintf("%s: %v, ", "graphql-cabundle-file", graphqlCABundleFile),
+		fmt.Sprintf("%s: %v, ", "nats-endpoint", natsEndpoint),
+		fmt.Sprintf("%s: %v", "nats-jwt-endpoint", natsJWTEndpoint))
 
-	logrus.Infof("Starting the Upbound agent with controlPlaneID %s", cpID)
-	s := &http.Server{
-		Handler:           e,
-		Addr:              fmt.Sprintf(":%s", serverPort),
-		ReadTimeout:       readTimeout,
-		ReadHeaderTimeout: readHeaderTimeout,
-		// Note(turkenh): WriteTimeout intentionally left as "0" since setting a write timeout breaks k8s watch requests.
-		WriteTimeout: 0,
-	}
-
-	go func() {
-		if err := s.ListenAndServeTLS(tlsCertFile, tlsKeyFile); err != nil && err != http.ErrServerClosed {
-			logrus.WithError(err).Fatal("service stopped unexpectedly")
-		}
-	}()
-
-	// Graceful shutdown
-	quit := make(chan os.Signal, 1)
-	// interrupt signal sent from terminal
-	signal.Notify(quit, syscall.SIGINT)
-	// sigterm signal sent from kubernetes
-	signal.Notify(quit, syscall.SIGTERM)
-	<-quit
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-	if err := pxy.Drain(); err != nil {
-		// Error from draining listeners, or context timeout:
-		logrus.WithError(err).Error("unable to drain service")
-	}
-	// TODO(turkenh): wait with timeout until IsDraining false.
-	if err := s.Shutdown(ctx); err != nil {
-		logrus.WithError(err).Fatal("unable to shutdown service")
-	}
-
-	return nil
+	addr := fmt.Sprintf(":%s", serverPort)
+	return pxy.Run(addr, tlsCertFile, tlsKeyFile)
 }
 
 func generateTrustedCertPool(b []byte) (*x509.CertPool, error) {

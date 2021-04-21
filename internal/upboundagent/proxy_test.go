@@ -272,7 +272,7 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 		t.Run(name, func(t *testing.T) {
 			p := &Proxy{
 				kubeTransport: mockRoundTripper{},
-				config:        &Config{EnvID: testEnvID},
+				config:        &Config{ControlPlaneID: testEnvID},
 				kubeHost:      kubeURL, // No function just to avoid nil ref
 			}
 			if tc.publicKey != nil {
@@ -281,7 +281,7 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 					t.Fatalf("invalid input public key: %v", err)
 				}
 				p.config = &Config{
-					EnvID:             testEnvID,
+					ControlPlaneID:    testEnvID,
 					TokenRSAPublicKey: k,
 				}
 			}
@@ -329,7 +329,7 @@ func TestProxy_reviewToken(t *testing.T) {
 		req       *http.Request
 	}
 	type want struct {
-		out *TokenClaims
+		out *internal.TokenClaims
 		err error
 	}
 	cases := map[string]struct {
@@ -409,7 +409,7 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 			},
 			want: want{
 				err: nil,
-				out: &TokenClaims{
+				out: &internal.TokenClaims{
 					User: internal.CrossplaneAccessor{
 						TeamIDs:        []string{"test1", "test2"},
 						Identifier:     "test",

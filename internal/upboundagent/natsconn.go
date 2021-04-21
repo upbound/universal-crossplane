@@ -18,6 +18,9 @@ import (
 const (
 	natsTokenPath = "/v1/nats/token"
 	natsCAPath    = "/v1/gw/certs"
+
+	keyNatsCA = "nats_ca"
+	keyToken  = "token"
 )
 
 type natsConnManager struct {
@@ -117,11 +120,11 @@ func fetchCABundle(client *resty.Client, ubcNATSEndpointToken string) (string, e
 	if err := json.Unmarshal(resp.Body(), &respBody); err != nil {
 		return "", errors.Wrap(err, "failed to unmarshall nats ca bundle response")
 	}
-	if respBody["nats_ca"] == "" {
+	if respBody[keyNatsCA] == "" {
 		return "", errors.New("empty nats ca bundle received")
 	}
 
-	return respBody["nats_ca"], nil
+	return respBody[keyNatsCA], nil
 }
 
 func fetchNewJWTToken(client *resty.Client, ubcNATSEndpointToken, clusterID, publicKey string) (string, error) {
@@ -154,11 +157,11 @@ func fetchNewJWTToken(client *resty.Client, ubcNATSEndpointToken, clusterID, pub
 	if err := json.Unmarshal(resp.Body(), &respBody); err != nil {
 		return "", errors.Wrap(err, "failed to unmarshall nats token response")
 	}
-	if respBody["token"] == "" {
+	if respBody[keyToken] == "" {
 		return "", errors.New("empty token received")
 	}
 
-	return respBody["token"], nil
+	return respBody[keyToken], nil
 }
 
 func isJWTValid(token string) bool {

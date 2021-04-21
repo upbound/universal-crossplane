@@ -1,5 +1,7 @@
 package internal
 
+import "github.com/dgrijalva/jwt-go"
+
 // IdentifierKind - enumeration of supported identifier types
 type IdentifierKind string
 
@@ -20,4 +22,10 @@ type CrossplaneAccessor struct {
 	TeamIDs        []string       `json:"teamIds"`
 	Identifier     string         `json:"identifier"`
 	IdentifierKind IdentifierKind `json:"identifierKind"`
+}
+
+// TokenClaims is the struct for custom claims of JWT token
+type TokenClaims struct {
+	User CrossplaneAccessor `json:"payload"`
+	jwt.StandardClaims
 }

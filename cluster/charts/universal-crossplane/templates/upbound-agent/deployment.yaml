@@ -74,12 +74,12 @@ spec:
           readinessProbe:
             httpGet:
               scheme: HTTPS
-              path: /livez
+              path: /readyz
               port: 6443
             initialDelaySeconds: 5
             timeoutSeconds: 5
             periodSeconds: 5
-            failureThreshold: 5
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               scheme: HTTPS

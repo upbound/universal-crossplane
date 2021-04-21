@@ -72,7 +72,7 @@ func (am *AWSMarketplace) Register(ctx context.Context, s *v1.Secret, uid string
 		s.Data[SecretKeyAWSMeteringSignature] = []byte(aws.ToString(resp.Signature))
 		return am.client.Update(ctx, s)
 	})
-	return aws.ToString(resp.Signature), errors.Wrap(err, "cannot update aws marketplace secret")
+	return aws.ToString(resp.Signature), errors.Wrapf(err, "cannot update entitlement secret %s/%s", s.Namespace, s.Name)
 }
 
 // Verify makes sure the signature is signed by AWS Marketplace.

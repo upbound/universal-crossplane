@@ -34,6 +34,6 @@ func SetupAWSMarketplace(mgr ctrl.Manager, l logging.Logger) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&corev1.Secret{}).
-		WithEventFilter(resource.NewPredicates(resource.IsNamed(meta.SecretNameControlPlaneToken))).
+		WithEventFilter(resource.NewPredicates(resource.IsNamed(meta.SecretNameEntitlement))).
 		Complete(r)
 }

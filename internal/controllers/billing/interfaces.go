@@ -1,10 +1,14 @@
 package billing
 
-import "context"
+import (
+	"context"
+
+	v1 "k8s.io/api/core/v1"
+)
 
 // Registerer can register usage of universal-crossplane with idempotent calls.
 type Registerer interface {
-	Register(ctx context.Context, namespace, uid string) (string, error)
+	Register(ctx context.Context, secret *v1.Secret, uid string) (string, error)
 	Verify(token, uid string) (bool, error)
 }
 
@@ -17,7 +21,7 @@ func NewNopRegisterer() NopRegisterer {
 type NopRegisterer struct{}
 
 // Register does nothing.
-func (np NopRegisterer) Register(_ context.Context, _, _ string) (string, error) {
+func (np NopRegisterer) Register(_ context.Context, _ *v1.Secret, _ string) (string, error) {
 	return "", nil
 }
 

@@ -23,10 +23,10 @@ const (
 	AWSPublicKeyVersion = 1
 )
 
-// Constants used for in-cluster operations.
+// SecretKeyAWSMeteringSignature is the key whose value contains JWT signature returned
+// from AWS Metering Service.
 const (
-	SecretNameAWSMarketplace = "upbound-aws-marketplace"
-	SecretKeyAWSUsageToken   = "token"
+	SecretKeyAWSMeteringSignature = "awsMeteringSignature"
 )
 
 type marketplaceClient interface {
@@ -48,14 +48,9 @@ type AWSMarketplace struct {
 }
 
 // Register makes sure user is entitled for this usage in an idempotent way.
-func (am *AWSMarketplace) Register(ctx context.Context, namespace, uid string) (string, error) {
-	s := &v1.Secret{}
-	nn := types.NamespacedName{Name: SecretNameAWSMarketplace, Namespace: namespace}
-	if err := am.client.Get(ctx, nn, s); err != nil {
-		return "", errors.Wrap(err, "cannot get aws marketplace secret")
-	}
-	if len(s.Data[SecretKeyAWSUsageToken]) > 0 {
-		return string(s.Data[SecretKeyAWSUsageToken]), nil
+func (am *AWSMarketplace) Register(ctx context.Context, s *v1.Secret, uid string) (string, error) {
+	if len(s.Data[SecretKeyAWSMeteringSignature]) > 0 {
+		return string(s.Data[SecretKeyAWSMeteringSignature]), nil
 	}
 	u := &marketplacemetering.RegisterUsageInput{
 		ProductCode:      aws.String(AWSProductCode),
@@ -67,13 +62,14 @@ func (am *AWSMarketplace) Register(ctx context.Context, namespace, uid string) (
 		return "", errors.Wrap(err, "cannot register usage")
 	}
 	err = retry.OnError(retry.DefaultRetry, resource.IsAPIError, func() error {
+		nn := types.NamespacedName{Name: s.Name, Namespace: s.Namespace}
 		if err := am.client.Get(ctx, nn, s); err != nil {
 			return err
 		}
 		if s.Data == nil {
 			s.Data = map[string][]byte{}
 		}
-		s.Data[SecretKeyAWSUsageToken] = []byte(aws.ToString(resp.Signature))
+		s.Data[SecretKeyAWSMeteringSignature] = []byte(aws.ToString(resp.Signature))
 		return am.client.Update(ctx, s)
 	})
 	return aws.ToString(resp.Signature), errors.Wrap(err, "cannot update aws marketplace secret")

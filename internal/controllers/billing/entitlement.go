@@ -70,7 +70,8 @@ func NewReconciler(mgr manager.Manager, opts ...ReconcilerOption) *Reconciler {
 	return r
 }
 
-// Reconcile reconciles on tls secrets for uxp and fills the secret data with generated certificates
+// Reconcile reconciles on entitlement secret and registers & verifies that usage
+// is valid in given entitlement context.
 func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
 	log := r.log.WithValues("request", req)
 
@@ -79,24 +80,23 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	defer cancel()
 
 	s := &corev1.Secret{}
-	if err := r.client.Get(ctx, req.NamespacedName, s); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "cannot get control plane secret")
+	nn := types.NamespacedName{Name: meta.SecretNameEntitlement, Namespace: req.Namespace}
+	if err := r.client.Get(ctx, nn, s); err != nil {
+		return reconcile.Result{}, errors.Wrap(err, "cannot get entitlement secret")
 	}
-	if len(s.Data[meta.SecretKeyControlPlaneToken]) == 0 {
-		log.Info("waiting for control plane token", "duration", syncPeriod.String())
-		return reconcile.Result{RequeueAfter: syncPeriod}, nil
-	}
+
 	kubeNS := &corev1.Namespace{}
-	nn := types.NamespacedName{Name: "kube-system"}
+	nn = types.NamespacedName{Name: "kube-system"}
 	if err := r.client.Get(ctx, nn, kubeNS); err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "cannot get kube-system namespace")
 	}
 	uid := string(kubeNS.GetUID())
 
-	token, err := r.entitlement.Register(ctx, req.Namespace, uid)
+	token, err := r.entitlement.Register(ctx, s, uid)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "cannot register entitlement")
 	}
+
 	verified, err := r.entitlement.Verify(token, uid)
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, "cannot verify signature")
@@ -106,6 +106,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 		log.Info("entitlement signature is not valid")
 		return reconcile.Result{RequeueAfter: syncPeriod}, nil
 	}
+
 	log.Info("entitlement has been confirmed")
 	return reconcile.Result{}, nil
 }

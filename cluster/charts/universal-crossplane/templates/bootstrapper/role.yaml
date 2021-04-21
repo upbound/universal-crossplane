@@ -22,5 +22,5 @@ rules:
     - xgql-tls
     - upbound-control-plane-token
     {{- if .Values.billing.awsMarketplace.enabled }}
-    - upbound-aws-marketplace
+    - upbound-entitlement
     {{- end}}

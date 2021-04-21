@@ -35,11 +35,6 @@ const (
 	errCPIDInTokenNotValidUUID   = "control plane id in token is not a valid UUID: %s"
 )
 
-// Context represents a cli context
-type Context struct {
-	Debug bool
-}
-
 // AgentCmd represents the "upbound-agent" command
 type AgentCmd struct {
 	PodName             string `help:"Name of the agent pod."`
@@ -61,75 +56,58 @@ var cli struct {
 
 func main() {
 	ctx := kong.Parse(&cli)
-	err := ctx.Run(&Context{Debug: cli.Debug})
-	ctx.FatalIfErrorf(err)
-}
+	a := cli.Agent
 
-// Run runs the agent command
-func (a *AgentCmd) Run(ctx *Context) error {
-	debug := ctx.Debug
-	podName := a.PodName
-	serverPort := a.ServerPort
-	tlsCertFile := a.TLSCertFile
-	tlsKeyFile := a.TLSKeyFile
-	graphqlCABundleFile := a.GraphqlCABundleFile
-
-	natsEndpoint := a.NATSEndpoint
-	natsJWTEndpoint := a.NATSJwtEndpoint
-
-	cpToken := a.ControlPlaneToken
-	jwtPublicKey := a.JWTPublicKey
-
-	if debug {
+	if cli.Debug {
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 
-	cpID, err := readCPIDFromToken(cpToken)
+	cpID, err := readCPIDFromToken(a.ControlPlaneToken)
 	if err != nil {
-		return errors.Wrap(err, "failed to read control plane id from token")
+		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read control plane id from token"))
 	}
 
-	pem, err := base64.StdEncoding.DecodeString(jwtPublicKey)
+	pem, err := base64.StdEncoding.DecodeString(a.JWTPublicKey)
 	if err != nil {
-		return errors.Wrap(err, "failed to base64 decode provided jwt public key")
+		ctx.FatalIfErrorf(errors.Wrap(err, "failed to base64 decode provided jwt public key"))
 	}
 	pk, err := jwt.ParseRSAPublicKeyFromPEM(pem)
 	if err != nil {
-		return errors.Wrap(err, "failed to parse public key")
+		ctx.FatalIfErrorf(errors.Wrap(err, "failed to parse public key"))
 	}
 
 	var graphqlCertPool *x509.CertPool
-	if graphqlCABundleFile != "" {
-		b, err := ioutil.ReadFile(filepath.Clean(graphqlCABundleFile))
+	if a.GraphqlCABundleFile != "" {
+		b, err := ioutil.ReadFile(filepath.Clean(a.GraphqlCABundleFile))
 		if err != nil {
-			return errors.Wrap(err, "failed to read graphql ca bundle file")
+			ctx.FatalIfErrorf(errors.Wrap(err, "failed to read graphql ca bundle file"))
 		}
 		graphqlCertPool, err = generateTrustedCertPool(b)
 		if err != nil {
-			return errors.Wrap(err, "failed to generate graphql ca cert pool")
+			ctx.FatalIfErrorf(errors.Wrap(err, "failed to generate graphql ca cert pool"))
 		}
 	}
 
 	tgConfig := &upboundagent.Config{
-		DebugMode:         debug,
+		DebugMode:         cli.Debug,
 		ControlPlaneID:    cpID,
 		TokenRSAPublicKey: pk,
 		GraphQLCACertPool: graphqlCertPool,
 		NATS: &upboundagent.NATSClientConfig{
-			Name:              podName,
-			Endpoint:          natsEndpoint,
-			JWTEndpoint:       natsJWTEndpoint,
-			ControlPlaneToken: cpToken,
+			Name:              a.PodName,
+			Endpoint:          a.NATSEndpoint,
+			JWTEndpoint:       a.NATSJwtEndpoint,
+			ControlPlaneToken: a.ControlPlaneToken,
 		},
 	}
 
 	restConfig, err := config.GetConfig()
 	if err != nil {
-		return errors.Wrap(err, "failed to get rest config")
+		ctx.FatalIfErrorf(errors.Wrap(err, "failed to get rest config"))
 	}
 	kubeClusterID, err := readKubeClusterID(restConfig)
 	if err != nil {
-		return errors.Wrap(err, "failed to read kube cluster ID")
+		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read kube cluster ID"))
 	}
 
 	pxy := upboundagent.NewProxy(tgConfig, restConfig, kubeClusterID)
@@ -137,17 +115,17 @@ func (a *AgentCmd) Run(ctx *Context) error {
 	logrus.Info("Starting Upbound Agent ",
 		fmt.Sprintf("%s: %v, ", "version", version.Version),
 		fmt.Sprintf("%s: %v, ", "control-plane-id", cpID),
-		fmt.Sprintf("%s: %v, ", "debug", debug),
-		fmt.Sprintf("%s: %v, ", "pod-name", podName),
-		fmt.Sprintf("%s: %v, ", "server-port", serverPort),
-		fmt.Sprintf("%s: %v, ", "tls-cert-file", tlsCertFile),
-		fmt.Sprintf("%s: %v, ", "tls-private-key-file", tlsKeyFile),
-		fmt.Sprintf("%s: %v, ", "graphql-cabundle-file", graphqlCABundleFile),
-		fmt.Sprintf("%s: %v, ", "nats-endpoint", natsEndpoint),
-		fmt.Sprintf("%s: %v", "nats-jwt-endpoint", natsJWTEndpoint))
+		fmt.Sprintf("%s: %v, ", "debug", cli.Debug),
+		fmt.Sprintf("%s: %v, ", "pod-name", a.PodName),
+		fmt.Sprintf("%s: %v, ", "server-port", a.ServerPort),
+		fmt.Sprintf("%s: %v, ", "tls-cert-file", a.TLSCertFile),
+		fmt.Sprintf("%s: %v, ", "tls-private-key-file", a.TLSKeyFile),
+		fmt.Sprintf("%s: %v, ", "graphql-cabundle-file", a.GraphqlCABundleFile),
+		fmt.Sprintf("%s: %v, ", "nats-endpoint", a.NATSEndpoint),
+		fmt.Sprintf("%s: %v", "nats-jwt-endpoint", a.NATSJwtEndpoint))
 
-	addr := fmt.Sprintf(":%s", serverPort)
-	return pxy.Run(addr, tlsCertFile, tlsKeyFile)
+	addr := fmt.Sprintf(":%s", a.ServerPort)
+	ctx.FatalIfErrorf(errors.Wrap(pxy.Run(addr, a.TLSCertFile, a.TLSKeyFile), "cannot run upbound agent proxy"))
 }
 
 func generateTrustedCertPool(b []byte) (*x509.CertPool, error) {

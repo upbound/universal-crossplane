@@ -16,7 +16,6 @@ import (
 	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 
@@ -33,6 +32,8 @@ const (
 	errCPTokenNoSubjectKey       = "failed to get value for key \"sub\""
 	errCPTokenSubjectIsNotString = "failed to parse value for key \"sub\" as a string"
 	errCPIDInTokenNotValidUUID   = "control plane id in token is not a valid UUID: %s"
+	errFailedToGetKubeSystemNS   = "failed to get kube-system namespace"
+	errKubeSystemUIDEmpty        = "metadata.uid of kube-system namespace is empty"
 )
 
 // AgentCmd represents the "upbound-agent" command
@@ -54,7 +55,7 @@ var cli struct {
 	Agent AgentCmd `cmd:"" help:"Runs Upbound Agent"`
 }
 
-func main() {
+func main() { // nolint:gocyclo
 	ctx := kong.Parse(&cli)
 	a := cli.Agent
 
@@ -105,7 +106,11 @@ func main() {
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to get rest config"))
 	}
-	kubeClusterID, err := readKubeClusterID(restConfig)
+	kube, err := client.New(restConfig, client.Options{})
+	if err != nil {
+		ctx.FatalIfErrorf(errors.Wrap(err, "failed to initialize kubernetes client"))
+	}
+	kubeClusterID, err := readKubeClusterID(kube)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read kube cluster ID"))
 	}
@@ -160,17 +165,13 @@ func readCPIDFromToken(t string) (string, error) {
 	return envID, errors.Wrapf(err, errCPIDInTokenNotValidUUID, envID)
 }
 
-func readKubeClusterID(restConfig *rest.Config) (string, error) {
-	kube, err := client.New(restConfig, client.Options{})
-	if err != nil {
-		return "", errors.Wrap(err, "failed to initialize kubernetes client")
-	}
+func readKubeClusterID(kube client.Client) (string, error) {
 	ns := &corev1.Namespace{}
 	if err := kube.Get(context.Background(), types.NamespacedName{Name: "kube-system"}, ns); err != nil {
-		return "", errors.Wrap(err, "failed to get kube-system namespace")
+		return "", errors.Wrap(err, errFailedToGetKubeSystemNS)
 	}
 	if ns.GetUID() == "" {
-		return "", errors.New("metadata.uid of kube-system namespace is empty")
+		return "", errors.New(errKubeSystemUIDEmpty)
 	}
 	return string(ns.GetUID()), nil
 }

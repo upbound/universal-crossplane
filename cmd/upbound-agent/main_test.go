@@ -1,8 +1,15 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"testing"
+
+	"github.com/google/uuid"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/types"
+
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
@@ -84,6 +91,77 @@ func Test_readPlatformIDFromToken(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			got, gotErr := readCPIDFromToken(tc.args.t)
+			if diff := cmp.Diff(tc.want.err, gotErr, test.EquateErrors()); diff != "" {
+				t.Fatalf("readCPIDFromToken(...): -want error, +got error: %s", diff)
+			}
+			if diff := cmp.Diff(tc.want.id, got); diff != "" {
+				t.Errorf("readCPIDFromToken(...): -want result, +got result: %s", diff)
+			}
+		})
+	}
+}
+
+func Test_readKubeClusterID(t *testing.T) {
+	errBoom := errors.New("boom")
+	uid := uuid.New().String()
+
+	type args struct {
+		kube client.Client
+	}
+	type want struct {
+		id  string
+		err error
+	}
+	cases := map[string]struct {
+		args
+		want
+	}{
+		"FailedToGet": {
+			args{
+				kube: &test.MockClient{
+					MockGet: func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+						return errBoom
+					},
+				},
+			},
+			want{
+				err: errors.Wrap(errBoom, errFailedToGetKubeSystemNS),
+			},
+		},
+		"EmptyUID": {
+			args{
+				kube: &test.MockClient{
+					MockGet: func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+						return nil
+					},
+				},
+			},
+			want{
+				err: errors.New(errKubeSystemUIDEmpty),
+			},
+		},
+		"HappyPath": {
+			args{
+				kube: &test.MockClient{
+					MockGet: func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+						if key.Name == "kube-system" {
+							ns := obj.(*corev1.Namespace)
+							ns.SetUID(types.UID(uid))
+						}
+						return nil
+					},
+				},
+			},
+			want{
+				id:  uid,
+				err: nil,
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			got, gotErr := readKubeClusterID(tc.args.kube)
 			if diff := cmp.Diff(tc.want.err, gotErr, test.EquateErrors()); diff != "" {
 				t.Fatalf("readCPIDFromToken(...): -want error, +got error: %s", diff)
 			}

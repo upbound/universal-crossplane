@@ -14,7 +14,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/go-cmp/cmp"
 	"github.com/labstack/echo/v4"
-	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/transport"
@@ -285,7 +284,6 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 					TokenRSAPublicKey: k,
 				}
 			}
-			g := NewGomegaWithT(t)
 			rec := httptest.NewRecorder()
 			// We need close notify to support the proxy.
 			w := CloseNotifyWrapper{rec}
@@ -307,9 +305,13 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 				if w.Code != http.StatusOK {
 					wantBody += "\n" // Proxy adds `/n` for internal responses / errors
 				}
-				g.Expect(w.Body.String()).To(Equal(wantBody))
+				if diff := cmp.Diff(wantBody, w.Body.String()); diff != "" {
+					t.Errorf("serveHTTP(...): -want body, +got body: %s", diff)
+				}
 			}
-			g.Expect(w.Code).To(Equal(tc.want.respCode))
+			if diff := cmp.Diff(tc.want.respCode, w.Code); diff != "" {
+				t.Errorf("serveHTTP(...): -want code, +got code: %s", diff)
+			}
 		})
 	}
 }

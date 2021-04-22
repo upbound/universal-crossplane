@@ -2,14 +2,19 @@ package upboundagent
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 
+	"github.com/crossplane/crossplane-runtime/pkg/test"
+	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
 	"github.com/jarcoal/httpmock"
-	. "github.com/onsi/gomega"
 	"github.com/pkg/errors"
+)
+
+var (
+	errBoom = errors.New("boom")
 )
 
 func Test_fetchCA(t *testing.T) {
@@ -48,7 +53,7 @@ func Test_fetchCA(t *testing.T) {
 				responseBody: "some-error",
 			},
 			want: want{
-				err: fmt.Errorf("ca bundle request failed with 500 - \"some-error\""),
+				err: errors.New("ca bundle request failed with 500 - \"some-error\""),
 			},
 		},
 		"UnexpectedResponseBody": {
@@ -57,7 +62,8 @@ func Test_fetchCA(t *testing.T) {
 				responseBody: "test-ca",
 			},
 			want: want{
-				err: fmt.Errorf("failed to unmarshall nats ca bundle response: json: cannot unmarshal string into Go value of type map[string]string"),
+				//err: errors.New("failed to unmarshall nats ca bundle response: json: cannot unmarshal string into Go value of type map[string]string"),
+				err: errors.WithStack(errors.New("failed to unmarshall nats ca bundle response: json: cannot unmarshal string into Go value of type map[string]string")),
 			},
 		},
 		"EmptyToken": {
@@ -68,15 +74,19 @@ func Test_fetchCA(t *testing.T) {
 				},
 			},
 			want: want{
-				err: fmt.Errorf("empty nats ca bundle received"),
+				err: errors.New("empty nats ca bundle received"),
 			},
 		},
 		"RestyTransportErr": {
 			args: args{
-				responderErr: errors.New("boom"),
+				responderErr: errBoom,
 			},
 			want: want{
-				err: fmt.Errorf("failed to request ca bundle: Get \"https://foo.com/v1/gw/certs\": boom"),
+				err: errors.Wrap(&url.Error{
+					Op:  "Get",
+					URL: "https://foo.com/v1/gw/certs",
+					Err: errBoom,
+				}, "failed to request ca bundle"),
 			},
 		},
 	}
@@ -87,9 +97,10 @@ func Test_fetchCA(t *testing.T) {
 
 			httpmock.ActivateNonDefault(rc.GetClient())
 
-			g := NewGomegaWithT(t)
 			b, err := json.Marshal(tc.responseBody)
-			g.Expect(err).To(BeNil())
+			if err != nil {
+				t.Errorf("cannot unmarshal tc.responseBody %v", err)
+			}
 
 			var responder httpmock.Responder
 			if tc.responderErr != nil {
@@ -100,13 +111,12 @@ func Test_fetchCA(t *testing.T) {
 
 			httpmock.RegisterResponder(http.MethodGet, endpoint+natsCAPath, responder)
 
-			ca, err := fetchCABundle(rc, endpointToken)
-
-			g.Expect(ca).To(Equal(tc.want.ca))
-			if tc.err != nil {
-				g.Expect(err.Error()).To(Equal(tc.err.Error()))
-			} else {
-				g.Expect(err).To(BeNil())
+			got, gotErr := fetchCABundle(rc, endpointToken)
+			if diff := cmp.Diff(tc.want.err, gotErr, test.EquateErrors()); diff != "" {
+				t.Fatalf("fetchCABundle(...): -want error, +got error: %s", diff)
+			}
+			if diff := cmp.Diff(tc.want.ca, got); diff != "" {
+				t.Errorf("fetchCABundle(...): -want result, +got result: %s", diff)
 			}
 		})
 	}
@@ -149,7 +159,7 @@ func Test_fetchNewJWT(t *testing.T) {
 				responseBody: "some-error",
 			},
 			want: want{
-				err: fmt.Errorf("new token request failed with 500 - \"some-error\""),
+				err: errors.New("new token request failed with 500 - \"some-error\""),
 			},
 		},
 		"UnexpectedResponseBody": {
@@ -158,7 +168,7 @@ func Test_fetchNewJWT(t *testing.T) {
 				responseBody: "test-ca",
 			},
 			want: want{
-				err: fmt.Errorf("failed to unmarshall nats token response: json: cannot unmarshal string into Go value of type map[string]string"),
+				err: errors.WithStack(errors.New("failed to unmarshall nats token response: json: cannot unmarshal string into Go value of type map[string]string")),
 			},
 		},
 		"EmptyToken": {
@@ -169,15 +179,19 @@ func Test_fetchNewJWT(t *testing.T) {
 				},
 			},
 			want: want{
-				err: fmt.Errorf("empty token received"),
+				err: errors.New("empty token received"),
 			},
 		},
 		"RestyTransportErr": {
 			args: args{
-				responderErr: errors.New("boom"),
+				responderErr: errBoom,
 			},
 			want: want{
-				err: fmt.Errorf("failed to request new token: Post \"https://foo.com/v1/nats/token\": boom"),
+				err: errors.Wrap(&url.Error{
+					Op:  "Post",
+					URL: "https://foo.com/v1/nats/token",
+					Err: errBoom,
+				}, "failed to request new token"),
 			},
 		},
 	}
@@ -188,9 +202,10 @@ func Test_fetchNewJWT(t *testing.T) {
 
 			httpmock.ActivateNonDefault(rc.GetClient())
 
-			g := NewGomegaWithT(t)
 			b, err := json.Marshal(tc.responseBody)
-			g.Expect(err).To(BeNil())
+			if err != nil {
+				t.Errorf("cannot unmarshal tc.responseBody %v", err)
+			}
 
 			var responder httpmock.Responder
 			if tc.responderErr != nil {
@@ -201,13 +216,12 @@ func Test_fetchNewJWT(t *testing.T) {
 
 			httpmock.RegisterResponder(http.MethodPost, endpoint+natsTokenPath, responder)
 
-			token, err := fetchNewJWTToken(rc, endpointToken, clusterID.String(), "some-public-key")
-
-			g.Expect(token).To(Equal(tc.want.jwt))
-			if tc.err != nil {
-				g.Expect(err.Error()).To(Equal(tc.err.Error()))
-			} else {
-				g.Expect(err).To(BeNil())
+			got, gotErr := fetchNewJWTToken(rc, endpointToken, clusterID.String(), "some-public-key")
+			if diff := cmp.Diff(tc.want.err, gotErr, test.EquateErrors()); diff != "" {
+				t.Fatalf("fetchNewJWTToken(...): -want error, +got error: %s", diff)
+			}
+			if diff := cmp.Diff(tc.want.jwt, got); diff != "" {
+				t.Errorf("fetchNewJWTToken(...): -want result, +got result: %s", diff)
 			}
 		})
 	}
@@ -254,11 +268,11 @@ func Test_isTokenValid(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			g := NewGomegaWithT(t)
 
-			valid := isJWTValid(tc.jwt)
-
-			g.Expect(valid).To(Equal(tc.want.valid))
+			got := isJWTValid(tc.jwt)
+			if diff := cmp.Diff(tc.want.valid, got); diff != "" {
+				t.Errorf("isJWTValid(...): -want result, +got result: %s", diff)
+			}
 		})
 	}
 }

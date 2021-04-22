@@ -26,14 +26,12 @@ spec:
         - name: agent
           image: "{{ .Values.agent.image.repository }}:{{ .Values.agent.image.tag }}"
           args:
-          - upbound-agent
-          - --server-port
-          - "6443"
+          - agent
           - --tls-cert-file
           - /etc/certs/upbound-agent/tls.crt
-          - --tls-private-key-file
+          - --tls-key-file
           - /etc/certs/upbound-agent/tls.key
-          - --graphql-cabundle-file
+          - --graphql-ca-bundle-file
           - /etc/certs/upbound-agent/ca.crt
           - --nats-endpoint
           - nats://{{ .Values.upbound.connectHost }}:{{ .Values.upbound.connectPort | default "443" }}
@@ -76,19 +74,19 @@ spec:
           readinessProbe:
             httpGet:
               scheme: HTTPS
-              path: /svc/upbound-agent/ready
+              path: /readyz
               port: 6443
             initialDelaySeconds: 5
-            timeoutSeconds: 15
+            timeoutSeconds: 5
             periodSeconds: 5
-            failureThreshold: 5
+            failureThreshold: 3
           livenessProbe:
             httpGet:
               scheme: HTTPS
-              path: /svc/upbound-agent/up.json
+              path: /livez
               port: 6443
             initialDelaySeconds: 10
-            timeoutSeconds: 15
+            timeoutSeconds: 5
             periodSeconds: 30
             failureThreshold: 5
           volumeMounts:

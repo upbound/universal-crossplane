@@ -21,7 +21,7 @@ CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
 CROSSPLANE_TAG := v1.2.0-rc.0.106.gdb33bb23
 
 BOOTSTRAPPER_TAG := $(VERSION)
-AGENT_TAG := v0.25.0-alpha1.103.g59b3073
+AGENT_TAG := $(VERSION)
 GRAPHQL_TAG := v0.25.0-alpha1.41.g119b42a
 
 export BOOTSTRAPPER_TAG
@@ -38,7 +38,7 @@ S3_BUCKET ?= upbound.releases/$(PACKAGE_NAME)
 # ====================================================================================
 # Setup Go
 
-GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper
+GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper $(GO_PROJECT)/cmd/upbound-agent
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
 GO_SUBDIRS += cmd internal
 GO111MODULE = on
@@ -68,7 +68,7 @@ HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
 # all be in folders at the same level (no additional levels of nesting).
 
 DOCKER_REGISTRY = upbound
-IMAGES = uxp-bootstrapper
+IMAGES = uxp-bootstrapper upbound-agent
 OSBASEIMAGE = gcr.io/distroless/static:nonroot
 -include build/makelib/image.mk
 

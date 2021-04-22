@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/labstack/echo-contrib/jaegertracing"
@@ -23,7 +25,6 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"github.com/upbound/nats-proxy/pkg/natsproxy"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/transport"
@@ -79,6 +80,7 @@ var (
 
 // Proxy is an Upbound Agent Proxy
 type Proxy struct {
+	log      logging.Logger
 	config   *Config
 	kubeHost *url.URL
 	http.Header
@@ -91,7 +93,7 @@ type Proxy struct {
 }
 
 // NewProxy returns a new Proxy
-func NewProxy(config *Config, restConfig *rest.Config, clusterID string) *Proxy {
+func NewProxy(config *Config, restConfig *rest.Config, log logging.Logger, clusterID string) (*Proxy, error) {
 	krt, err := roundTripperForRestConfig(restConfig)
 	if err != nil {
 		panic(err)
@@ -100,30 +102,30 @@ func NewProxy(config *Config, restConfig *rest.Config, clusterID string) *Proxy 
 	// get k8s API server url
 	kubeHost, err := url.Parse(restConfig.Host)
 	if err != nil {
-		logrus.WithError(err).Panic("failed to parse kube url")
+		return nil, errors.Wrap(err, "failed to parse kube url")
 	}
 
 	graphQLHost, err := url.Parse(fmt.Sprintf("https://%s", serviceGraphQL))
 	if err != nil {
-		logrus.WithError(err).Panic("failed to parse graphql url")
+		return nil, errors.Wrap(err, "failed to parse graphql url")
 	}
 
 	var nc *nats.Conn
-	natsConn, err := newNATSConnManager(clusterID, config.NATS.JWTEndpoint, config.NATS.ControlPlaneToken, true)
+	natsConn, err := newNATSConnManager(log, clusterID, config.NATS.JWTEndpoint, config.NATS.ControlPlaneToken, true)
 	if err != nil {
-		logrus.Fatal(err)
+		return nil, errors.Wrap(err, "failed to create new nats connection manager")
 	}
-	opts := []nats.Option{nats.Name(fmt.Sprintf("%s-%s", config.ControlPlaneID, config.NATS.Name))}
-	opts = natsproxy.SetupConnOptions(opts)
-	opts = append(opts, natsConn.setupAuthOption(), natsConn.setupTLSOption())
+	nopts := []nats.Option{nats.Name(fmt.Sprintf("%s-%s", config.ControlPlaneID, config.NATS.Name))}
+	nopts = natsproxy.SetupConnOptions(nopts)
+	nopts = append(nopts, natsConn.setupAuthOption(), natsConn.setupTLSOption())
 	// Connect to NATS
-	nc, err = nats.Connect(config.NATS.Endpoint, opts...)
+	nc, err = nats.Connect(config.NATS.Endpoint, nopts...)
 	if err != nil {
-		// pod restarts, will retry with exponential backoff
-		logrus.Fatal(err)
+		return nil, errors.Wrap(err, "failed to connect NATS")
 	}
 
 	pxy := &Proxy{
+		log:           log,
 		nc:            nc,
 		kubeHost:      kubeHost,
 		kubeTransport: krt,
@@ -132,14 +134,17 @@ func NewProxy(config *Config, restConfig *rest.Config, clusterID string) *Proxy 
 		isReady:       &atomic.Value{},
 	}
 
-	return pxy
+	return pxy, nil
 }
 
 // Run runs Upbound Agent Proxy.
 func (p *Proxy) Run(addr, certFile, keyFile string) error {
 	p.isReady.Store(true)
 
-	e := p.setupRouter()
+	e, err := p.setupRouter()
+	if err != nil {
+		return errors.Wrap(err, "failed to setup router")
+	}
 
 	s := &http.Server{
 		Handler:           e,
@@ -152,7 +157,9 @@ func (p *Proxy) Run(addr, certFile, keyFile string) error {
 	p.server = s
 	go func() {
 		if err := s.ListenAndServeTLS(certFile, keyFile); err != nil && err != http.ErrServerClosed {
-			logrus.WithError(err).Fatal("service stopped unexpectedly")
+			err = errors.Wrap(err, "service stopped unexpectedly")
+			p.log.Info(err.Error())
+			os.Exit(-1)
 		}
 	}()
 
@@ -170,28 +177,27 @@ func (p *Proxy) Run(addr, certFile, keyFile string) error {
 func (p *Proxy) shutdown() error {
 	p.isReady.Store(false)
 
-	logrus.Debug("proxy shutdown: draining nats agent")
+	p.log.Debug("proxy shutdown: draining nats agent")
 	dtc, cancel := context.WithTimeout(context.Background(), drainTimeout)
 	defer cancel()
 	err := p.agent.Drain()
 	if err != nil {
-		logrus.WithError(err).Error("error on drain")
-		return err
+		return errors.Wrap(err, "error on drain")
 	}
 
 draining:
 	for p.agent.IsDraining() {
 		select {
 		case <-dtc.Done():
-			logrus.Error("proxy shutdown: drain timed out")
+			p.log.Info("Error: proxy shutdown, drain timed out")
 			break draining
 		default:
-			logrus.Debug("proxy shutdown: still draining")
+			p.log.Debug("proxy shutdown: still draining")
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
 
-	logrus.Debug("proxy shutdown: shutting down server")
+	p.log.Info("proxy shutdown: shutting down server")
 	stc, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
 
@@ -199,10 +205,10 @@ draining:
 }
 
 // setupRouter setup an echo instance as a router.
-func (p *Proxy) setupRouter() *echo.Echo {
+func (p *Proxy) setupRouter() (*echo.Echo, error) {
 	e := echo.New()
 
-	e.Logger.SetLevel(log.ERROR)
+	e.Logger.SetLevel(log.INFO)
 	if p.config.DebugMode {
 		e.Use(middleware.Logger())
 		e.Logger.SetLevel(log.DEBUG)
@@ -223,17 +229,16 @@ func (p *Proxy) setupRouter() *echo.Echo {
 
 	agentID, err := uuid.Parse(p.config.ControlPlaneID)
 	if err != nil {
-		logrus.Fatal(err)
+		return nil, errors.Wrap(err, "failed to parse control plane id as uid")
 	}
 	agent := natsproxy.NewAgent(p.nc, agentID, e, getSubjectForAgent(agentID), keepAliveInterval)
 	err = agent.Listen()
 
 	if err != nil {
-		logrus.WithError(err).Panic("failed to listen to nats")
+		return nil, errors.Wrap(err, "failed to listen to nats")
 	}
 	p.agent = agent
-
-	return e
+	return e, nil
 }
 
 func (p *Proxy) livez() echo.HandlerFunc {
@@ -266,23 +271,24 @@ func (p *Proxy) graphql() echo.HandlerFunc {
 			},
 		}
 
-		logrus.Debugf("graphql.proxy: %s", c.Request().URL.String())
+		p.log.Debug(fmt.Sprintf("graphql.proxy: %s", c.Request().URL.String()))
 		c.Request().URL.Host = p.graphQLHost.Host
 
 		gqlProxy.ServeHTTP(c.Response(), c.Request())
-		logrus.Debugf("graphql.proxy: %d", c.Response().Status)
+		p.log.Debug(fmt.Sprintf("graphql.proxy: %d", c.Response().Status))
 		return nil
 	}
 }
 
 func (p *Proxy) k8s() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		logrus.Debugf("incoming request url: %s", c.Request().URL.String())
+		p.log.Debug(fmt.Sprintf("incoming request url: %s", c.Request().URL.String()))
 
 		tc, err := p.reviewToken(c.Request().Header)
 		if err != nil {
-			logrus.WithError(err).Warnf("Failed to fetch ca token")
-			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": fmt.Sprintf("%s - %s", errUnableToValidateToken, err)})
+			err = errors.Wrap(err, errUnableToValidateToken)
+			p.log.Info(err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": err.Error()})
 		}
 
 		// Work on a copy of the request, RoundTrip should never modify the request:
@@ -292,17 +298,18 @@ func (p *Proxy) k8s() echo.HandlerFunc {
 
 		cid := tc.Audience
 		if cid != p.config.ControlPlaneID {
-			message := fmt.Sprintf(errInvalidEnvID, cid, p.config.ControlPlaneID)
-			logrus.Warnf(message)
-			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": message})
+			err = errors.New(fmt.Sprintf(errInvalidEnvID, cid, p.config.ControlPlaneID))
+			p.log.Info(err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": err.Error()})
 		}
 
-		logrus.Debug("Token is valid")
+		p.log.Debug("Token is valid")
 
-		iCfg, err := impersonationConfigForUser(tc.User)
+		iCfg, err := impersonationConfigForUser(tc.User, p.log)
 		if err != nil {
-			logrus.WithError(err).Warn(errFailedToGetImpersonationConfig)
-			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": fmt.Sprintf(errFailedToGetImpersonationConfig+": %s", err)})
+			err = errors.Wrap(err, errFailedToGetImpersonationConfig)
+			p.log.Info(err.Error())
+			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": err.Error()})
 		}
 
 		irt := transport.NewImpersonatingRoundTripper(iCfg, p.kubeTransport)
@@ -347,7 +354,7 @@ func cloneAllowedHeaders(in http.Header) http.Header {
 }
 
 func (p *Proxy) error(rw http.ResponseWriter, r *http.Request, err error) {
-	logrus.Error("unknown error", "err", err, "remote-addr", r.RemoteAddr)
+	p.log.Info("unknown error", "err", err, "remote-addr", r.RemoteAddr)
 	http.Error(rw, "", http.StatusInternalServerError)
 }
 
@@ -401,12 +408,12 @@ func roundTripperForRestConfig(config *rest.Config) (http.RoundTripper, error) {
 	return kubeRT, nil
 }
 
-func impersonationConfigForUser(u internal.CrossplaneAccessor) (transport.ImpersonationConfig, error) {
+func impersonationConfigForUser(u internal.CrossplaneAccessor, log logging.Logger) (transport.ImpersonationConfig, error) {
 	user := u.Identifier
 	groups := u.TeamIDs
 	isOwner := u.IsOwner
 
-	logrus.Debugf("User info: isowner %v user %s groups %v", isOwner, user, groups)
+	log.Debug(fmt.Sprintf("User info: isowner %v user %s groups %v", isOwner, user, groups))
 
 	if user == "" {
 		return transport.ImpersonationConfig{}, errors.New(errUsernameMissing)

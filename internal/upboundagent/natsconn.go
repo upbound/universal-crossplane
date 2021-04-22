@@ -7,12 +7,13 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+
 	"github.com/go-resty/resty/v2"
 	natsjwt "github.com/nats-io/jwt"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -24,6 +25,7 @@ const (
 )
 
 type natsConnManager struct {
+	log                  logging.Logger
 	restyClient          *resty.Client
 	kp                   nkeys.KeyPair
 	pubKey               string
@@ -33,7 +35,7 @@ type natsConnManager struct {
 	caFile               string
 }
 
-func newNATSConnManager(cID, ubcNATSEndpoint, ubcNATSEndpointToken string, debug bool) (*natsConnManager, error) {
+func newNATSConnManager(log logging.Logger, cID, ubcNATSEndpoint, ubcNATSEndpointToken string, debug bool) (*natsConnManager, error) {
 	r := newRestyClient(ubcNATSEndpoint, debug)
 	kp, err := nkeys.CreateUser()
 	if err != nil {
@@ -43,20 +45,22 @@ func newNATSConnManager(cID, ubcNATSEndpoint, ubcNATSEndpointToken string, debug
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get public key for nats user nkey")
 	}
-
-	caFile, err := getCABundleFile(r, ubcNATSEndpointToken)
+	caFile, err := getCABundleFile(r, log, ubcNATSEndpointToken)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get nats ca bundle file")
 	}
 
-	return &natsConnManager{
+	n := &natsConnManager{
+		log:                  log,
 		kp:                   kp,
 		pubKey:               pk,
 		restyClient:          r,
 		clusterID:            cID,
-		ubcNATSEndpointToken: ubcNATSEndpointToken,
 		caFile:               caFile,
-	}, nil
+		ubcNATSEndpointToken: ubcNATSEndpointToken,
+	}
+
+	return n, nil
 }
 func (n *natsConnManager) setupAuthOption() nats.Option {
 	return nats.UserJWT(n.userTokenRefresher, n.signatureHandler)
@@ -67,9 +71,9 @@ func (n *natsConnManager) setupTLSOption() nats.Option {
 }
 
 func (n *natsConnManager) userTokenRefresher() (string, error) {
-	logrus.Debug("handling NATS user JWT")
-	if !isJWTValid(n.jwtToken) {
-		tk, err := fetchNewJWTToken(n.restyClient, n.ubcNATSEndpointToken, n.clusterID, n.pubKey)
+	n.log.Debug("handling NATS user JWT")
+	if !isJWTValid(n.jwtToken, n.log) {
+		tk, err := fetchNewJWTToken(n.restyClient, n.log, n.ubcNATSEndpointToken, n.clusterID, n.pubKey)
 		if err != nil {
 			return "", err
 		}
@@ -82,8 +86,8 @@ func (n *natsConnManager) signatureHandler(nonce []byte) ([]byte, error) {
 	return n.kp.Sign(nonce)
 }
 
-func getCABundleFile(client *resty.Client, ubcNATSEndpointToken string) (string, error) {
-	caBundle, err := fetchCABundle(client, ubcNATSEndpointToken)
+func getCABundleFile(client *resty.Client, log logging.Logger, ubcNATSEndpointToken string) (string, error) {
+	caBundle, err := fetchCABundle(client, log, ubcNATSEndpointToken)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to fetch ca bundle")
 	}
@@ -102,8 +106,8 @@ func getCABundleFile(client *resty.Client, ubcNATSEndpointToken string) (string,
 	return caFile.Name(), nil
 }
 
-func fetchCABundle(client *resty.Client, ubcNATSEndpointToken string) (string, error) {
-	logrus.Debug("fetching NATS CA bundle")
+func fetchCABundle(client *resty.Client, log logging.Logger, ubcNATSEndpointToken string) (string, error) {
+	log.Debug("fetching NATS CA bundle")
 
 	req := client.R()
 	req.SetHeader("Authorization", fmt.Sprintf("Bearer %s", ubcNATSEndpointToken))
@@ -127,8 +131,8 @@ func fetchCABundle(client *resty.Client, ubcNATSEndpointToken string) (string, e
 	return respBody[keyNatsCA], nil
 }
 
-func fetchNewJWTToken(client *resty.Client, ubcNATSEndpointToken, clusterID, publicKey string) (string, error) {
-	logrus.Debug("fetching new NATS JWT")
+func fetchNewJWTToken(client *resty.Client, log logging.Logger, ubcNATSEndpointToken, clusterID, publicKey string) (string, error) {
+	log.Debug("fetching new NATS JWT")
 
 	body := map[string]string{
 		"clusterID":    clusterID,
@@ -164,22 +168,22 @@ func fetchNewJWTToken(client *resty.Client, ubcNATSEndpointToken, clusterID, pub
 	return respBody[keyToken], nil
 }
 
-func isJWTValid(token string) bool {
+func isJWTValid(token string, log logging.Logger) bool {
 	if token == "" {
 		return false
 	}
 	claims := &natsjwt.UserClaims{}
 	err := natsjwt.Decode(token, claims)
 	if err != nil {
-		logrus.Debugf("failed to decode token: %v", err)
+		log.Debug(fmt.Sprintf("failed to decode token: %v", err))
 		return false
 	}
 	vr := &natsjwt.ValidationResults{}
 	claims.Validate(vr)
 	if len(vr.Issues) > 0 {
-		logrus.Debugf("token is not valid with issues: %v", vr.Issues)
+		log.Debug(fmt.Sprintf("token is not valid with issues: %v", vr.Issues))
 		return false
 	}
-	logrus.Debug("existing NATS JWT is valid")
+	log.Debug("existing NATS JWT is valid")
 	return true
 }

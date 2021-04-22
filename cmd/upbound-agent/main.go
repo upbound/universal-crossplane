@@ -10,14 +10,15 @@ import (
 	"strings"
 
 	"github.com/alecthomas/kong"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
+	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/upbound/universal-crossplane/internal/upboundagent"
 	"github.com/upbound/universal-crossplane/internal/version"
@@ -57,11 +58,9 @@ var cli struct {
 
 func main() { // nolint:gocyclo
 	ctx := kong.Parse(&cli)
-	a := cli.Agent
 
-	if cli.Debug {
-		logrus.SetLevel(logrus.DebugLevel)
-	}
+	zl := zap.New(zap.UseDevMode(cli.Debug))
+	a := cli.Agent
 
 	cpID, err := readCPIDFromToken(a.ControlPlaneToken)
 	if err != nil {
@@ -115,19 +114,22 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read kube cluster ID"))
 	}
 
-	pxy := upboundagent.NewProxy(tgConfig, restConfig, kubeClusterID)
+	logger := logging.NewLogrLogger(zl.WithName("upbound-agent"))
+	pxy, err := upboundagent.NewProxy(tgConfig, restConfig, logger, kubeClusterID)
+	if err != nil {
+		ctx.FatalIfErrorf(errors.Wrap(err, "failed to create new agent proxy"))
+	}
 
-	logrus.Info("Starting Upbound Agent ",
-		fmt.Sprintf("%s: %v, ", "version", version.Version),
-		fmt.Sprintf("%s: %v, ", "control-plane-id", cpID),
-		fmt.Sprintf("%s: %v, ", "debug", cli.Debug),
-		fmt.Sprintf("%s: %v, ", "pod-name", a.PodName),
-		fmt.Sprintf("%s: %v, ", "server-port", a.ServerPort),
-		fmt.Sprintf("%s: %v, ", "tls-cert-file", a.TLSCertFile),
-		fmt.Sprintf("%s: %v, ", "tls-private-key-file", a.TLSKeyFile),
-		fmt.Sprintf("%s: %v, ", "graphql-cabundle-file", a.GraphqlCABundleFile),
-		fmt.Sprintf("%s: %v, ", "nats-endpoint", a.NATSEndpoint),
-		fmt.Sprintf("%s: %v", "nats-jwt-endpoint", a.NATSJwtEndpoint))
+	logger.Info("Starting Upbound Agent ", "version", version.Version,
+		"control-plane-id", cpID,
+		"debug", cli.Debug,
+		"pod-name", a.PodName,
+		"server-port", a.ServerPort,
+		"tls-cert-file", a.TLSCertFile,
+		"tls-private-key-file", a.TLSKeyFile,
+		"graphql-cabundle-file", a.GraphqlCABundleFile,
+		"nats-endpoint", a.NATSEndpoint,
+		"nats-jwt-endpoint", a.NATSJwtEndpoint)
 
 	addr := fmt.Sprintf(":%s", a.ServerPort)
 	ctx.FatalIfErrorf(errors.Wrap(pxy.Run(addr, a.TLSCertFile, a.TLSKeyFile), "cannot run upbound agent proxy"))

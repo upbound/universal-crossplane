@@ -7,15 +7,15 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"os"
 	"testing"
+
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/go-cmp/cmp"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
-	"github.com/sirupsen/logrus"
 	"k8s.io/client-go/transport"
 
 	"github.com/upbound/universal-crossplane/internal/upboundagent/internal"
@@ -62,12 +62,6 @@ MwIDAQAB
 //  y18Ae9n7dHVueyslrb6weq7dTkYDi3iOYRW8HRkIQh06wEdbxt0shTzAJvvCQfrB
 //  jg/3747WSsf/zBTcHihTRBdAv6OmdhV4/dD5YBfLAkLrd+mX7iE=
 //  -----END RSA PRIVATE KEY-----
-
-// TestMain - Configure gin to not output debug output during tests.
-func TestMain(m *testing.M) {
-	logrus.SetLevel(logrus.FatalLevel)
-	os.Exit(m.Run())
-}
 
 func Test_impersonationConfigForUser(t *testing.T) {
 	type args struct {
@@ -172,7 +166,7 @@ func Test_impersonationConfigForUser(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			got, gotErr := impersonationConfigForUser(tc.u)
+			got, gotErr := impersonationConfigForUser(tc.u, logging.NewNopLogger())
 			if diff := cmp.Diff(tc.want.err, gotErr, test.EquateErrors()); diff != "" {
 				t.Fatalf("impersonationConfigForUser(...): -want error, +got error: %s", diff)
 			}
@@ -216,7 +210,7 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 			},
 			want: want{
 				respCode: http.StatusBadRequest,
-				respBody: fmt.Sprintf(`{"message":"%s - %s"}`, errUnableToValidateToken, errors.New("crypto/rsa: verification error")),
+				respBody: fmt.Sprintf(`{"message":"%s"}`, errors.Wrap(errors.New("crypto/rsa: verification error"), errUnableToValidateToken).Error()),
 			},
 		},
 		"WrongEnvironmentId": {
@@ -273,6 +267,7 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 				kubeTransport: mockRoundTripper{},
 				config:        &Config{ControlPlaneID: testEnvID},
 				kubeHost:      kubeURL, // No function just to avoid nil ref
+				log:           logging.NewNopLogger(),
 			}
 			if tc.publicKey != nil {
 				k, err := jwt.ParseRSAPublicKeyFromPEM(tc.publicKey)

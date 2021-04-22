@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/uuid"
@@ -111,7 +112,7 @@ func Test_fetchCA(t *testing.T) {
 
 			httpmock.RegisterResponder(http.MethodGet, endpoint+natsCAPath, responder)
 
-			got, gotErr := fetchCABundle(rc, endpointToken)
+			got, gotErr := fetchCABundle(rc, logging.NewNopLogger(), endpointToken)
 			if diff := cmp.Diff(tc.want.err, gotErr, test.EquateErrors()); diff != "" {
 				t.Fatalf("fetchCABundle(...): -want error, +got error: %s", diff)
 			}
@@ -216,7 +217,7 @@ func Test_fetchNewJWT(t *testing.T) {
 
 			httpmock.RegisterResponder(http.MethodPost, endpoint+natsTokenPath, responder)
 
-			got, gotErr := fetchNewJWTToken(rc, endpointToken, clusterID.String(), "some-public-key")
+			got, gotErr := fetchNewJWTToken(rc, logging.NewNopLogger(), endpointToken, clusterID.String(), "some-public-key")
 			if diff := cmp.Diff(tc.want.err, gotErr, test.EquateErrors()); diff != "" {
 				t.Fatalf("fetchNewJWTToken(...): -want error, +got error: %s", diff)
 			}
@@ -269,7 +270,7 @@ func Test_isTokenValid(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 
-			got := isJWTValid(tc.jwt)
+			got := isJWTValid(tc.jwt, logging.NewNopLogger())
 			if diff := cmp.Diff(tc.want.valid, got); diff != "" {
 				t.Errorf("isJWTValid(...): -want result, +got result: %s", diff)
 			}

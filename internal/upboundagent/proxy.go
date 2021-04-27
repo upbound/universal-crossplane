@@ -39,6 +39,7 @@ const (
 	livenessHandlerPath  = "/livez"
 	k8sHandlerPath       = "/k8s/*"
 	graphqlHandlerPath   = "/graphql"
+	xgqlHandlerPath      = "/query"
 
 	headerAuthorization      = "Authorization"
 	groupCrossplaneOwner     = "crossplane:masters"
@@ -48,6 +49,7 @@ const (
 	userUpboundCloud = "upbound-cloud-user"
 
 	serviceGraphQL = "crossplane-graphql"
+	serviceXgql    = "xgql"
 
 	readHeaderTimeout = 5 * time.Second
 	readTimeout       = 10 * time.Second
@@ -80,13 +82,14 @@ var (
 
 // Proxy is an Upbound Agent Proxy
 type Proxy struct {
-	log      logging.Logger
-	config   *Config
-	kubeHost *url.URL
-	http.Header
+	log           logging.Logger
+	config        *Config
+	kubeHost      *url.URL
 	kubeTransport http.RoundTripper
 	nc            *nats.Conn
 	graphQLHost   *url.URL
+	xgqlHost      *url.URL
+	k8sBearer     string
 	agent         *natsproxy.Agent
 	server        *http.Server
 	isReady       *atomic.Value
@@ -96,7 +99,7 @@ type Proxy struct {
 func NewProxy(config *Config, restConfig *rest.Config, log logging.Logger, clusterID string) (*Proxy, error) {
 	krt, err := roundTripperForRestConfig(restConfig)
 	if err != nil {
-		panic(err)
+		return nil, errors.Wrap(err, "failed to build round tripper for rest config")
 	}
 
 	// get k8s API server url
@@ -108,6 +111,11 @@ func NewProxy(config *Config, restConfig *rest.Config, log logging.Logger, clust
 	graphQLHost, err := url.Parse(fmt.Sprintf("https://%s", serviceGraphQL))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse graphql url")
+	}
+
+	xgqlHost, err := url.Parse(fmt.Sprintf("https://%s", serviceXgql))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse xgql url")
 	}
 
 	var nc *nats.Conn
@@ -131,6 +139,8 @@ func NewProxy(config *Config, restConfig *rest.Config, log logging.Logger, clust
 		kubeTransport: krt,
 		config:        config,
 		graphQLHost:   graphQLHost,
+		xgqlHost:      xgqlHost,
+		k8sBearer:     restConfig.BearerToken,
 		isReady:       &atomic.Value{},
 	}
 
@@ -222,8 +232,11 @@ func (p *Proxy) setupRouter() (*echo.Echo, error) {
 	jt := jaegertracing.New(e, nil)
 	defer jt.Close() // nolint:errcheck
 
+	// TODO(turkenh): use different routers for nats agent and http server once graphql removed, which will let us
+	// remove k8s from http server
 	e.Any(k8sHandlerPath, p.k8s())
 	e.Any(graphqlHandlerPath, p.graphql())
+	e.Any(xgqlHandlerPath, p.xgql())
 	e.Any(readynessHandlerPath, p.readyz())
 	e.Any(livenessHandlerPath, p.livez())
 
@@ -261,6 +274,7 @@ func (p *Proxy) readyz() echo.HandlerFunc {
 
 func (p *Proxy) graphql() echo.HandlerFunc {
 	return func(c echo.Context) error {
+		p.log.Debug(fmt.Sprintf("incoming graphql request url: %s", c.Request().URL.String()))
 		gqlProxy := httputil.NewSingleHostReverseProxy(p.graphQLHost)
 
 		gqlProxy.Transport = &http.Transport{
@@ -280,46 +294,88 @@ func (p *Proxy) graphql() echo.HandlerFunc {
 	}
 }
 
-func (p *Proxy) k8s() echo.HandlerFunc {
+func (p *Proxy) xgql() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		p.log.Debug(fmt.Sprintf("incoming request url: %s", c.Request().URL.String()))
+		p.log.Debug(fmt.Sprintf("incoming xgql request url: %s", c.Request().URL.String()))
 
-		tc, err := p.reviewToken(c.Request().Header)
+		ic, err := p.getImpersonationConfig(c.Request().Header)
 		if err != nil {
-			err = errors.Wrap(err, errUnableToValidateToken)
-			p.log.Info(err.Error())
 			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": err.Error()})
 		}
 
-		// Work on a copy of the request, RoundTrip should never modify the request:
-		// https://golang.org/src/net/http/client.go#L103
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: false,
+				RootCAs:            p.config.GraphQLCACertPool,
+				MinVersion:         tls.VersionTLS12,
+			},
+		}
+		btr := transport.NewBearerAuthRoundTripper(p.k8sBearer, tr)
+		itr := transport.NewImpersonatingRoundTripper(ic, btr)
+
+		rp := httputil.NewSingleHostReverseProxy(p.xgqlHost)
+		rp.Transport = itr
+		rp.ErrorHandler = p.error
+
+		reqCopy := sanitizeRequest(c.Request())
+		reqCopy.URL.Host = p.xgqlHost.Host
+
+		rp.ServeHTTP(c.Response(), reqCopy)
+		p.log.Debug(fmt.Sprintf("xgql.proxy: %d", c.Response().Status))
+		return nil
+	}
+}
+
+func (p *Proxy) k8s() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		p.log.Debug(fmt.Sprintf("incoming k8s request url: %s", c.Request().URL.String()))
+
+		ic, err := p.getImpersonationConfig(c.Request().Header)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": err.Error()})
+		}
+
+		irt := transport.NewImpersonatingRoundTripper(ic, p.kubeTransport)
+
+		rp := httputil.NewSingleHostReverseProxy(p.kubeHost)
+		rp.Transport = irt
+		rp.ErrorHandler = p.error
+
 		reqCopy := sanitizeRequest(c.Request())
 		reqCopy.URL.Path = parseDestinationPath(c) // k8s/path -> path
 
-		cid := tc.Audience
-		if cid != p.config.ControlPlaneID {
-			err = errors.New(fmt.Sprintf(errInvalidEnvID, cid, p.config.ControlPlaneID))
-			p.log.Info(err.Error())
-			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": err.Error()})
-		}
-
-		p.log.Debug("Token is valid")
-
-		iCfg, err := impersonationConfigForUser(tc.User, p.log)
-		if err != nil {
-			err = errors.Wrap(err, errFailedToGetImpersonationConfig)
-			p.log.Info(err.Error())
-			return echo.NewHTTPError(http.StatusBadRequest, echo.Map{"message": err.Error()})
-		}
-
-		irt := transport.NewImpersonatingRoundTripper(iCfg, p.kubeTransport)
-		k8sProxy := httputil.NewSingleHostReverseProxy(p.kubeHost)
-		k8sProxy.Transport = irt
-		k8sProxy.ErrorHandler = p.error
-
-		k8sProxy.ServeHTTP(c.Response(), reqCopy)
+		rp.ServeHTTP(c.Response(), reqCopy)
+		p.log.Debug(fmt.Sprintf("k8s.proxy: %d", c.Response().Status))
 		return nil
 	}
+}
+
+func (p *Proxy) getImpersonationConfig(requestHeader http.Header) (transport.ImpersonationConfig, error) {
+	var cfg transport.ImpersonationConfig
+
+	tc, err := p.reviewToken(requestHeader)
+	if err != nil {
+		err = errors.Wrap(err, errUnableToValidateToken)
+		p.log.Info(err.Error())
+		return cfg, err
+	}
+
+	cid := tc.Audience
+	if cid != p.config.ControlPlaneID {
+		err = errors.New(fmt.Sprintf(errInvalidEnvID, cid, p.config.ControlPlaneID))
+		p.log.Info(err.Error())
+		return cfg, err
+	}
+
+	p.log.Debug("Token is valid")
+
+	cfg, err = impersonationConfigForUser(tc.User, p.log)
+	if err != nil {
+		err = errors.Wrap(err, errFailedToGetImpersonationConfig)
+		p.log.Info(err.Error())
+		return cfg, err
+	}
+	return cfg, nil
 }
 
 func parseDestinationPath(c echo.Context) string {

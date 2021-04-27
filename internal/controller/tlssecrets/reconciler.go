@@ -45,9 +45,11 @@ const (
 	nameUpbound          = "upbound"
 	cnAgent              = "upbound-agent"
 	cnGraphql            = "crossplane-graphql"
+	cnXgql               = "xgql"
 	secretNameCA         = "upbound-agent-ca"
 	secretNameGatewayTLS = "upbound-agent-tls"
 	secretNameGraphqlTLS = "crossplane-graphql-tls"
+	secretNameXgqlTLS    = "xgql-tls"
 )
 
 const (
@@ -87,6 +89,13 @@ var (
 			},
 			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		},
+		secretNameXgqlTLS: {
+			CommonName: cnXgql,
+			AltNames: certutil.AltNames{
+				DNSNames: []string{cnXgql},
+			},
+			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+		},
 	}
 )
 
@@ -122,6 +131,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		WithEventFilter(resource.NewPredicates(resource.AnyOf(
 			resource.IsNamed(secretNameGatewayTLS),
 			resource.IsNamed(secretNameGraphqlTLS),
+			resource.IsNamed(secretNameXgqlTLS),
 		))).
 		Complete(r)
 }

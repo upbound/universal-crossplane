@@ -96,6 +96,18 @@ graphql:
     # The default maximum number of concurrent requests to the upbound agent
     maxK8sConnections: 10
 
+xgql:
+  image:
+    repository: upbound/xgql
+    tag: %%XGQL_TAG%%
+    pullPolicy: IfNotPresent
+  resources: {}
+  metrics:
+    enabled: false
+  config:
+    debugMode: false
+    args: []
+
 agent:
   image:
     repository: upbound/upbound-agent

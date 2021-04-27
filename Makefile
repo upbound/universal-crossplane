@@ -71,7 +71,6 @@ HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
 
 DOCKER_REGISTRY = upbound
 IMAGES = uxp-bootstrapper upbound-agent
-OSBASEIMAGE = gcr.io/distroless/static:nonroot
 -include build/makelib/image.mk
 
 # ====================================================================================

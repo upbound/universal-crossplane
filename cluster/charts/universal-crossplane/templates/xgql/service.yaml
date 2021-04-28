@@ -1,4 +1,3 @@
-{{- if .Values.upbound.controlPlane.connect }}
 apiVersion: v1
 kind: Service
 metadata:
@@ -13,4 +12,3 @@ spec:
       targetPort: https
       protocol: TCP
       name: https
-{{- end }}

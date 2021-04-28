@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "xgql-name" . }}
+  labels:
+    {{- include "labelsXgql" . | nindent 4 }}
+spec:
+  selector:
+    {{- include "selectorLabelsXgql" . | nindent 4 }}
+  ports:
+    - port: 443
+      targetPort: https
+      protocol: TCP
+      name: https

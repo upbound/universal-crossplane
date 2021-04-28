@@ -23,10 +23,12 @@ CROSSPLANE_TAG := v1.2.0-rc.0.106.gdb33bb23
 BOOTSTRAPPER_TAG := $(VERSION)
 AGENT_TAG := $(VERSION)
 GRAPHQL_TAG := v0.25.0-alpha1.41.g119b42a
+XGQL_TAG := v0.0.0-123.gadb10e6
 
 export BOOTSTRAPPER_TAG
 export AGENT_TAG
 export GRAPHQL_TAG
+export XGQL_TAG
 export CROSSPLANE_TAG
 
 # ====================================================================================
@@ -118,6 +120,7 @@ generate-chart: crossplane
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%GRAPHQL_TAG%%|$(GRAPHQL_TAG)|g' values.yaml
+	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%XGQL_TAG%%|$(XGQL_TAG)|g' values.yaml
 	@$(OK) Generating values.yaml for the chart
 
 # We have to give a static namespace for OLM bundle because it does not interpret

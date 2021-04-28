@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "xgql-name" . }}
+  labels:
+    {{- include "labelsXgql" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "selectorLabelsXgql" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "selectorLabelsXgql" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ template "xgql-name" . }}
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+      {{- range $index, $secret := .Values.imagePullSecrets }}
+        - name: {{ $secret }}
+      {{- end }}
+      {{ end }}
+      containers:
+      - name: xgql
+        image: "{{ .Values.xgql.image.repository }}:{{ .Values.xgql.image.tag }}"
+        imagePullPolicy: {{ .Values.xgql.image.pullPolicy }}
+        resources:
+          {{- toYaml .Values.xgql.resources | nindent 12 }}
+        ports:
+          - name: https
+            containerPort: 8443
+            protocol: TCP
+        {{- if .Values.xgql.metrics.enabled }}
+          - name: metrics
+            containerPort: 8080
+        {{- end }}
+        args:
+          - --tls-key=/etc/certs/xgql/tls.key
+          - --tls-cert=/etc/certs/xgql/tls.crt
+          {{- if .Values.xgql.config.debugMode }}
+          - "--debug"
+          {{- end }}
+          {{- range $arg := .Values.xgql.config.args }}
+          - {{ $arg }}
+          {{- end }}
+        env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        volumeMounts:
+          - mountPath: /etc/certs/xgql
+            name: certs
+            readOnly: true
+      volumes:
+        - name: certs
+          secret:
+            defaultMode: 420
+            secretName: xgql-tls

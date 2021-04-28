@@ -19,4 +19,5 @@ rules:
     - upbound-agent-public-certs
     - upbound-agent-tls
     - crossplane-graphql-tls
+    - xgql-tls
     - upbound-control-plane-token

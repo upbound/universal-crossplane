@@ -175,13 +175,13 @@ func isJWTValid(token string, log logging.Logger) bool {
 	claims := &natsjwt.UserClaims{}
 	err := natsjwt.Decode(token, claims)
 	if err != nil {
-		log.Debug(fmt.Sprintf("failed to decode token: %v", err))
+		log.Info("failed to decode token", "error", err)
 		return false
 	}
 	vr := &natsjwt.ValidationResults{}
 	claims.Validate(vr)
 	if len(vr.Issues) > 0 {
-		log.Debug(fmt.Sprintf("token is not valid with issues: %v", vr.Issues))
+		log.Info("token is not valid with issues", "issues", vr.Issues)
 		return false
 	}
 	log.Debug("existing NATS JWT is valid")

@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/labstack/echo-contrib/jaegertracing"
@@ -25,6 +24,7 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/nats-io/nats.go"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/upbound/nats-proxy/pkg/natsproxy"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/transport"
@@ -118,6 +118,11 @@ func NewProxy(config *Config, restConfig *rest.Config, log logging.Logger, clust
 		return nil, errors.Wrap(err, "failed to parse xgql url")
 	}
 
+	// TODO(turkenh): remove once nats-proxy starts using logging interface: https://github.com/upbound/nats-proxy/issues/3
+	if config.DebugMode {
+		// set log level for nats-proxy
+		logrus.SetLevel(logrus.DebugLevel)
+	}
 	var nc *nats.Conn
 	natsConn, err := newNATSConnManager(log, clusterID, config.NATS.JWTEndpoint, config.NATS.ControlPlaneToken, true)
 	if err != nil {
@@ -199,7 +204,7 @@ draining:
 	for p.agent.IsDraining() {
 		select {
 		case <-dtc.Done():
-			p.log.Info("Error: proxy shutdown, drain timed out")
+			p.log.Info("error: proxy shutdown, drain timed out")
 			break draining
 		default:
 			p.log.Debug("proxy shutdown: still draining")
@@ -274,7 +279,7 @@ func (p *Proxy) readyz() echo.HandlerFunc {
 
 func (p *Proxy) graphql() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		p.log.Debug(fmt.Sprintf("incoming graphql request url: %s", c.Request().URL.String()))
+		p.log.Debug("incoming graphql request", "url", c.Request().URL.String())
 		gqlProxy := httputil.NewSingleHostReverseProxy(p.graphQLHost)
 
 		gqlProxy.Transport = &http.Transport{
@@ -285,18 +290,17 @@ func (p *Proxy) graphql() echo.HandlerFunc {
 			},
 		}
 
-		p.log.Debug(fmt.Sprintf("graphql.proxy: %s", c.Request().URL.String()))
 		c.Request().URL.Host = p.graphQLHost.Host
 
 		gqlProxy.ServeHTTP(c.Response(), c.Request())
-		p.log.Debug(fmt.Sprintf("graphql.proxy: %d", c.Response().Status))
+		p.log.Debug("response from graphql", "status", c.Response().Status)
 		return nil
 	}
 }
 
 func (p *Proxy) xgql() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		p.log.Debug(fmt.Sprintf("incoming xgql request url: %s", c.Request().URL.String()))
+		p.log.Debug("incoming xgql request", "url", c.Request().URL.String())
 
 		ic, err := p.getImpersonationConfig(c.Request().Header)
 		if err != nil {
@@ -321,14 +325,14 @@ func (p *Proxy) xgql() echo.HandlerFunc {
 		reqCopy.URL.Host = p.xgqlHost.Host
 
 		rp.ServeHTTP(c.Response(), reqCopy)
-		p.log.Debug(fmt.Sprintf("xgql.proxy: %d", c.Response().Status))
+		p.log.Debug("response from xgql", "status", c.Response().Status)
 		return nil
 	}
 }
 
 func (p *Proxy) k8s() echo.HandlerFunc {
 	return func(c echo.Context) error {
-		p.log.Debug(fmt.Sprintf("incoming k8s request url: %s", c.Request().URL.String()))
+		p.log.Debug("incoming k8s request", "url", c.Request().URL.String())
 
 		ic, err := p.getImpersonationConfig(c.Request().Header)
 		if err != nil {
@@ -345,7 +349,7 @@ func (p *Proxy) k8s() echo.HandlerFunc {
 		reqCopy.URL.Path = parseDestinationPath(c) // k8s/path -> path
 
 		rp.ServeHTTP(c.Response(), reqCopy)
-		p.log.Debug(fmt.Sprintf("k8s.proxy: %d", c.Response().Status))
+		p.log.Debug("response from k8s", "status", c.Response().Status)
 		return nil
 	}
 }
@@ -362,12 +366,12 @@ func (p *Proxy) getImpersonationConfig(requestHeader http.Header) (transport.Imp
 
 	cid := tc.Audience
 	if cid != p.config.ControlPlaneID {
-		err = errors.New(fmt.Sprintf(errInvalidEnvID, cid, p.config.ControlPlaneID))
+		err = errors.Errorf(errInvalidEnvID, cid, p.config.ControlPlaneID)
 		p.log.Info(err.Error())
 		return cfg, err
 	}
 
-	p.log.Debug("Token is valid")
+	p.log.Debug("token is valid")
 
 	cfg, err = impersonationConfigForUser(tc.User, p.log)
 	if err != nil {
@@ -428,7 +432,7 @@ func (p *Proxy) reviewToken(requestHeaders http.Header) (*internal.TokenClaims, 
 	tcs := &internal.TokenClaims{}
 	token, err := jwt.ParseWithClaims(tokenStr, tcs, func(token *jwt.Token) (interface{}, error) {
 		if sm, ok := token.Method.(*jwt.SigningMethodRSA); !ok || sm.Name != "RS256" {
-			return nil, errors.New(fmt.Sprintf(errUnexpectedSigningMethod, token.Header["alg"]))
+			return nil, errors.Errorf(errUnexpectedSigningMethod, token.Header["alg"])
 		}
 		return p.config.TokenRSAPublicKey, nil
 	})
@@ -469,7 +473,7 @@ func impersonationConfigForUser(u internal.CrossplaneAccessor, log logging.Logge
 	groups := u.TeamIDs
 	isOwner := u.IsOwner
 
-	log.Debug(fmt.Sprintf("User info: isowner %v user %s groups %v", isOwner, user, groups))
+	log.Debug("user info", "isOwner", isOwner, "user", user, "groups", groups)
 
 	if user == "" {
 		return transport.ImpersonationConfig{}, errors.New(errUsernameMissing)

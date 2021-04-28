@@ -75,39 +75,19 @@ func Test_impersonationConfigForUser(t *testing.T) {
 		args
 		want
 	}{
-		"owner": {
-			args: args{
-				u: internal.CrossplaneAccessor{
-					IsOwner:    true,
-					TeamIDs:    nil,
-					Identifier: "test",
-				},
-			},
-			want: want{
-				out: transport.ImpersonationConfig{
-					UserName: userUpboundCloud,
-					Groups:   []string{groupSystemAuthenticated, groupCrossplaneOwner},
-					Extra: map[string][]string{
-						keyUpboundUser: {"test"},
-					},
-				},
-				err: nil,
-			},
-		},
 		"userWithOneGroup": {
 			args: args{
 				u: internal.CrossplaneAccessor{
-					IsOwner:    false,
-					TeamIDs:    []string{"test-group"},
-					Identifier: "test",
+					Groups:    []string{"test-group"},
+					UpboundID: "test",
 				},
 			},
 			want: want{
 				out: transport.ImpersonationConfig{
-					UserName: userUpboundCloud,
+					UserName: impersonatorUserUpboundCloud,
 					Groups:   []string{"test-group", groupSystemAuthenticated},
 					Extra: map[string][]string{
-						keyUpboundUser: {"test"},
+						impersonatorExtraKeyUpboundID: {"test"},
 					},
 				},
 				err: nil,
@@ -116,36 +96,16 @@ func Test_impersonationConfigForUser(t *testing.T) {
 		"userWithMultipleGroups": {
 			args: args{
 				u: internal.CrossplaneAccessor{
-					IsOwner:    false,
-					TeamIDs:    []string{"test-group-1", "test-group-2", "test-group-3"},
-					Identifier: "test",
+					Groups:    []string{"test-group-1", "test-group-2", "test-group-3"},
+					UpboundID: "test",
 				},
 			},
 			want: want{
 				out: transport.ImpersonationConfig{
-					UserName: userUpboundCloud,
+					UserName: impersonatorUserUpboundCloud,
 					Groups:   []string{"test-group-1", "test-group-2", "test-group-3", groupSystemAuthenticated},
 					Extra: map[string][]string{
-						keyUpboundUser: {"test"},
-					},
-				},
-				err: nil,
-			},
-		},
-		"ownerWithMultipleGroups": {
-			args: args{
-				u: internal.CrossplaneAccessor{
-					IsOwner:    true,
-					TeamIDs:    []string{"test-group-1", "test-group-2", "test-group-3"},
-					Identifier: "test",
-				},
-			},
-			want: want{
-				out: transport.ImpersonationConfig{
-					UserName: userUpboundCloud,
-					Groups:   []string{"test-group-1", "test-group-2", "test-group-3", groupSystemAuthenticated, groupCrossplaneOwner},
-					Extra: map[string][]string{
-						keyUpboundUser: {"test"},
+						impersonatorExtraKeyUpboundID: {"test"},
 					},
 				},
 				err: nil,
@@ -154,13 +114,12 @@ func Test_impersonationConfigForUser(t *testing.T) {
 		"missingUserName": {
 			args: args{
 				u: internal.CrossplaneAccessor{
-					IsOwner:    false,
-					TeamIDs:    nil,
-					Identifier: "",
+					Groups:    nil,
+					UpboundID: "",
 				},
 			},
 			want: want{
-				err: errors.New(errUsernameMissing),
+				err: errors.New(errUpboundIDMissing),
 			},
 		},
 	}
@@ -242,7 +201,7 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 			},
 			want: want{
 				respCode: http.StatusBadRequest,
-				respBody: fmt.Sprintf(`{"message":"%s: %s"}`, errFailedToGetImpersonationConfig, errUsernameMissing),
+				respBody: fmt.Sprintf(`{"message":"%s: %s"}`, errFailedToGetImpersonationConfig, errUpboundIDMissing),
 			},
 		},
 		"Success": {
@@ -407,11 +366,9 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 			want: want{
 				err: nil,
 				out: &internal.TokenClaims{
-					User: internal.CrossplaneAccessor{
-						TeamIDs:        []string{"test1", "test2"},
-						Identifier:     "test",
-						IsOwner:        false,
-						IdentifierKind: "userID",
+					Payload: internal.CrossplaneAccessor{
+						Groups:    []string{"test1", "test2"},
+						UpboundID: "test",
 					},
 					StandardClaims: jwt.StandardClaims{
 						Audience:  "c21561da-087b-4efc-af6b-718e99bfd85f",

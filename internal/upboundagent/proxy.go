@@ -42,11 +42,10 @@ const (
 	xgqlHandlerPath      = "/query"
 
 	headerAuthorization      = "Authorization"
-	groupCrossplaneOwner     = "crossplane:masters"
 	groupSystemAuthenticated = "system:authenticated"
 
-	keyUpboundUser   = "user-on-upbound-cloud"
-	userUpboundCloud = "upbound-cloud-user"
+	impersonatorExtraKeyUpboundID = "upbound-id"
+	impersonatorUserUpboundCloud  = "upbound-cloud-impersonator"
 
 	serviceGraphQL = "crossplane-graphql"
 	serviceXgql    = "xgql"
@@ -60,7 +59,7 @@ const (
 
 const (
 	errUnableToValidateToken          = "unable to validate token"
-	errUsernameMissing                = "username is missing"
+	errUpboundIDMissing               = "upboundID is missing"
 	errMissingAuthHeader              = "missing authorization header"
 	errMissingBearer                  = "missing bearer token"
 	errInvalidToken                   = "invalid token"
@@ -373,7 +372,7 @@ func (p *Proxy) getImpersonationConfig(requestHeader http.Header) (transport.Imp
 
 	p.log.Debug("token is valid")
 
-	cfg, err = impersonationConfigForUser(tc.User, p.log)
+	cfg, err = impersonationConfigForUser(tc.Payload, p.log)
 	if err != nil {
 		err = errors.Wrap(err, errFailedToGetImpersonationConfig)
 		p.log.Info(err.Error())
@@ -468,27 +467,18 @@ func roundTripperForRestConfig(config *rest.Config) (http.RoundTripper, error) {
 	return kubeRT, nil
 }
 
-func impersonationConfigForUser(u internal.CrossplaneAccessor, log logging.Logger) (transport.ImpersonationConfig, error) {
-	user := u.Identifier
-	groups := u.TeamIDs
-	isOwner := u.IsOwner
+func impersonationConfigForUser(ca internal.CrossplaneAccessor, log logging.Logger) (transport.ImpersonationConfig, error) {
+	log.Debug(fmt.Sprintf("User info: user %s groups %v", ca.UpboundID, ca.Groups))
 
-	log.Debug("user info", "isOwner", isOwner, "user", user, "groups", groups)
-
-	if user == "" {
-		return transport.ImpersonationConfig{}, errors.New(errUsernameMissing)
-	}
-
-	groups = append(groups, groupSystemAuthenticated)
-	if isOwner {
-		groups = append(groups, groupCrossplaneOwner)
+	if ca.UpboundID == "" {
+		return transport.ImpersonationConfig{}, errors.New(errUpboundIDMissing)
 	}
 
 	return transport.ImpersonationConfig{
-		UserName: userUpboundCloud,
-		Groups:   groups,
+		UserName: impersonatorUserUpboundCloud,
+		Groups:   append(ca.Groups, groupSystemAuthenticated),
 		Extra: map[string][]string{
-			keyUpboundUser: {user},
+			impersonatorExtraKeyUpboundID: {ca.UpboundID},
 		},
 	}, nil
 }

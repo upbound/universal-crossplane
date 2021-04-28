@@ -21,16 +21,16 @@ rules:
   - apiGroups: [""]
     resources: ["users"]
     verbs: ["impersonate"]
-    resourceNames: ["upbound-cloud-user"]
+    resourceNames: ["upbound-cloud-impersonator"]
   - apiGroups: ["authentication.k8s.io"]
-    resources: ["userextras/user-on-upbound-cloud"]
+    resources: ["userextras/upbound-id"]
     verbs: ["impersonate"]
   - apiGroups: [""]
     resources: ["groups"]
     resourceNames:
+    - "system:authenticated" # This is required to call /apis endpoint
     - "upbound:view"
 {{- if eq .Values.upbound.controlPlane.permission "Edit" }}
-    - "upbound:admin"
     - "upbound:edit"
 {{- end }}
     verbs: ["impersonate"]

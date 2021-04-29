@@ -1,11 +1,13 @@
 upbound:
   apiURL: https://{{ .Env.UPBOUND_API_ENDPOINT }}
   connectHost: {{ .Env.UPBOUND_CONNECT_ENDPOINT}}
+  # This port is predefined in nats local dev config https://github.com/upbound/wesaas/pull/814
+  connectPort: 4222
   controlPlane:
     {{ if eq (env.Getenv "LOCALDEV_CONNECT_TO_UBC" "") "true" }}
-    connect: true
+    permission: Edit
     {{ else }}
-    connect: false
+    permission: None
     {{ end }}
 
 agent:

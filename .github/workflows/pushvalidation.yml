@@ -78,10 +78,10 @@ jobs:
       - name: Push Validation Tests
         run: make e2e
         env:
-          LOCALDEV_CONNECT_TO_UBC: true
+          LOCALDEV_UBC_PERMISSION: edit
           LOCALDEV_CONNECT_CLEANUP: true
+          LOCALDEV_CONNECT_CP_ORG: crossplane
           LOCALDEV_CONNECT_CP_NAME: uxp-pushval-${{ github.run_id }}-${{ github.run_number }}
-          LOCALDEV_CONNECT_CP_ORG: ${{ secrets.LOCALDEV_CONNECT_CP_ORG }}
           LOCALDEV_CONNECT_API_TOKEN: ${{ secrets.LOCALDEV_CONNECT_API_TOKEN }}
           UPBOUND_API_ENDPOINT: ${{ secrets.UPBOUND_API_ENDPOINT }}
           UPBOUND_CONNECT_ENDPOINT: ${{ secrets.UPBOUND_CONNECT_ENDPOINT }}

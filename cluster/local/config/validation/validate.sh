@@ -12,8 +12,8 @@ ${WAIT_DEPLOYMENT} upbound-agent
 ${WAIT_DEPLOYMENT} xgql
 echo_info "Successfully validated all deployments!"
 
-if [ ${LOCALDEV_CONNECT_TO_UBC} != "true" ]; then
-  echo_info "LOCALDEV_CONNECT_TO_UBC is not set to true, skipping validating Upbound Cloud connectivity"
+if [ "${LOCALDEV_UBC_PERMISSION}" != "edit" ] && [ "${LOCALDEV_UBC_PERMISSION}" != "view" ]; then
+  echo "LOCALDEV_UBC_PERMISSION is neither edit nor view, skipping validating Upbound Cloud connectivity"
   return 0
 fi
 

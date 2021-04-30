@@ -15,12 +15,12 @@ make build local-dev
 ```
 
 You can override default local development configuration by overriding environment
-values [here](https://github.com/upbound/universal-crossplane/blob/main/cluster/local/config/config.env).
+variables [here](https://github.com/upbound/universal-crossplane/blob/main/cluster/local/config/config.env).
 
-For example, following will enable connecting your local development environment to Upbound Cloud:
+For example, the following will enable connecting your local development environment to Upbound Cloud:
 
 ```
-export LOCALDEV_CONNECT_TO_UBC=true
+export LOCALDEV_UBC_PERMISSION=edit
 export LOCALDEV_CONNECT_CP_ORG=<YOUR_UBC_ORG>
 export LOCALDEV_CONNECT_API_TOKEN=<YOUR_ACCESS_TOKEN>
 

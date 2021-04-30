@@ -33,7 +33,7 @@ create_control_plane() {
   kube_cluster_id=$(${KUBECTL} get ns kube-system -o jsonpath='{.metadata.uid}')
   id=$(curl -s --cookie /tmp/req.cookie \
       -H "Content-Type: application/json" \
-      -d '{"namespace": "'"${LOCALDEV_CONNECT_CP_ORG}"'","name": "'"${LOCALDEV_CONNECT_CP_NAME}"'","description": " ", "selfHosted": true, "kubeClusterID": "'"${kube_cluster_id}"'"}' \
+      -d '{"account": "'"${LOCALDEV_CONNECT_CP_ORG}"'","name": "'"${LOCALDEV_CONNECT_CP_NAME}"'", "selfHosted": true, "kubeClusterID": "'"${kube_cluster_id}"'"}' \
       "https://${UPBOUND_API_ENDPOINT}/v1/controlPlanes" | \
       jq -r .controlPlane.id)
   echo "${id}"

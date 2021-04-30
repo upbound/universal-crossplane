@@ -46,7 +46,7 @@ const (
 	cnAgent              = "upbound-agent"
 	cnGraphql            = "crossplane-graphql"
 	cnXgql               = "xgql"
-	secretNameCA         = "upbound-agent-ca"
+	secretNameCA         = "uxp-ca"
 	secretNameGatewayTLS = "upbound-agent-tls"
 	secretNameGraphqlTLS = "crossplane-graphql-tls"
 	secretNameXgqlTLS    = "xgql-tls"

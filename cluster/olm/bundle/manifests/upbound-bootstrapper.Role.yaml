@@ -29,7 +29,7 @@ rules:
 - apiGroups:
   - ""
   resourceNames:
-  - upbound-agent-ca
+  - uxp-ca
   - upbound-agent-public-certs
   - upbound-agent-tls
   - crossplane-graphql-tls

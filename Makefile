@@ -51,7 +51,7 @@ GO111MODULE = on
 
 # ====================================================================================
 # Setup Kubernetes tools
-
+KUBECTL_VERSION = v1.19.10
 USE_HELM3 = true
 HELM_CHART_LINT_STRICT = false
 CRDS_DIR=$(ROOT_DIR)/cluster/crds
@@ -149,7 +149,7 @@ check-diff: reviewable
 
 local-dev: local.up local.deploy.$(PACKAGE_NAME)
 
-e2e.run: build local-dev
+e2e.run: build local-dev local.deploy.validation
 e2e.done: local.down
 
 .PHONY: generate-chart crossplane submodules fallthrough reviewable

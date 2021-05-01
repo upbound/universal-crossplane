@@ -18,7 +18,10 @@ PACKAGE_NAME := universal-crossplane
 # Versions
 
 CROSSPLANE_REPO := https://github.com/crossplane/crossplane.git
-CROSSPLANE_TAG := v1.2.0-rc.0-133-g2e227c16
+# Tag corresponds to Docker image tag while commit is git-compatible signature
+# for pulling. They do not always match.
+CROSSPLANE_TAG := v1.2.0
+CROSSPLANE_COMMIT := v1.2.0
 
 BOOTSTRAPPER_TAG := $(VERSION)
 AGENT_TAG := $(VERSION)
@@ -96,7 +99,6 @@ submodules:
 	@git submodule update --init --recursive
 
 GITCP_CMD?=git -C $(WORK_DIR)/crossplane
-CROSSPLANE_COMMIT := $(shell echo $(CROSSPLANE_TAG) | sed -E 's/(.*)\./\1-/' | sed -E 's/(.*)\./\1-/')
 
 crossplane:
 	@$(INFO) Fetching Crossplane chart $(CROSSPLANE_TAG)

@@ -468,7 +468,7 @@ func roundTripperForRestConfig(config *rest.Config) (http.RoundTripper, error) {
 }
 
 func impersonationConfigForUser(ca internal.CrossplaneAccessor, log logging.Logger) (transport.ImpersonationConfig, error) {
-	log.Debug(fmt.Sprintf("User info: user %s groups %v", ca.UpboundID, ca.Groups))
+	log.Debug("Impersonating user info", "upboundID", ca.UpboundID, "groups", ca.Groups)
 
 	if ca.UpboundID == "" {
 		return transport.ImpersonationConfig{}, errors.New(errUpboundIDMissing)

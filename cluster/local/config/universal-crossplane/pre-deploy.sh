@@ -7,8 +7,8 @@ CONTROL_PLANE_NAME="${LOCALDEV_CONNECT_CP_NAME}"
 CONTROL_PLANE_ORG="${LOCALDEV_CONNECT_CP_ORG}"
 UPBOUND_PLATFORM_TOKEN_SECRET_NAME="upbound-control-plane-token"
 
-if [ ${LOCALDEV_CONNECT_TO_UBC} != "true" ]; then
-  echo "LOCALDEV_CONNECT_TO_UBC is not set to true, skipping self hosted control plane creation"
+if [ "${LOCALDEV_UBC_PERMISSION}" != "edit" ] && [ "${LOCALDEV_UBC_PERMISSION}" != "view" ]; then
+  echo "LOCALDEV_UBC_PERMISSION is neither edit nor view, skipping self hosted control plane creation"
   return 0
 fi
 
@@ -36,7 +36,7 @@ curl --cookie-jar /tmp/req.cookie \
 echo "Logged in!"
 
 echo "Checking if control plane ${CONTROL_PLANE_NAME} in org ${CONTROL_PLANE_ORG} already exists..."
-cp_id=$(curl -s --cookie /tmp/req.cookie "https://${UPBOUND_API_ENDPOINT}/v1/namespaces/${CONTROL_PLANE_ORG}/controlPlanes" | \
+cp_id=$(curl -s --cookie /tmp/req.cookie "https://${UPBOUND_API_ENDPOINT}/v1/accounts/${CONTROL_PLANE_ORG}/controlPlanes" | \
   jq -c '.[] | select(.controlPlane.name | contains("'"${CONTROL_PLANE_NAME}"'"))' | \
   jq -r .controlPlane.id)
 
@@ -44,11 +44,13 @@ if [ -z "${cp_id}" ]; then
     echo "Creating a new control plane with name ${CONTROL_PLANE_NAME} in org ${CONTROL_PLANE_ORG}"
     cp_id=$(curl -s --cookie /tmp/req.cookie \
       -H "Content-Type: application/json" \
-      -d '{"namespace": "'"${CONTROL_PLANE_ORG}"'","name": "'"${CONTROL_PLANE_NAME}"'","description": " ", "selfHosted": true, "kubeClusterID": "'"${kube_cluster_id}"'"}' \
+      -d '{"account": "'"${CONTROL_PLANE_ORG}"'","name": "'"${CONTROL_PLANE_NAME}"'", "selfHosted": true, "kubeClusterID": "'"${kube_cluster_id}"'"}' \
       "https://${UPBOUND_API_ENDPOINT}/v1/controlPlanes" | \
       jq -r .controlPlane.id)
+      echo "Platform created with id ${cp_id}!"
+else
+  echo "Platform exists with id ${cp_id}!"
 fi
-echo "Platform created/exists with id ${cp_id}!"
 
 echo "Creating control plane token..."
 cp_token=$(curl -s --cookie /tmp/req.cookie \

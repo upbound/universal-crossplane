@@ -1,31 +1,34 @@
 {{- if or (eq .Values.upbound.controlPlane.permission "view") (eq .Values.upbound.controlPlane.permission "edit") }}
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
-metadata:
-  name: {{ template "agent-name" . }}
-  labels:
-    {{- include "labelsAgent" . | nindent 4 }}
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: {{ template "agent-name" . }}
-subjects:
-- kind: ServiceAccount
-  name: {{ template "agent-name" . }}
-  namespace: {{ .Release.Namespace }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ template "agent-name" . }}-impersonator
+  name: {{ template "name" . }}-view
   labels:
     {{- include "labelsAgent" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: {{ template "agent-name" . }}-impersonator
+  name: {{ template "name" . }}-view
 subjects:
-  - kind: ServiceAccount
-    name: {{ template "agent-name" . }}
-    namespace: {{ .Release.Namespace }}
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: upbound:view
+{{- if eq .Values.upbound.controlPlane.permission "edit" }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ template "name" . }}-edit
+  labels:
+    {{- include "labelsAgent" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ template "name" . }}-edit
+subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: Group
+    name: upbound:edit
+{{- end }}
 {{- end }}

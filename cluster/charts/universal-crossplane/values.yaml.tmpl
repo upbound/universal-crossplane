@@ -27,8 +27,9 @@ imagePullSecrets:
 
 rbacManager:
   deploy: true
+  skipAggregatedClusterRoles: true
   replicas: 1
-  managementPolicy: All
+  managementPolicy: Basic
   leaderElection: true
   args: {}
   nodeSelector: {}
@@ -81,7 +82,7 @@ upbound:
   apiURL: "https://api.upbound.io"
   connectHost: "connect.upbound.io"
   controlPlane:
-    connect: false
+    permission: None
     token: ""
 
 

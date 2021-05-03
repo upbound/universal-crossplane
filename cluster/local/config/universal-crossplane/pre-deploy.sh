@@ -7,8 +7,8 @@ CONTROL_PLANE_NAME="${LOCALDEV_CONNECT_CP_NAME}"
 CONTROL_PLANE_ORG="${LOCALDEV_CONNECT_CP_ORG}"
 UPBOUND_PLATFORM_TOKEN_SECRET_NAME="upbound-control-plane-token"
 
-if [ ${LOCALDEV_CONNECT_TO_UBC} != "true" ]; then
-  echo "LOCALDEV_CONNECT_TO_UBC is not set to true, skipping self hosted control plane creation"
+if [ "${LOCALDEV_UBC_PERMISSION}" != "Edit" ] && [ "${LOCALDEV_UBC_PERMISSION}" != "View" ]; then
+  echo "LOCALDEV_UBC_PERMISSION is neither Edit nor View, skipping self hosted control plane creation"
   return 0
 fi
 

@@ -1,4 +1,4 @@
-{{- if or (eq .Values.upbound.controlPlane.permission "View") (eq .Values.upbound.controlPlane.permission "Edit") }}
+{{- if or (eq .Values.upbound.controlPlane.permission "view") (eq .Values.upbound.controlPlane.permission "edit") }}
 # There are more permissions in upstream aggregated ClusterRoles than we'd like
 # to have, so, we have our own ClusterRoles with only the permissions we need.
 ---
@@ -31,7 +31,7 @@ rules:
       - pkg.crossplane.io
     resources: [providers, configurations, providerrevisions, configurationrevisions]
     verbs: [get, list, watch]
-{{- if eq .Values.upbound.controlPlane.permission "Edit" }}
+{{- if eq .Values.upbound.controlPlane.permission "edit" }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole

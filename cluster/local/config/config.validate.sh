@@ -7,7 +7,7 @@ LOCALDEV_CONNECT_CP_NAME: ${LOCALDEV_CONNECT_CP_NAME}
 =============================================================
 """
 
-if [ "${LOCALDEV_UBC_PERMISSION}" == "Edit" ] || [ "${LOCALDEV_UBC_PERMISSION}" == "View" ]; then
+if [ "${LOCALDEV_UBC_PERMISSION}" == "edit" ] || [ "${LOCALDEV_UBC_PERMISSION}" == "view" ]; then
   if [[ -z ${LOCALDEV_CONNECT_API_TOKEN:-} ]]; then
     echo_error "LOCALDEV_UBC_PERMISSION is set to ${LOCALDEV_UBC_PERMISSION} but LOCALDEV_CONNECT_API_TOKEN is not set ";
   fi

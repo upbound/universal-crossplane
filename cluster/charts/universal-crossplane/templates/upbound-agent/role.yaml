@@ -1,4 +1,4 @@
-{{- if eq .Values.upbound.controlPlane.permission "Edit" }}
+{{- if eq .Values.upbound.controlPlane.permission "edit" }}
 ---
 # We need to be able to manage Secrets in the namespace where UXP is deployed
 # so that Secrets pointed by ProviderConfig objects can be created by the agent.

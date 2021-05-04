@@ -28,11 +28,11 @@ ${CP_KUBECTL} config use-context "self-hosted-test"
 
 echo_info "Validating \"kubectl\" queries work over Upbound Cloud..."
 ${CP_KUBECTL} get ns
-validation_namespace="uxp-validation"
-${CP_KUBECTL} delete ns "${validation_namespace}" --ignore-not-found
-${CP_KUBECTL} create ns "${validation_namespace}"
+validation_secret="uxp-validation"
+${CP_KUBECTL} -n ${HELM_RELEASE_NAMESPACE} delete secret "${validation_secret}" --ignore-not-found
+${CP_KUBECTL} -n ${HELM_RELEASE_NAMESPACE} create secret generic "${validation_secret}" --from-literal=foo=bar
 
-${KUBECTL} get ns "${validation_namespace}"
+${KUBECTL} -n ${HELM_RELEASE_NAMESPACE} get secret "${validation_secret}"
 echo_info "Successfully validated \"kubectl\" queries over Upbound Cloud!"
 
 echo_info "Validating \"xqgl\" queries work over Upbound Cloud..."
@@ -40,7 +40,8 @@ echo_info "Validating \"xqgl\" queries work over Upbound Cloud..."
 query='query {
   kubernetesResources(
     apiVersion: \"v1\"
-    kind: \"Namespace\"
+    kind: \"Secret\"
+    namespace: \"upbound-system\"
   ) {
     totalCount
     nodes {
@@ -60,8 +61,8 @@ xgql_response=$(curl -H 'Content-Type: application/json' \
 echo_info "XGQL response:"
 echo "${xgql_response}" | json_pp
 
-echo_info "Checking if xgql response contains validation namespace..."
-echo "${xgql_response}" | grep -o "\"name\":\"${validation_namespace}\""
+echo_info "Checking if xgql response contains validation secret..."
+echo "${xgql_response}" | grep -o "\"name\":\"${validation_secret}\""
 echo_info "Successfully validated \"xgql\" queries over Upbound Cloud!"
 
 

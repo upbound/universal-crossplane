@@ -149,4 +149,7 @@ check-diff: reviewable
 
 local-dev: local.up local.deploy.$(PACKAGE_NAME)
 
+e2e.run: build local-dev local.deploy.validation
+e2e.done: local.down
+
 .PHONY: generate-chart crossplane submodules fallthrough reviewable

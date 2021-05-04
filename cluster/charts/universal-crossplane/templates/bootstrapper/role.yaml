@@ -13,7 +13,7 @@ rules:
     verbs: ["watch", "list"]
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "update"]
+    verbs: ["get", "update", "patch"]
     resourceNames:
     - uxp-ca
     - upbound-agent-public-certs

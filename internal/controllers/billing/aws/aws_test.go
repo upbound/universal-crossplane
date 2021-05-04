@@ -34,7 +34,7 @@ MwIDAQAB
 	testNonce = "c21561da-087b-4efc-af6b-sdas232asd"
 )
 
-var errBoom = errors.New("boom!")
+var errBoom = errors.New("boom")
 
 type MockAWSMarketplace struct {
 	MockRegisterUsage func(ctx context.Context, params *marketplacemetering.RegisterUsageInput, optFns ...func(*marketplacemetering.Options)) (*marketplacemetering.RegisterUsageOutput, error)
@@ -131,7 +131,7 @@ func TestAWSMarketplace_Register(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := NewAWSMarketplace(tc.args.kube, tc.args.mcl, testPublicKey)
+			r := NewMarketplace(tc.args.kube, tc.args.mcl, testPublicKey)
 			token, err := r.Register(context.Background(), tc.args.s, tc.args.uid)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("\nReason: %s\nr.Register(...): -want token, +got token:\n%s", tc.reason, diff)
@@ -173,7 +173,7 @@ func TestAWSMarketplace_Verify(t *testing.T) {
 			},
 			want: want{
 				verified: false,
-				err:      errors.Errorf(errProductCodeMatchFmt, differentProductCode, AWSProductCode),
+				err:      errors.Errorf(errProductCodeMatchFmt, differentProductCode, MarketplaceProductCode),
 			},
 		},
 		"Success": {
@@ -189,7 +189,7 @@ func TestAWSMarketplace_Verify(t *testing.T) {
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := NewAWSMarketplace(nil, nil, testPublicKey)
+			r := NewMarketplace(nil, nil, testPublicKey)
 			verified, err := r.Verify(tc.args.token, tc.args.uid)
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("\nReason: %s\nr.Verify(...): -want verified, +got verified:\n%s", tc.reason, diff)

@@ -25,7 +25,7 @@ func SetupAWSMarketplace(mgr ctrl.Manager, l logging.Logger) error {
 	if err != nil {
 		return errors.Wrap(err, "cannot load default AWS config")
 	}
-	reg := aws.NewAWSMarketplace(mgr.GetClient(), marketplacemetering.NewFromConfig(cfg), aws.AWSPublicKey)
+	reg := aws.NewMarketplace(mgr.GetClient(), marketplacemetering.NewFromConfig(cfg), aws.MarketplacePublicKey)
 
 	r := NewReconciler(mgr,
 		WithLogger(l.WithValues("controller", name)),

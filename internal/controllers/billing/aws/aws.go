@@ -18,9 +18,9 @@ import (
 // TODO(muvaf): Consider fetching them from an Upbound API but keep the latest
 // ones hard-coded as fallback for air-gapped environments.
 const (
-	AWSProductCode      = "1fszvu527waovqeuhpkyx2b5d"
-	AWSPublicKey        = "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAyu7Xq7XTBRgFWCL+DXj8\nXyc/fPLWNQ1adPDf8zqkJ1H1JCTg6fUo7HUvNu0BAbPwIME4aDEzteJkhPq9IzS8\nHlrZT/7DqSPV9bXnR9OkqugfbFPyHGyd9afHyfDJfGwfqBP5r8oBuGwmCw5Ia088\nAcePfkVEisAo+8KiBAE16bqvDw0v5YzDrDVpHH9YdK1q9eG5WRTt0h7lYFj8dydr\nh+OyONGyWTkAWbs3JpsQLZgRdU6Klj5aZzO6FeUc2kOz2Hs+QvKgbNSpgV0000KK\n2on4L1+WJau7sj8EFquFdk2C0MhucIy6ceWXGB3YAOb8c0H9FT0eSY5rtX154otW\njmV9vMLLX1gajtQD0iOLBLRQ3WliP7fGc6o3StjMrbKh+ErXGVzzJnjK2eQhgkg/\n/DgcKjUptZ21gdbqbQBGwvfitBEJX7VCwF4VMhFM8JQiAxCVBZ7kkY5ZlGjvN2gO\nAMFKarvAWRwrZisxKWe+RFBU1EI5WS75X7owU/IehIabAgMBAAE=\n-----END PUBLIC KEY-----\n"
-	AWSPublicKeyVersion = 1
+	MarketplaceProductCode      = "1fszvu527waovqeuhpkyx2b5d"
+	MarketplacePublicKey        = "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAyu7Xq7XTBRgFWCL+DXj8\nXyc/fPLWNQ1adPDf8zqkJ1H1JCTg6fUo7HUvNu0BAbPwIME4aDEzteJkhPq9IzS8\nHlrZT/7DqSPV9bXnR9OkqugfbFPyHGyd9afHyfDJfGwfqBP5r8oBuGwmCw5Ia088\nAcePfkVEisAo+8KiBAE16bqvDw0v5YzDrDVpHH9YdK1q9eG5WRTt0h7lYFj8dydr\nh+OyONGyWTkAWbs3JpsQLZgRdU6Klj5aZzO6FeUc2kOz2Hs+QvKgbNSpgV0000KK\n2on4L1+WJau7sj8EFquFdk2C0MhucIy6ceWXGB3YAOb8c0H9FT0eSY5rtX154otW\njmV9vMLLX1gajtQD0iOLBLRQ3WliP7fGc6o3StjMrbKh+ErXGVzzJnjK2eQhgkg/\n/DgcKjUptZ21gdbqbQBGwvfitBEJX7VCwF4VMhFM8JQiAxCVBZ7kkY5ZlGjvN2gO\nAMFKarvAWRwrZisxKWe+RFBU1EI5WS75X7owU/IehIabAgMBAAE=\n-----END PUBLIC KEY-----\n"
+	MarketplacePublicKeyVersion = 1
 )
 
 // SecretKeyAWSMeteringSignature is the key whose value contains JWT signature returned
@@ -40,30 +40,30 @@ type marketplaceClient interface {
 	RegisterUsage(ctx context.Context, params *marketplacemetering.RegisterUsageInput, optFns ...func(*marketplacemetering.Options)) (*marketplacemetering.RegisterUsageOutput, error)
 }
 
-// NewAWSMarketplace returns a new AWSMarketplace object that can register usage.
-func NewAWSMarketplace(cl client.Client, mcl marketplaceClient, publicKey string) *AWSMarketplace {
-	return &AWSMarketplace{
+// NewMarketplace returns a new Marketplace object that can register usage.
+func NewMarketplace(cl client.Client, mcl marketplaceClient, publicKey string) *Marketplace {
+	return &Marketplace{
 		client:    resource.NewApplicatorWithRetry(resource.NewAPIPatchingApplicator(cl), resource.IsAPIErrorWrapped, &retry.DefaultRetry),
 		metering:  mcl,
 		publicKey: publicKey,
 	}
 }
 
-// AWSMarketplace implements Registerer for AWS Marketplace API.
-type AWSMarketplace struct {
+// Marketplace implements Registerer for AWS Marketplace API.
+type Marketplace struct {
 	client    resource.Applicator
 	metering  marketplaceClient
 	publicKey string
 }
 
 // Register makes sure user is entitled for this usage in an idempotent way.
-func (am *AWSMarketplace) Register(ctx context.Context, s *v1.Secret, uid string) (string, error) {
+func (am *Marketplace) Register(ctx context.Context, s *v1.Secret, uid string) (string, error) {
 	if len(s.Data[SecretKeyAWSMeteringSignature]) > 0 {
 		return string(s.Data[SecretKeyAWSMeteringSignature]), nil
 	}
 	u := &marketplacemetering.RegisterUsageInput{
-		ProductCode:      aws.String(AWSProductCode),
-		PublicKeyVersion: aws.Int32(AWSPublicKeyVersion),
+		ProductCode:      aws.String(MarketplaceProductCode),
+		PublicKeyVersion: aws.Int32(MarketplacePublicKeyVersion),
 		Nonce:            aws.String(uid),
 	}
 	resp, err := am.metering.RegisterUsage(ctx, u)
@@ -78,7 +78,7 @@ func (am *AWSMarketplace) Register(ctx context.Context, s *v1.Secret, uid string
 }
 
 // Verify makes sure the signature is signed by AWS Marketplace.
-func (am *AWSMarketplace) Verify(token, uid string) (bool, error) {
+func (am *Marketplace) Verify(token, uid string) (bool, error) {
 	t, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(_ *jwt.Token) (interface{}, error) {
 		return jwt.ParseRSAPublicKeyFromPEM([]byte(am.publicKey))
 	})
@@ -90,12 +90,12 @@ func (am *AWSMarketplace) Verify(token, uid string) (bool, error) {
 	}
 	claims := t.Claims.(jwt.MapClaims)
 	switch {
-	case claims["productCode"] != AWSProductCode:
-		return false, errors.Errorf(errProductCodeMatchFmt, claims["productCode"], AWSProductCode)
+	case claims["productCode"] != MarketplaceProductCode:
+		return false, errors.Errorf(errProductCodeMatchFmt, claims["productCode"], MarketplaceProductCode)
 	case claims["nonce"] != uid:
 		return false, errors.Errorf(errNonceMatchFmt, claims["nonce"], uid)
-	case claims["publicKeyVersion"] != float64(AWSPublicKeyVersion):
-		return false, errors.Errorf(errPublicKeyVersionMatchFmt, claims["publicKeyVersion"], float64(AWSPublicKeyVersion))
+	case claims["publicKeyVersion"] != float64(MarketplacePublicKeyVersion):
+		return false, errors.Errorf(errPublicKeyVersionMatchFmt, claims["publicKeyVersion"], float64(MarketplacePublicKeyVersion))
 	}
 	return true, nil
 }

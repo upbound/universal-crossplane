@@ -20,7 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-var errBoom = errors.New("boom!")
+var errBoom = errors.New("boom")
 
 type MockRegisterer struct {
 	MockRegister func(ctx context.Context, secret *corev1.Secret, uid string) (string, error)

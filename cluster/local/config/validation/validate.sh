@@ -35,6 +35,10 @@ ${CP_KUBECTL} -n ${HELM_RELEASE_NAMESPACE} create secret generic "${validation_s
 ${KUBECTL} -n ${HELM_RELEASE_NAMESPACE} get secret "${validation_secret}"
 echo_info "Successfully validated \"kubectl\" queries over Upbound Cloud!"
 
+echo_info "Validating reading universal crossplane configuration works..."
+${CP_KUBECTL} -n ${HELM_RELEASE_NAMESPACE} get cm universal-crossplane-config -o yaml
+echo_info "Successfully validated reading universal crossplane configuration!"
+
 echo_info "Validating \"xqgl\" queries work over Upbound Cloud..."
 # shellcheck disable=SC2089
 query='query {

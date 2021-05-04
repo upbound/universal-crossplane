@@ -19,6 +19,11 @@ import (
 const (
 	reconcileTimeout = 1 * time.Minute
 	syncPeriod       = 1 * time.Minute
+
+	errGetSecret       = "cannot get entitlement secret"
+	errGetKubesystemNS = "cannot get kube-system namespace"
+	errRegister        = "cannot register entitlement"
+	errVerify          = "cannot verify signature"
 )
 
 // ReconcilerOption is used to configure the Reconciler.
@@ -45,7 +50,7 @@ func WithRecorder(er event.Recorder) ReconcilerOption {
 	}
 }
 
-// Reconciler reconciles on tls secrets
+// Reconciler reconciles on entitlement secret.
 type Reconciler struct {
 	client client.Client
 	log    logging.Logger
@@ -54,7 +59,7 @@ type Reconciler struct {
 	entitlement Registerer
 }
 
-// NewReconciler returns a new reconciler
+// NewReconciler returns a new reconciler.
 func NewReconciler(mgr manager.Manager, opts ...ReconcilerOption) *Reconciler {
 	r := &Reconciler{
 		client:      mgr.GetClient(),
@@ -82,24 +87,24 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	s := &corev1.Secret{}
 	nn := types.NamespacedName{Name: meta.SecretNameEntitlement, Namespace: req.Namespace}
 	if err := r.client.Get(ctx, nn, s); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "cannot get entitlement secret")
+		return reconcile.Result{}, errors.Wrap(err, errGetSecret)
 	}
 
 	kubeNS := &corev1.Namespace{}
 	nn = types.NamespacedName{Name: "kube-system"}
 	if err := r.client.Get(ctx, nn, kubeNS); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "cannot get kube-system namespace")
+		return reconcile.Result{}, errors.Wrap(err, errGetKubesystemNS)
 	}
 	uid := string(kubeNS.GetUID())
 
 	token, err := r.entitlement.Register(ctx, s, uid)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "cannot register entitlement")
+		return reconcile.Result{}, errors.Wrap(err, errRegister)
 	}
 
 	verified, err := r.entitlement.Verify(token, uid)
 	if err != nil {
-		return reconcile.Result{}, errors.Wrap(err, "cannot verify signature")
+		return reconcile.Result{}, errors.Wrap(err, errVerify)
 	}
 	if !verified {
 		// TODO(muvaf): There is no action we can take at this point.

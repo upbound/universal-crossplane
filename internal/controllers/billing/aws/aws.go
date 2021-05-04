@@ -1,7 +1,9 @@
-package billing
+package aws
 
 import (
 	"context"
+
+	"k8s.io/client-go/util/retry"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/marketplacemetering"
@@ -9,8 +11,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/types"
-	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -27,6 +27,13 @@ const (
 // from AWS Metering Service.
 const (
 	SecretKeyAWSMeteringSignature = "awsMeteringSignature"
+
+	errRegisterUsage            = "cannot register usage"
+	errApplySecret              = "cannot apply entitlement secret"
+	errParseToken               = "cannot parse token"
+	errProductCodeMatchFmt      = "productCode %s does not match expected %s"
+	errNonceMatchFmt            = "nonce %s does not match expected %s"
+	errPublicKeyVersionMatchFmt = "publicKeyVersion %s does not match expected %f"
 )
 
 type marketplaceClient interface {
@@ -34,17 +41,19 @@ type marketplaceClient interface {
 }
 
 // NewAWSMarketplace returns a new AWSMarketplace object that can register usage.
-func NewAWSMarketplace(cl client.Client, mcl marketplaceClient) *AWSMarketplace {
+func NewAWSMarketplace(cl client.Client, mcl marketplaceClient, publicKey string) *AWSMarketplace {
 	return &AWSMarketplace{
-		client:   cl,
-		metering: mcl,
+		client:    resource.NewApplicatorWithRetry(resource.NewAPIPatchingApplicator(cl), resource.IsAPIErrorWrapped, &retry.DefaultRetry),
+		metering:  mcl,
+		publicKey: publicKey,
 	}
 }
 
 // AWSMarketplace implements Registerer for AWS Marketplace API.
 type AWSMarketplace struct {
-	client   client.Client
-	metering marketplaceClient
+	client    resource.Applicator
+	metering  marketplaceClient
+	publicKey string
 }
 
 // Register makes sure user is entitled for this usage in an idempotent way.
@@ -59,41 +68,34 @@ func (am *AWSMarketplace) Register(ctx context.Context, s *v1.Secret, uid string
 	}
 	resp, err := am.metering.RegisterUsage(ctx, u)
 	if err != nil {
-		return "", errors.Wrap(err, "cannot register usage")
+		return "", errors.Wrap(err, errRegisterUsage)
 	}
-	err = retry.OnError(retry.DefaultRetry, resource.IsAPIError, func() error {
-		nn := types.NamespacedName{Name: s.Name, Namespace: s.Namespace}
-		if err := am.client.Get(ctx, nn, s); err != nil {
-			return err
-		}
-		if s.Data == nil {
-			s.Data = map[string][]byte{}
-		}
-		s.Data[SecretKeyAWSMeteringSignature] = []byte(aws.ToString(resp.Signature))
-		return am.client.Update(ctx, s)
-	})
-	return aws.ToString(resp.Signature), errors.Wrapf(err, "cannot update entitlement secret %s/%s", s.Namespace, s.Name)
+	if s.Data == nil {
+		s.Data = map[string][]byte{}
+	}
+	s.Data[SecretKeyAWSMeteringSignature] = []byte(aws.ToString(resp.Signature))
+	return aws.ToString(resp.Signature), errors.Wrapf(am.client.Apply(ctx, s), errApplySecret)
 }
 
 // Verify makes sure the signature is signed by AWS Marketplace.
 func (am *AWSMarketplace) Verify(token, uid string) (bool, error) {
 	t, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(_ *jwt.Token) (interface{}, error) {
-		return jwt.ParseRSAPublicKeyFromPEM([]byte(AWSPublicKey))
+		return jwt.ParseRSAPublicKeyFromPEM([]byte(am.publicKey))
 	})
 	if err != nil {
-		return false, errors.Wrap(err, "cannot parse token")
+		return false, errors.Wrap(err, errParseToken)
 	}
 	if !t.Valid {
-		return false, errors.New("token is invalid")
+		return false, nil
 	}
 	claims := t.Claims.(jwt.MapClaims)
 	switch {
 	case claims["productCode"] != AWSProductCode:
-		return false, errors.Errorf("productCode %s does not match expected %s", claims["productCode"], AWSProductCode)
+		return false, errors.Errorf(errProductCodeMatchFmt, claims["productCode"], AWSProductCode)
 	case claims["nonce"] != uid:
-		return false, errors.Errorf("nonce %s does not match expected %s", claims["nonce"], uid)
+		return false, errors.Errorf(errNonceMatchFmt, claims["nonce"], uid)
 	case claims["publicKeyVersion"] != float64(AWSPublicKeyVersion):
-		return false, errors.Errorf("publicKeyVersion %s does not match expected %f", claims["publicKeyVersion"], float64(AWSPublicKeyVersion))
+		return false, errors.Errorf(errPublicKeyVersionMatchFmt, claims["publicKeyVersion"], float64(AWSPublicKeyVersion))
 	}
 	return true, nil
 }

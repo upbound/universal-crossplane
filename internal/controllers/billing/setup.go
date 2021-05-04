@@ -3,6 +3,8 @@ package billing
 import (
 	"context"
 
+	"github.com/upbound/universal-crossplane/internal/controllers/billing/aws"
+
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/marketplacemetering"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
@@ -23,7 +25,7 @@ func SetupAWSMarketplace(mgr ctrl.Manager, l logging.Logger) error {
 	if err != nil {
 		return errors.Wrap(err, "cannot load default AWS config")
 	}
-	reg := NewAWSMarketplace(mgr.GetClient(), marketplacemetering.NewFromConfig(cfg))
+	reg := aws.NewAWSMarketplace(mgr.GetClient(), marketplacemetering.NewFromConfig(cfg), aws.AWSPublicKey)
 
 	r := NewReconciler(mgr,
 		WithLogger(l.WithValues("controller", name)),

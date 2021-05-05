@@ -5,7 +5,7 @@ replicas: 1
 deploymentStrategy: RollingUpdate
 
 image:
-  repository: crossplane/crossplane
+  repository: %%IMAGE_REGISTRY%%/crossplane/crossplane
   tag: %%CROSSPLANE_TAG%%
   pullPolicy: Always
 
@@ -88,7 +88,7 @@ upbound:
 
 graphql:
   image:
-    repository: upbound/crossplane-graphql
+    repository: %%IMAGE_REGISTRY%%/upbound/crossplane-graphql
     tag: %%GRAPHQL_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
@@ -99,7 +99,7 @@ graphql:
 
 xgql:
   image:
-    repository: upbound/xgql
+    repository: %%IMAGE_REGISTRY%%/upbound/xgql
     tag: %%XGQL_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
@@ -111,7 +111,7 @@ xgql:
 
 agent:
   image:
-    repository: upbound/upbound-agent
+    repository: %%IMAGE_REGISTRY%%/upbound/upbound-agent
     tag: %%AGENT_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
@@ -123,10 +123,15 @@ agent:
 
 bootstrapper:
   image:
-    repository: upbound/uxp-bootstrapper
+    repository: %%IMAGE_REGISTRY%%/upbound/uxp-bootstrapper
     tag: %%BOOTSTRAPPER_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
   config:
     debugMode: false
     args: []
+
+billing:
+  awsMarketplace:
+    enabled: false
+    iamRoleARN: arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>

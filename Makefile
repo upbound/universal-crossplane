@@ -72,7 +72,9 @@ HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
 # Due to the way that the shared build logic works, images should
 # all be in folders at the same level (no additional levels of nesting).
 
-DOCKER_REGISTRY = upbound
+# IMAGE_REGISTRY is the registry server to push the images to.
+IMAGE_REGISTRY ?= docker.io
+DOCKER_REGISTRY = "$(IMAGE_REGISTRY)/upbound"
 IMAGES = uxp-bootstrapper upbound-agent
 -include build/makelib/image.mk
 
@@ -117,6 +119,7 @@ crossplane:
 generate-chart: crossplane
 	@$(INFO) Generating values.yaml for the chart
 	@cp -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml.tmpl $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%IMAGE_REGISTRY%%|$(IMAGE_REGISTRY)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' values.yaml
 	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' values.yaml

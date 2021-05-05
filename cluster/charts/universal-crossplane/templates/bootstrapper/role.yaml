@@ -13,7 +13,7 @@ rules:
     verbs: ["watch", "list"]
   - apiGroups: [""]
     resources: ["secrets"]
-    verbs: ["get", "update"]
+    verbs: ["get", "update", "patch"]
     resourceNames:
     - uxp-ca
     - upbound-agent-public-certs
@@ -21,3 +21,6 @@ rules:
     - crossplane-graphql-tls
     - xgql-tls
     - upbound-control-plane-token
+    {{- if .Values.billing.awsMarketplace.enabled }}
+    - upbound-entitlement
+    {{- end}}

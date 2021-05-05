@@ -6,61 +6,62 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/upbound/universal-crossplane/internal/clients/upbound"
-	"github.com/upbound/universal-crossplane/internal/controller"
+	"github.com/upbound/universal-crossplane/internal/controllers/billing"
+	"github.com/upbound/universal-crossplane/internal/controllers/tlssecrets"
+	"github.com/upbound/universal-crossplane/internal/controllers/ubccerts"
 	"github.com/upbound/universal-crossplane/internal/version"
 )
-
-// Context represents a cli context
-type Context struct {
-	Debug bool
-}
 
 // BootstrapCmd represents the "bootstrap" command
 type BootstrapCmd struct {
 	SyncPeriod    time.Duration `default:"10m"`
 	Namespace     string        `default:"upbound-system"`
 	UpboundAPIUrl string        `default:"https://api.upbound.io"`
+	Controllers   []string      `default:"tls-secrets,ubc-certs" name:"controller" help:"List of controllers you want to run"`
 }
 
 var cli struct {
 	Debug bool `help:"Enable debug mode"`
 
-	Bootstrap BootstrapCmd `cmd:"" help:"Bootstraps Universal Crossplane"`
+	Bootstrap BootstrapCmd `cmd:"" name:"start" help:"Bootstraps Universal Crossplane"`
 }
 
 func main() {
 	ctx := kong.Parse(&cli)
-	err := ctx.Run(&Context{Debug: cli.Debug})
-	ctx.FatalIfErrorf(err)
-}
-
-// Run runs the bootstrap command
-func (b *BootstrapCmd) Run(ctx *Context) error {
-	zl := zap.New(zap.UseDevMode(ctx.Debug))
+	zl := zap.New(zap.UseDevMode(cli.Debug))
 	ctrl.SetLogger(zl)
+	s := runtime.NewScheme()
+	ctx.FatalIfErrorf(corev1.AddToScheme(s), "cannot add client-go scheme")
 
 	cfg, err := ctrl.GetConfig()
-	if err != nil {
-		return errors.Wrap(err, "cannot get config")
-	}
+	ctx.FatalIfErrorf(errors.Wrap(err, "cannot get config"))
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		SyncPeriod: &b.SyncPeriod,
-		Namespace:  b.Namespace,
+		Scheme:     s,
+		SyncPeriod: &cli.Bootstrap.SyncPeriod,
+		Namespace:  cli.Bootstrap.Namespace,
 	})
-	if err != nil {
-		return errors.Wrap(err, "cannot create manager")
-	}
+	ctx.FatalIfErrorf(errors.Wrap(err, "cannot create manager"))
 
-	logger := logging.NewLogrLogger(zl.WithName("bootstrap"))
-	if err := controller.Setup(mgr, logger, upbound.NewClient(b.UpboundAPIUrl, ctx.Debug)); err != nil {
-		return errors.Wrap(err, "cannot add bootstrap controller to manager")
+	logger := logging.NewLogrLogger(zl.WithName("bootstrapper"))
+	for _, c := range cli.Bootstrap.Controllers {
+		switch c {
+		case "tls-secrets":
+			ctx.FatalIfErrorf(errors.Wrapf(tlssecrets.Setup(mgr, logger), "cannot start %s controller", c))
+		case "ubc-certs":
+			ctx.FatalIfErrorf(errors.Wrapf(ubccerts.Setup(mgr, logger, upbound.NewClient(cli.Bootstrap.UpboundAPIUrl, cli.Debug)), "cannot setup %s controller", c))
+		case "aws-marketplace":
+			ctx.FatalIfErrorf(errors.Wrapf(billing.SetupAWSMarketplace(mgr, logger), "cannot setup %s controller", c))
+		default:
+			ctx.Errorf("unknown controller name: %s", c)
+		}
 	}
 
 	logger.Info("Starting bootstrapper", "version", version.Version)
-
-	return errors.Wrap(mgr.Start(ctrl.SetupSignalHandler()), "cannot start controller manager")
+	ctx.FatalIfErrorf(errors.Wrap(mgr.Start(ctrl.SetupSignalHandler()), "cannot start controller manager"))
 }

@@ -1,5 +1,5 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRole
+kind: Role
 metadata:
   labels:
     app.kubernetes.io/component: agent
@@ -8,29 +8,13 @@ metadata:
     app.kubernetes.io/name: crossplane
     app.kubernetes.io/version: 0.0.1
     helm.sh/chart: universal-crossplane-0.0.1
-  name: upbound-agent-impersonator
+  name: upbound-agent-uxp-config
 rules:
 - apiGroups:
   - ""
   resourceNames:
-  - upbound-cloud-impersonator
+  - universal-crossplane-config
   resources:
-  - users
+  - configmaps
   verbs:
-  - impersonate
-- apiGroups:
-  - authentication.k8s.io
-  resources:
-  - userextras/upbound-id
-  verbs:
-  - impersonate
-- apiGroups:
-  - ""
-  resourceNames:
-  - system:authenticated
-  - upbound:view
-  - upbound:edit
-  resources:
-  - groups
-  verbs:
-  - impersonate
+  - get

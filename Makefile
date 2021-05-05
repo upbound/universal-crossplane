@@ -129,9 +129,9 @@ generate-chart: crossplane
 # where the operator is deployed. See https://github.com/operator-framework/operator-lifecycle-manager/issues/1361
 # and https://github.com/operator-framework/operator-lifecycle-manager/issues/2039
 
-olm: $(HELM) $(OLMBUNDLE) generate-chart
+olm: $(HELM) $(OLMBUNDLE)
 	@$(INFO) Generating OLM bundle
-	@$(HELM) -n upbound-system template $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) --set upbound.controlPlane.connect=true > $(WORK_DIR)/olm.yaml
+	@$(HELM) -n upbound-system template $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) --set upbound.controlPlane.permission=edit > $(WORK_DIR)/olm.yaml
 	@$(SED_CMD) 's|RELEASE-NAME|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
 	@rm -rf $(OLM_DIR)/bundle
 	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --version $(HELM_CHART_VERSION) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
@@ -139,7 +139,7 @@ olm: $(HELM) $(OLMBUNDLE) generate-chart
 helm.prepare: generate-chart
 
 # Ensure a PR is ready for review.
-reviewable: helm.prepare lint
+reviewable: helm.prepare olm lint
 
 # Ensure branch is clean.
 check-diff: reviewable

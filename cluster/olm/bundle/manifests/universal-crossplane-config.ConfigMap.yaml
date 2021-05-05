@@ -1,8 +1,8 @@
 apiVersion: v1
 data:
-  agentVersion: 0.25.0-alpha1.76.g1ef3599
-  crossplaneVersion: 1.2.0-rc.0.106.gdb33bb23
-  graphQLVersion: 0.25.0-alpha1.39.gcf9772d
+  agentVersion: 1.2.0-rc.80.g57e96283-dirty
+  crossplaneVersion: 1.2.0
+  graphQLVersion: 0.25.0-alpha1.41.g119b42a
 kind: ConfigMap
 metadata:
   labels:

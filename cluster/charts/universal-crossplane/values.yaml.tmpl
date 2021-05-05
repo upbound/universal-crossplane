@@ -5,7 +5,7 @@ replicas: 1
 deploymentStrategy: RollingUpdate
 
 image:
-  repository: %%IMAGE_REGISTRY%%/crossplane/crossplane
+  repository: crossplane/crossplane
   tag: %%CROSSPLANE_TAG%%
   pullPolicy: Always
 
@@ -88,7 +88,7 @@ upbound:
 
 graphql:
   image:
-    repository: %%IMAGE_REGISTRY%%/upbound/crossplane-graphql
+    repository: upbound/crossplane-graphql
     tag: %%GRAPHQL_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
@@ -99,7 +99,7 @@ graphql:
 
 xgql:
   image:
-    repository: %%IMAGE_REGISTRY%%/upbound/xgql
+    repository: upbound/xgql
     tag: %%XGQL_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
@@ -111,7 +111,7 @@ xgql:
 
 agent:
   image:
-    repository: %%IMAGE_REGISTRY%%/upbound/upbound-agent
+    repository: upbound/upbound-agent
     tag: %%AGENT_TAG%%
     pullPolicy: IfNotPresent
   resources: {}
@@ -123,7 +123,7 @@ agent:
 
 bootstrapper:
   image:
-    repository: %%IMAGE_REGISTRY%%/upbound/uxp-bootstrapper
+    repository: upbound/uxp-bootstrapper
     tag: %%BOOTSTRAPPER_TAG%%
     pullPolicy: IfNotPresent
   resources: {}

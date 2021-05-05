@@ -74,7 +74,7 @@ HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
 
 # IMAGE_REGISTRY is the registry server to push the images to.
 IMAGE_REGISTRY ?= docker.io
-DOCKER_REGISTRY = $(IMAGE_REGISTRY)/upbound
+DOCKER_REGISTRY = "$(IMAGE_REGISTRY)/upbound"
 IMAGES = uxp-bootstrapper upbound-agent
 -include build/makelib/image.mk
 

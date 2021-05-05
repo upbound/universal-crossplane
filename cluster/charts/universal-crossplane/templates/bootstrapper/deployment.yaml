@@ -15,10 +15,12 @@ spec:
         {{- include "selectorLabelsBootstrapper" . | nindent 8 }}
     spec:
       serviceAccountName: {{ template "bootstrapper-name" . }}
+      {{- if .Values.billing.awsMarketplace.enabled }}
       securityContext:
         # Providing this is not required for 1.19 or later clusters.
         # See https://docs.aws.amazon.com/eks/latest/userguide/iam-roles-for-service-accounts-technical-overview.html
         fsGroup: 1337
+      {{- end }}
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
       {{- range $index, $secret := .Values.imagePullSecrets }}

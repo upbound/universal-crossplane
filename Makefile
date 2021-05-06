@@ -37,7 +37,7 @@ export CROSSPLANE_TAG
 # ====================================================================================
 # Setup Output
 
-S3_BUCKET ?= upbound.releases/$(PACKAGE_NAME)
+S3_BUCKET ?= public-upbound.releases/$(PACKAGE_NAME)
 -include build/makelib/output.mk
 
 # ====================================================================================
@@ -62,7 +62,7 @@ OLM_DIR=$(ROOT_DIR)/cluster/olm
 # Setup Helm
 
 HELM_BASE_URL = https://charts.upbound.io
-HELM_S3_BUCKET = upbound.charts
+HELM_S3_BUCKET = public-upbound.charts
 HELM_CHARTS = $(PACKAGE_NAME)
 HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
 -include build/makelib/helm.mk

@@ -1,0 +1,127 @@
+UPBOUND SOFTWARE LICENSE AGREEMENT
+ 
+THESE LICENSE TERMS ARE AN AGREEMENT BETWEEN YOU AND UPBOUND, INC. (“UPBOUND”).
+ 
+PLEASE READ THIS END USER LICENSE AGREEMENT CAREFULLY BEFORE USING SOFTWARE FROM
+UPBOUND. BY USING UPBOUND SOFTWARE, YOU SIGNIFY YOUR ASSENT TO AND ACCEPTANCE OF
+THIS END USER LICENSE AGREEMENT AND ACKNOWLEDGE YOU HAVE READ AND UNDERSTAND THE
+TERMS. AN INDIVIDUAL ACTING ON BEHALF OF AN ENTITY REPRESENTS THAT HE OR SHE HAS
+THE AUTHORITY TO ENTER INTO THIS END USER LICENSE AGREEMENT ON BEHALF OF THAT
+ENTITY. IF YOU DO NOT ACCEPT THE TERMS OF THIS AGREEMENT, THEN YOU MUST NOT USE
+THE UPBOUND SOFTWARE.
+ 
+IF YOU COMPLY WITH THESE LICENSE TERMS, YOU HAVE THE RIGHTS BELOW.
+
+1. SCOPE OF LICENSE. This license applies to the Upbound software and any
+related updates, components, and organization (the “Product”) that include or
+refer to this license regardless of the delivery mechanism. Source code for
+Upbound open source components are available at https://github.com/upbound and
+https://github.com/crossplane under the Apache License 2.0 license agreement.
+The software Product is licensed, not sold. This agreement only gives you some
+rights to use the software. Upbound reserves all other rights. Unless applicable
+law gives you more rights despite this limitation, you may use the software only
+as expressly permitted in this agreement. In doing so, you must comply with any
+technical limitations in the software that only allow you to use it in certain
+ways. You may not:
+   * reverse engineer, decompile or disassemble the software, or otherwise
+   attempt to derive the source code for the software except and solely to the
+   extent required by third-party licensing terms governing use of certain open
+   source components that may be included in the software;
+   * remove, minimize, block or modify any notices of Upbound or its suppliers
+   in the software;
+   * use the software in any way that is against the law;
+   * share, publish, rent or lease the software, or provide the software as a
+   stand-alone offering for others to use.
+
+2. INSTALLATION AND USE RIGHTS.
+   1. General. You may use any number of copies of the software to develop, test
+   and deploy your applications.
+   
+   2. Demo use. The uses permitted above include use of the software in
+   demonstrating your applications.
+   
+   3. Third-Party Components. The software may include third-party components
+   with separate legal notices or governed by other agreements, as may be
+   described in the Third Party Notices file accompanying the software.
+   
+   4. Extensions. The software Product may give you the option to download other
+   Upbound and third-party software packages from our repository service or
+   other package managers. Those packages are under their own licenses, and not
+   this agreement. Upbound does not distribute, license or provide any
+   warranties for any of the third-party packages. By accessing or using our
+   repository service, you agree to the terms of service located at
+   upbound.io/terms.
+
+3. UPDATES. The software Product may periodically check for updates from our
+repository service or other package managers and download and install them for
+you. You may obtain updates only from Upbound or authorized sources. If you do
+not want automatic updates, you may turn them off by following the instructions
+in the documentation.
+
+4. SUPPORT SERVICES. Because this software Product is “as is,” we may not
+provide support services for it.
+
+5. INTELLECTUAL PROPERTY RIGHTS. The Products and each of their components are
+owned by Upbound and other licensors and are protected under copyright law and
+under other laws as applicable. Title to the Products and any component, or to
+any copy, modification, or merged portion shall remain with Upbound and other
+licensors, subject to the applicable license. The “Upbound” trademark, the
+individual Product trademarks, and the “Upbound” logo are trademarks or
+registered trademarks of Upbound and its affiliates in the U.S. and other
+countries. This license agreement does not permit you to distribute the Products
+using Upbound's trademarks, regardless of whether they have been modified. You
+may make a commercial redistribution of the Products only if permitted under a
+separate written agreement with Upbound authorizing such commercial
+redistribution.
+
+6. FEEDBACK. If you give feedback about the software to Upbound, you give to
+Upbound, without charge, the right to use, share and commercialize your feedback
+in any way and for any purpose. These rights survive this agreement.
+
+7. DATA COLLECTION. The software Product may collect information about you and
+your use of the software and send that to Upbound. Upbound may use this
+information to provide services and improve our products and services. You may
+opt-out of many of these scenarios as described in the product documentation.
+Our privacy statement is located at upbound.io/privacy. You can learn more about
+data collection and use in the Product documentation and our privacy statement.
+Your use of the software operates as your consent to these practices.
+
+8. ENTIRE AGREEMENT. This agreement, and the terms for supplements, updates,
+Internet-based services and support services that you use, are the entire
+agreement for the software and support services.
+
+9. EXPORT RESTRICTIONS. You understand that the software provided under this
+agreement may contain encryption technology and other software programs that may
+require an export license from the U.S. State Department and that export or
+re-export of the software to certain entities (such as a foreign government and
+its subdivisions) and certain countries is prohibited. You agree that you will
+comply with all applicable export and import control laws and regulations of the
+United States and the foreign jurisdiction in which the software is used and, in
+particular, you will not export or reexport the software without all required
+United States and foreign government licenses. You will defend, indemnify, and
+hold harmless Upbound and its suppliers and licensors from and against any
+violation of such laws or regulations by you or any of your agents, officers,
+directors or employees.
+
+10. APPLICABLE LAW. If you acquired the software in the United States,
+Washington State law applies to interpretation of and claims for breach of this
+agreement, and the laws of the state where you live apply to all other claims.
+If you acquired the software in any other country, its laws apply.
+
+11. DISCLAIMER OF WARRANTY. The software is licensed “as-is.” You bear the risk
+of using it. Upbound gives no express warranties, guarantees or conditions. To
+the extent permitted under your local laws, Upbound excludes the implied
+warranties of merchantability, fitness for a particular purpose and
+non-infringement.
+
+12. LIMITATION ON AND EXCLUSION OF DAMAGES. You can recover from Upbound and its
+suppliers only direct damages up to U.S. $100.00. You cannot recover any other
+damages, including consequential, lost profits, special, indirect or incidental
+damages. This limitation applies to (a) anything related to the software,
+services, content (including code) on third-party Internet sites, or third-party
+applications; and (b) claims for breach of contract, breach of warranty,
+guarantee or condition, strict liability, negligence, or other tort to the
+extent permitted by applicable law. It also applies even if Upbound knew or
+should have known about the possibility of the damages. The above limitation or
+exclusion may not apply to you because your state or country may not allow the
+exclusion or limitation of incidental, consequential or other damages.

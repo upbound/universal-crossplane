@@ -271,7 +271,7 @@ jobs:
         run: make -j2 promote
         env:
           BRANCH_NAME: main
-          CHANNEL: master
+          CHANNEL: main
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_USR }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PSW }}
           MUSEUM_URL: ${{ secrets.MUSEUM_URL }}

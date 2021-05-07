@@ -5,12 +5,14 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/pkg/errors"
@@ -26,7 +28,8 @@ import (
 )
 
 const (
-	prefixPlatformTokenSubject = "controlPlane|"
+	prefixPlatformTokenSubject   = "controlPlane|"
+	controlPlaneTokenCheckPeriod = time.Second * 3
 )
 
 const (
@@ -40,14 +43,14 @@ const (
 
 // AgentCmd represents the "upbound-agent" command
 type AgentCmd struct {
-	PodName            string `help:"Name of the agent pod."`
-	ServerPort         string `default:"6443" help:"Port to serve agent service."`
-	TLSCertFile        string `help:"File containing the default x509 Certificate for HTTPS."`
-	TLSKeyFile         string `help:"File containing the default x509 private key matching provided cert"`
-	XgqlCABundleFile   string `help:"CA bundle file for xgql server"`
-	NATSEndpoint       string `help:"Endpoint for nats"`
-	UpboundAPIEndpoint string `help:"Endpoint for Upbound API"`
-	ControlPlaneToken  string `help:"Platform token to access Upbound Cloud connect endpoint"`
+	PodName               string `help:"Name of the agent pod."`
+	ServerPort            string `default:"6443" help:"Port to serve agent service."`
+	TLSCertFile           string `help:"File containing the default x509 Certificate for HTTPS."`
+	TLSKeyFile            string `help:"File containing the default x509 private key matching provided cert"`
+	XgqlCABundleFile      string `help:"CA bundle file for xgql server"`
+	NATSEndpoint          string `help:"Endpoint for nats"`
+	UpboundAPIEndpoint    string `help:"Endpoint for Upbound API"`
+	ControlPlaneTokenPath string `help:"File path of the platform token to access Upbound Cloud connect endpoint"`
 }
 
 var cli struct {
@@ -58,19 +61,22 @@ var cli struct {
 
 func main() { // nolint:gocyclo
 	ctx := kong.Parse(&cli)
-
 	zl := zap.New(zap.UseDevMode(cli.Debug))
-	logger := logging.NewLogrLogger(zl.WithName("upbound-agent"))
-
+	log := logging.NewLogrLogger(zl.WithName("upbound-agent"))
 	a := cli.Agent
 
-	cpID, err := readCPIDFromToken(a.ControlPlaneToken)
+	token, err := waitForControlPlaneToken(a.ControlPlaneTokenPath, controlPlaneTokenCheckPeriod, log)
+	if err != nil {
+		ctx.FatalIfErrorf(errors.Wrap(err, "failed to wait for control plane token"))
+	}
+
+	cpID, err := readCPIDFromToken(token)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read control plane id from token"))
 	}
 
-	upClient := upbound.NewClient(a.UpboundAPIEndpoint, logger, cli.Debug)
-	pubCerts, err := upClient.GetGatewayCerts(a.ControlPlaneToken)
+	upClient := upbound.NewClient(a.UpboundAPIEndpoint, log, cli.Debug)
+	pubCerts, err := upClient.GetGatewayCerts(token)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to fetch public certs"))
 	}
@@ -86,7 +92,7 @@ func main() { // nolint:gocyclo
 
 	var xgqlCertPool *x509.CertPool
 	if a.XgqlCABundleFile != "" {
-		b, err := ioutil.ReadFile(filepath.Clean(a.XgqlCABundleFile))
+		b, err := os.ReadFile(filepath.Clean(a.XgqlCABundleFile))
 		if err != nil {
 			ctx.FatalIfErrorf(errors.Wrap(err, "failed to read xgql ca bundle file"))
 		}
@@ -105,7 +111,7 @@ func main() { // nolint:gocyclo
 			Name:              a.PodName,
 			Endpoint:          a.NATSEndpoint,
 			JWTEndpoint:       a.UpboundAPIEndpoint,
-			ControlPlaneToken: a.ControlPlaneToken,
+			ControlPlaneToken: token,
 			CABundle:          pubCerts.NATSCA,
 		},
 	}
@@ -123,12 +129,12 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read kube cluster ID"))
 	}
 
-	pxy, err := upboundagent.NewProxy(tgConfig, restConfig, upClient, logger, kubeClusterID)
+	pxy, err := upboundagent.NewProxy(tgConfig, restConfig, upClient, log, kubeClusterID)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to create new agent proxy"))
 	}
 
-	logger.Info("Starting Upbound Agent ", "version", version.Version,
+	log.Info("Starting Upbound Agent ", "version", version.Version,
 		"control-plane-id", cpID,
 		"debug", cli.Debug,
 		"pod-name", a.PodName,
@@ -141,6 +147,29 @@ func main() { // nolint:gocyclo
 
 	addr := fmt.Sprintf(":%s", a.ServerPort)
 	ctx.FatalIfErrorf(errors.Wrap(pxy.Run(addr, a.TLSCertFile, a.TLSKeyFile), "cannot run upbound agent proxy"))
+}
+
+func waitForControlPlaneToken(path string, d time.Duration, log logging.Logger) (string, error) {
+	ticker := time.NewTicker(d)
+	log.Info("waiting for control plane token to be mounted", "path", path, "check-period", d.String())
+	defer ticker.Stop()
+	for {
+		// We should wait until file exists and has content.
+		f, err := os.ReadFile(filepath.Clean(path))
+		if resource.Ignore(os.IsNotExist, err) != nil {
+			return "", errors.Wrapf(err, "cannot read control plane token file")
+		}
+		if len(f) != 0 {
+			log.Info("control plane token has been read")
+			return string(f), nil
+		}
+		log.Debug("control plane token file is empty")
+		// TODO(muvaf): We can probably replace this with an implementation
+		// that uses time.Ticker but I couldn't figure out to have a simple
+		// implementation with no timeout and single select case without wasting
+		// the initial period.
+		time.Sleep(d)
+	}
 }
 
 func generateTrustedCertPool(b []byte) (*x509.CertPool, error) {

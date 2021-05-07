@@ -19,7 +19,6 @@ rules:
     - upbound-agent-public-certs
     - upbound-agent-tls
     - xgql-tls
-    - upbound-control-plane-token
     {{- if .Values.billing.awsMarketplace.enabled }}
     - upbound-entitlement
     {{- end}}

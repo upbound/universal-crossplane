@@ -39,8 +39,8 @@ spec:
           - {{ .Values.upbound.apiURL }}
           - --pod-name
           - $(POD_NAME)
-          - --control-plane-token
-          - $(CP_TOKEN)
+          - --control-plane-token-path
+          - /etc/tokens/control-plane/token
           {{- if .Values.agent.config.debugMode }}
           - "--debug"
           {{- end }}
@@ -52,11 +52,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          - name: CP_TOKEN
-            valueFrom:
-              secretKeyRef:
-                name: upbound-control-plane-token
-                key: token
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           ports:
           - name: agent
@@ -64,31 +59,45 @@ spec:
             protocol: TCP
           resources:
             {{- toYaml .Values.agent.resources | nindent 12 }}
-          readinessProbe:
-            httpGet:
-              scheme: HTTPS
-              path: /readyz
-              port: 6443
-            initialDelaySeconds: 5
-            timeoutSeconds: 5
-            periodSeconds: 5
-            failureThreshold: 3
-          livenessProbe:
-            httpGet:
-              scheme: HTTPS
-              path: /livez
-              port: 6443
-            initialDelaySeconds: 10
-            timeoutSeconds: 5
-            periodSeconds: 30
-            failureThreshold: 5
+# TODO(muvaf): Disabled temporarily since we'd like to complete the installation
+# even if the control plane token is not there, which makes these probes return
+# false.
+#          readinessProbe:
+#            httpGet:
+#              scheme: HTTPS
+#              path: /readyz
+#              port: 6443
+#            initialDelaySeconds: 5
+#            timeoutSeconds: 5
+#            periodSeconds: 5
+#            failureThreshold: 3
+#          livenessProbe:
+#            httpGet:
+#              scheme: HTTPS
+#              path: /livez
+#              port: 6443
+#            initialDelaySeconds: 10
+#            timeoutSeconds: 5
+#            periodSeconds: 30
+#            failureThreshold: 5
           volumeMounts:
             - mountPath: /etc/certs/upbound-agent
               name: certs
+              readOnly: true
+            - mountPath: /etc/tokens/control-plane
+              name: upbound-control-plane-token
               readOnly: true
       volumes:
         - name: certs
           secret:
             defaultMode: 420
             secretName: upbound-agent-tls
+        - name: upbound-control-plane-token
+          secret:
+            defaultMode: 420
+            secretName: {{ .Values.upbound.controlPlane.tokenSecretName }}
+            optional: true
+            items:
+            - key: token
+              path: token
 {{- end }}

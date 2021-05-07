@@ -1,7 +1,7 @@
-By proceeding, you are accepting to comply with terms and conditions in https://licenses.upbound.io/upbound-software-license.pdf
+By proceeding, you are accepting to comply with terms and conditions in https://licenses.upbound.io/upbound-software-license.html
 
 ✨ Thank you for installing Universal Crossplane!
-{{ if or (eq .Values.upbound.controlPlane.permission "view") (eq .Values.upbound.controlPlane.permission "edit") }}
+{{- if or (eq .Values.upbound.controlPlane.permission "view") (eq .Values.upbound.controlPlane.permission "edit") }}
 🚀 You can now connect your cluster to Upbound Cloud!
 
 Example command:

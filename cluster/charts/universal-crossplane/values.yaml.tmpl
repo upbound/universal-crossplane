@@ -85,18 +85,6 @@ upbound:
     permission: None
     token: ""
 
-
-graphql:
-  image:
-    repository: upbound/crossplane-graphql
-    tag: %%GRAPHQL_TAG%%
-    pullPolicy: IfNotPresent
-  resources: {}
-  config:
-    nodeEnv: production
-    # The default maximum number of concurrent requests to the upbound agent
-    maxK8sConnections: 10
-
 xgql:
   image:
     repository: upbound/xgql

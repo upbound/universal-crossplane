@@ -21,7 +21,7 @@ type BootstrapCmd struct {
 	SyncPeriod    time.Duration `default:"10m"`
 	Namespace     string        `default:"upbound-system"`
 	UpboundAPIUrl string        `default:"https://api.upbound.io"`
-	Controllers   []string      `default:"tls-secrets,ubc-certs" name:"controller" help:"List of controllers you want to run"`
+	Controllers   []string      `default:"tls-secrets" name:"controller" help:"List of controllers you want to run"`
 }
 
 var cli struct {

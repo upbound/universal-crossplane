@@ -40,14 +40,14 @@ const (
 
 // AgentCmd represents the "upbound-agent" command
 type AgentCmd struct {
-	PodName             string `help:"Name of the agent pod."`
-	ServerPort          string `default:"6443" help:"Port to serve agent service."`
-	TLSCertFile         string `help:"File containing the default x509 Certificate for HTTPS."`
-	TLSKeyFile          string `help:"File containing the default x509 private key matching provided cert"`
-	GraphqlCABundleFile string `help:"CA bundle file for graphql server"`
-	NATSEndpoint        string `help:"Endpoint for nats"`
-	UpboundAPIEndpoint  string `help:"Endpoint for Upbound api"`
-	ControlPlaneToken   string `help:"Platform token to access Upbound Cloud connect endpoint"`
+	PodName            string `help:"Name of the agent pod."`
+	ServerPort         string `default:"6443" help:"Port to serve agent service."`
+	TLSCertFile        string `help:"File containing the default x509 Certificate for HTTPS."`
+	TLSKeyFile         string `help:"File containing the default x509 private key matching provided cert"`
+	XgqlCABundleFile   string `help:"CA bundle file for xgql server"`
+	NATSEndpoint       string `help:"Endpoint for nats"`
+	UpboundAPIEndpoint string `help:"Endpoint for Upbound API"`
+	ControlPlaneToken  string `help:"Platform token to access Upbound Cloud connect endpoint"`
 }
 
 var cli struct {
@@ -84,15 +84,15 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to parse public key"))
 	}
 
-	var graphqlCertPool *x509.CertPool
-	if a.GraphqlCABundleFile != "" {
-		b, err := ioutil.ReadFile(filepath.Clean(a.GraphqlCABundleFile))
+	var xgqlCertPool *x509.CertPool
+	if a.XgqlCABundleFile != "" {
+		b, err := ioutil.ReadFile(filepath.Clean(a.XgqlCABundleFile))
 		if err != nil {
-			ctx.FatalIfErrorf(errors.Wrap(err, "failed to read graphql ca bundle file"))
+			ctx.FatalIfErrorf(errors.Wrap(err, "failed to read xgql ca bundle file"))
 		}
-		graphqlCertPool, err = generateTrustedCertPool(b)
+		xgqlCertPool, err = generateTrustedCertPool(b)
 		if err != nil {
-			ctx.FatalIfErrorf(errors.Wrap(err, "failed to generate graphql ca cert pool"))
+			ctx.FatalIfErrorf(errors.Wrap(err, "failed to generate xgql ca cert pool"))
 		}
 	}
 
@@ -100,7 +100,7 @@ func main() { // nolint:gocyclo
 		DebugMode:         cli.Debug,
 		ControlPlaneID:    cpID,
 		TokenRSAPublicKey: pk,
-		GraphQLCACertPool: graphqlCertPool,
+		XGQLCACertPool:    xgqlCertPool,
 		NATS: &upboundagent.NATSClientConfig{
 			Name:              a.PodName,
 			Endpoint:          a.NATSEndpoint,
@@ -135,7 +135,7 @@ func main() { // nolint:gocyclo
 		"server-port", a.ServerPort,
 		"tls-cert-file", a.TLSCertFile,
 		"tls-private-key-file", a.TLSKeyFile,
-		"graphql-cabundle-file", a.GraphqlCABundleFile,
+		"xgql-ca-bundle-file", a.XgqlCABundleFile,
 		"nats-endpoint", a.NATSEndpoint,
 		"upbound-api-endpoint", a.UpboundAPIEndpoint)
 

@@ -31,7 +31,7 @@ spec:
           - /etc/certs/upbound-agent/tls.crt
           - --tls-key-file
           - /etc/certs/upbound-agent/tls.key
-          - --graphql-ca-bundle-file
+          - --xgql-ca-bundle-file
           - /etc/certs/upbound-agent/ca.crt
           - --nats-endpoint
           - nats://{{ .Values.upbound.connectHost }}:{{ .Values.upbound.connectPort | default "443" }}

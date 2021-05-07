@@ -39,7 +39,6 @@ const (
 	readynessHandlerPath = "/readyz"
 	livenessHandlerPath  = "/livez"
 	k8sHandlerPath       = "/k8s/*"
-	graphqlHandlerPath   = "/graphql"
 	xgqlHandlerPath      = "/query"
 
 	headerAuthorization      = "Authorization"
@@ -48,8 +47,7 @@ const (
 	impersonatorExtraKeyUpboundID = "upbound-id"
 	impersonatorUserUpboundCloud  = "upbound-cloud-impersonator"
 
-	serviceGraphQL = "crossplane-graphql"
-	serviceXgql    = "xgql"
+	serviceXgql = "xgql"
 
 	readHeaderTimeout = 5 * time.Second
 	readTimeout       = 10 * time.Second
@@ -87,7 +85,6 @@ type Proxy struct {
 	kubeHost      *url.URL
 	kubeTransport http.RoundTripper
 	nc            *nats.Conn
-	graphQLHost   *url.URL
 	xgqlHost      *url.URL
 	k8sBearer     string
 	agent         *natsproxy.Agent
@@ -106,11 +103,6 @@ func NewProxy(config *Config, restConfig *rest.Config, upClient upbound.Client, 
 	kubeHost, err := url.Parse(restConfig.Host)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse kube url")
-	}
-
-	graphQLHost, err := url.Parse(fmt.Sprintf("https://%s", serviceGraphQL))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse graphql url")
 	}
 
 	xgqlHost, err := url.Parse(fmt.Sprintf("https://%s", serviceXgql))
@@ -143,7 +135,6 @@ func NewProxy(config *Config, restConfig *rest.Config, upClient upbound.Client, 
 		kubeHost:      kubeHost,
 		kubeTransport: krt,
 		config:        config,
-		graphQLHost:   graphQLHost,
 		xgqlHost:      xgqlHost,
 		k8sBearer:     restConfig.BearerToken,
 		isReady:       &atomic.Value{},
@@ -240,7 +231,6 @@ func (p *Proxy) setupRouter() (*echo.Echo, error) {
 	// TODO(turkenh): use different routers for nats agent and http server once graphql removed, which will let us
 	// remove k8s from http server
 	e.Any(k8sHandlerPath, p.k8s())
-	e.Any(graphqlHandlerPath, p.graphql())
 	e.Any(xgqlHandlerPath, p.xgql())
 	e.Any(readynessHandlerPath, p.readyz())
 	e.Any(livenessHandlerPath, p.livez())
@@ -277,27 +267,6 @@ func (p *Proxy) readyz() echo.HandlerFunc {
 	}
 }
 
-func (p *Proxy) graphql() echo.HandlerFunc {
-	return func(c echo.Context) error {
-		p.log.Debug("incoming graphql request", "url", c.Request().URL.String())
-		gqlProxy := httputil.NewSingleHostReverseProxy(p.graphQLHost)
-
-		gqlProxy.Transport = &http.Transport{
-			TLSClientConfig: &tls.Config{
-				InsecureSkipVerify: false,
-				RootCAs:            p.config.GraphQLCACertPool,
-				MinVersion:         tls.VersionTLS12,
-			},
-		}
-
-		c.Request().URL.Host = p.graphQLHost.Host
-
-		gqlProxy.ServeHTTP(c.Response(), c.Request())
-		p.log.Debug("response from graphql", "status", c.Response().Status)
-		return nil
-	}
-}
-
 func (p *Proxy) xgql() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		p.log.Debug("incoming xgql request", "url", c.Request().URL.String())
@@ -310,7 +279,7 @@ func (p *Proxy) xgql() echo.HandlerFunc {
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: false,
-				RootCAs:            p.config.GraphQLCACertPool,
+				RootCAs:            p.config.XGQLCACertPool,
 				MinVersion:         tls.VersionTLS12,
 			},
 		}

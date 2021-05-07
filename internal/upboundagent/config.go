@@ -22,6 +22,6 @@ type Config struct {
 	DebugMode         bool
 	ControlPlaneID    string
 	TokenRSAPublicKey *rsa.PublicKey
-	GraphQLCACertPool *x509.CertPool
+	XGQLCACertPool    *x509.CertPool
 	NATS              *NATSClientConfig
 }

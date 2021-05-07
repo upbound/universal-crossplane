@@ -155,7 +155,7 @@ func waitForControlPlaneToken(path string, d time.Duration, log logging.Logger) 
 	defer ticker.Stop()
 	for {
 		// We should wait until file exists and has content.
-		f, err := os.ReadFile(path) // nolint:gosec
+		f, err := os.ReadFile(filepath.Clean(path))
 		if resource.Ignore(os.IsNotExist, err) != nil {
 			return "", errors.Wrapf(err, "cannot read control plane token file")
 		}

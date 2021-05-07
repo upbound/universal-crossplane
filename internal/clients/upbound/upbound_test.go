@@ -7,10 +7,9 @@ import (
 	"testing"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/google/uuid"
-
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/uuid"
 	"github.com/jarcoal/httpmock"
 	"github.com/pkg/errors"
 )

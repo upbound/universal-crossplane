@@ -5,13 +5,11 @@ import (
 	"fmt"
 	"net/http"
 
-	"go.opencensus.io/plugin/ochttp"
-
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"go.opencensus.io/plugin/ochttp"
 )
 
 const (

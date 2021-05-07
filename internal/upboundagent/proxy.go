@@ -14,8 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/upbound/universal-crossplane/internal/clients/upbound"
-
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
@@ -31,6 +29,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/transport"
 
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
 	"github.com/upbound/universal-crossplane/internal/upboundagent/internal"
 )
 

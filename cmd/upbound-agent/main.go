@@ -9,8 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/upbound/universal-crossplane/internal/clients/upbound"
-
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/dgrijalva/jwt-go"
@@ -22,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
 	"github.com/upbound/universal-crossplane/internal/upboundagent"
 	"github.com/upbound/universal-crossplane/internal/version"
 )

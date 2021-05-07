@@ -4,14 +4,13 @@ import (
 	"encoding/base64"
 	"io/ioutil"
 
-	"github.com/upbound/universal-crossplane/internal/clients/upbound"
-
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-
 	natsjwt "github.com/nats-io/jwt"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 	"github.com/pkg/errors"
+
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
 )
 
 type natsConnManager struct {

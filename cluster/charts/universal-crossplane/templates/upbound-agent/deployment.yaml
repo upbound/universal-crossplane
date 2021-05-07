@@ -39,8 +39,8 @@ spec:
           - {{ .Values.upbound.apiURL }}
           - --pod-name
           - $(POD_NAME)
-          - --control-plane-token
-          - $(CP_TOKEN)
+          - --control-plane-token-path
+          - /etc/tokens/control-plane/token
           {{- if .Values.agent.config.debugMode }}
           - "--debug"
           {{- end }}
@@ -52,11 +52,6 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-          - name: CP_TOKEN
-            valueFrom:
-              secretKeyRef:
-                name: upbound-control-plane-token
-                key: token
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           ports:
           - name: agent
@@ -86,9 +81,20 @@ spec:
             - mountPath: /etc/certs/upbound-agent
               name: certs
               readOnly: true
+            - mountPath: /etc/tokens/control-plane
+              name: upbound-control-plane-token
+              readOnly: true
       volumes:
         - name: certs
           secret:
             defaultMode: 420
             secretName: upbound-agent-tls
+        - name: upbound-control-plane-token
+          secret:
+            defaultMode: 420
+            secretName: {{ .Values.upbound.controlPlane.tokenSecretName }}
+            optional: true
+            items:
+            - key: token
+              path: token
 {{- end }}

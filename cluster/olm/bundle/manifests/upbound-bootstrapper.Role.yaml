@@ -33,7 +33,6 @@ rules:
   - upbound-agent-public-certs
   - upbound-agent-tls
   - xgql-tls
-  - upbound-control-plane-token
   resources:
   - secrets
   verbs:

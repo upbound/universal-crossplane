@@ -59,24 +59,27 @@ spec:
             protocol: TCP
           resources:
             {{- toYaml .Values.agent.resources | nindent 12 }}
-          readinessProbe:
-            httpGet:
-              scheme: HTTPS
-              path: /readyz
-              port: 6443
-            initialDelaySeconds: 5
-            timeoutSeconds: 5
-            periodSeconds: 5
-            failureThreshold: 3
-          livenessProbe:
-            httpGet:
-              scheme: HTTPS
-              path: /livez
-              port: 6443
-            initialDelaySeconds: 10
-            timeoutSeconds: 5
-            periodSeconds: 30
-            failureThreshold: 5
+# TODO(muvaf): Disabled temporarily since we'd like to complete the installation
+# even if the control plane token is not there, which makes these probes return
+# false.
+#          readinessProbe:
+#            httpGet:
+#              scheme: HTTPS
+#              path: /readyz
+#              port: 6443
+#            initialDelaySeconds: 5
+#            timeoutSeconds: 5
+#            periodSeconds: 5
+#            failureThreshold: 3
+#          livenessProbe:
+#            httpGet:
+#              scheme: HTTPS
+#              path: /livez
+#              port: 6443
+#            initialDelaySeconds: 10
+#            timeoutSeconds: 5
+#            periodSeconds: 30
+#            failureThreshold: 5
           volumeMounts:
             - mountPath: /etc/certs/upbound-agent
               name: certs

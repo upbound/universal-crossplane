@@ -29,12 +29,11 @@ import (
 
 const (
 	prefixPlatformTokenSubject   = "controlPlane|"
-	controlPlaneTokenCheckPeriod = time.Second * 10
+	controlPlaneTokenCheckPeriod = time.Second * 3
 )
 
 const (
 	errMalformedCPToken          = "malformed control plane token"
-	errParseCPToken              = "failed to parse control plane token"
 	errCPTokenNoSubjectKey       = "failed to get value for key \"sub\""
 	errCPTokenSubjectIsNotString = "failed to parse value for key \"sub\" as a string"
 	errCPIDInTokenNotValidUUID   = "control plane id in token is not a valid UUID: %s"
@@ -152,7 +151,7 @@ func main() { // nolint:gocyclo
 
 func waitForControlPlaneToken(path string, d time.Duration, log logging.Logger) (string, error) {
 	ticker := time.NewTicker(d)
-	log.Info("Waiting for control plane token to be mounted", "path", path, "check-period", d.String())
+	log.Info("waiting for control plane token to be mounted", "path", path, "check-period", d.String())
 	defer ticker.Stop()
 	for {
 		// We should wait until file exists and has content.
@@ -161,6 +160,7 @@ func waitForControlPlaneToken(path string, d time.Duration, log logging.Logger) 
 			return "", errors.Wrapf(err, "cannot read control plane token file")
 		}
 		if len(f) != 0 {
+			log.Info("control plane token has been read")
 			return string(f), nil
 		}
 		log.Debug("control plane token file is empty")
@@ -187,9 +187,6 @@ func readCPIDFromToken(t string) (string, error) {
 	token, err := jwt.Parse(t, nil)
 	if err.(*jwt.ValidationError).Errors == jwt.ValidationErrorMalformed {
 		return "", errors.Wrap(err, errMalformedCPToken)
-	}
-	if err != nil {
-		return "", errors.Wrap(err, errParseCPToken)
 	}
 
 	cl := token.Claims.(jwt.MapClaims)

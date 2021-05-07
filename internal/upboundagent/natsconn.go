@@ -2,38 +2,30 @@ package upboundagent
 
 import (
 	"encoding/base64"
-	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"net/http"
+
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
-	"github.com/go-resty/resty/v2"
 	natsjwt "github.com/nats-io/jwt"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 	"github.com/pkg/errors"
 )
 
-const (
-	natsTokenPath = "/v1/nats/token"
-	keyToken      = "token"
-)
-
 type natsConnManager struct {
-	log                  logging.Logger
-	restyClient          *resty.Client
-	kp                   nkeys.KeyPair
-	pubKey               string
-	clusterID            string
-	ubcNATSEndpointToken string
-	jwtToken             string
-	caFile               string
+	log       logging.Logger
+	upClient  upbound.Client
+	kp        nkeys.KeyPair
+	pubKey    string
+	clusterID string
+	cpToken   string
+	jwtToken  string
+	caFile    string
 }
 
-func newNATSConnManager(log logging.Logger, cID, ubcNATSEndpoint, ubcNATSEndpointToken string, caBundle string, debug bool) (*natsConnManager, error) {
-	r := newRestyClient(ubcNATSEndpoint, debug)
+func newNATSConnManager(log logging.Logger, upClient upbound.Client, cID, cpToken string, caBundle string) (*natsConnManager, error) {
 	kp, err := nkeys.CreateUser()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create nats user")
@@ -48,13 +40,13 @@ func newNATSConnManager(log logging.Logger, cID, ubcNATSEndpoint, ubcNATSEndpoin
 	}
 
 	n := &natsConnManager{
-		log:                  log,
-		kp:                   kp,
-		pubKey:               pk,
-		restyClient:          r,
-		clusterID:            cID,
-		caFile:               caFile,
-		ubcNATSEndpointToken: ubcNATSEndpointToken,
+		log:       log,
+		upClient:  upClient,
+		kp:        kp,
+		pubKey:    pk,
+		clusterID: cID,
+		caFile:    caFile,
+		cpToken:   cpToken,
 	}
 
 	return n, nil
@@ -70,7 +62,7 @@ func (n *natsConnManager) setupTLSOption() nats.Option {
 func (n *natsConnManager) userTokenRefresher() (string, error) {
 	n.log.Debug("handling NATS user JWT")
 	if !isJWTValid(n.jwtToken, n.log) {
-		tk, err := fetchNewJWTToken(n.restyClient, n.log, n.ubcNATSEndpointToken, n.clusterID, n.pubKey)
+		tk, err := n.upClient.FetchNewJWTToken(n.cpToken, n.clusterID, n.pubKey)
 		if err != nil {
 			return "", err
 		}
@@ -97,43 +89,6 @@ func caBundleToFile(caBundle string) (string, error) {
 		return "", errors.Wrap(err, "failed to write nats ca to file")
 	}
 	return caFile.Name(), nil
-}
-
-func fetchNewJWTToken(client *resty.Client, log logging.Logger, ubcNATSEndpointToken, clusterID, publicKey string) (string, error) {
-	log.Debug("fetching new NATS JWT")
-
-	body := map[string]string{
-		"clusterID":    clusterID,
-		"clientPubKey": publicKey,
-	}
-	mBody, err := json.Marshal(body)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to marshall body to json")
-	}
-
-	req := client.R()
-	req.SetBody(mBody)
-	req.SetHeader("Authorization", fmt.Sprintf("Bearer %s", ubcNATSEndpointToken))
-
-	resp, err := req.Post(natsTokenPath)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to request new token")
-	}
-
-	if resp.StatusCode() != http.StatusOK {
-		return "", errors.Errorf("new token request failed with %s - %s", resp.Status(), string(resp.Body()))
-	}
-
-	respBody := map[string]string{}
-
-	if err := json.Unmarshal(resp.Body(), &respBody); err != nil {
-		return "", errors.Wrap(err, "failed to unmarshall nats token response")
-	}
-	if respBody[keyToken] == "" {
-		return "", errors.New("empty token received")
-	}
-
-	return respBody[keyToken], nil
 }
 
 func isJWTValid(token string, log logging.Logger) bool {

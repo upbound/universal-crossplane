@@ -5,14 +5,20 @@ import (
 	"fmt"
 	"net/http"
 
+	"go.opencensus.io/plugin/ochttp"
+
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	gwCertsPath = "/v1/gw/certs"
+	gwCertsPath   = "/v1/gw/certs"
+	natsTokenPath = "/v1/nats/token"
 
+	keyToken        = "token"
 	keyJWTPublicKey = "jwt_public_key"
 	keyNATSCA       = "nats_ca"
 )
@@ -27,23 +33,45 @@ type PublicCerts struct {
 //go:generate mockgen -destination ./mocks/upbound.go -package mocks github.com/upbound/universal-crossplane/internal/clients/upbound Client
 type Client interface {
 	GetGatewayCerts(cpToken string) (PublicCerts, error)
+	FetchNewJWTToken(cpToken, clusterID, publicKey string) (string, error)
 }
 
 type client struct {
-	resty *resty.Client
+	resty  *resty.Client
+	logger logging.Logger
 }
 
 // NewClient returns a new Upbound client
-func NewClient(host string, debug bool) Client {
-	r := resty.New().
+func NewClient(host string, log logging.Logger, debug bool) Client {
+	c := resty.New().
 		SetHostURL(host).
 		SetDebug(debug).
 		SetHeader("Content-Type", "application/json").
 		SetHeader("Accept", "application/json").
+		// Could not use crossplane runtime logger here, since:
+		// Cannot use 'log' (type Logger) as type Logger Type does not implement 'Logger' as some methods are missing:
+		// Debugf(format string, v ...interface{})
+		// Errorf(format string, v ...interface{})
+		// Warnf(format string, v ...interface{})
 		SetLogger(logrus.StandardLogger())
 
+	c.SetTransport(&ochttp.Transport{})
+
+	c.OnRequestLog(func(r *resty.RequestLog) error {
+		// masking authorization header
+		r.Header.Set("Authorization", "[REDACTED]")
+		r.Body = "[REDACTED]"
+		return nil
+	})
+
+	c.OnResponseLog(func(r *resty.ResponseLog) error {
+		r.Body = "[REDACTED]"
+		return nil
+	})
+
 	return &client{
-		resty: r,
+		resty:  c,
+		logger: log,
 	}
 }
 
@@ -77,4 +105,39 @@ func (c *client) GetGatewayCerts(cpToken string) (PublicCerts, error) {
 		JWTPublicKey: j,
 		NATSCA:       n,
 	}, nil
+}
+
+func (c *client) FetchNewJWTToken(cpToken, clusterID, publicKey string) (string, error) {
+	req := c.resty.R()
+	body := map[string]string{
+		"clusterID":    clusterID,
+		"clientPubKey": publicKey,
+	}
+	mBody, err := json.Marshal(body)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to marshall body to json")
+	}
+
+	req.SetBody(mBody)
+	req.SetHeader("Authorization", fmt.Sprintf("Bearer %s", cpToken))
+
+	resp, err := req.Post(natsTokenPath)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to request new token")
+	}
+
+	if resp.StatusCode() != http.StatusOK {
+		return "", errors.Errorf("new token request failed with %s - %s", resp.Status(), string(resp.Body()))
+	}
+
+	respBody := map[string]string{}
+
+	if err := json.Unmarshal(resp.Body(), &respBody); err != nil {
+		return "", errors.Wrap(err, "failed to unmarshall nats token response")
+	}
+	if respBody[keyToken] == "" {
+		return "", errors.New("empty token received")
+	}
+
+	return respBody[keyToken], nil
 }

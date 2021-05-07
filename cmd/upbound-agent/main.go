@@ -61,6 +61,8 @@ func main() { // nolint:gocyclo
 	ctx := kong.Parse(&cli)
 
 	zl := zap.New(zap.UseDevMode(cli.Debug))
+	logger := logging.NewLogrLogger(zl.WithName("upbound-agent"))
+
 	a := cli.Agent
 
 	cpID, err := readCPIDFromToken(a.ControlPlaneToken)
@@ -68,8 +70,8 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read control plane id from token"))
 	}
 
-	upCli := upbound.NewClient(a.UpboundAPIEndpoint, cli.Debug)
-	pubCerts, err := upCli.GetGatewayCerts(a.ControlPlaneToken)
+	upClient := upbound.NewClient(a.UpboundAPIEndpoint, logger, cli.Debug)
+	pubCerts, err := upClient.GetGatewayCerts(a.ControlPlaneToken)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to fetch public certs"))
 	}
@@ -77,6 +79,7 @@ func main() { // nolint:gocyclo
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to base64 decode provided jwt public key"))
 	}
+
 	pk, err := jwt.ParseRSAPublicKeyFromPEM(pem)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to parse public key"))
@@ -121,8 +124,7 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read kube cluster ID"))
 	}
 
-	logger := logging.NewLogrLogger(zl.WithName("upbound-agent"))
-	pxy, err := upboundagent.NewProxy(tgConfig, restConfig, logger, kubeClusterID)
+	pxy, err := upboundagent.NewProxy(tgConfig, restConfig, upClient, logger, kubeClusterID)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to create new agent proxy"))
 	}

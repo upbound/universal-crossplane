@@ -6,6 +6,9 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/google/uuid"
+
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/google/go-cmp/cmp"
 	"github.com/jarcoal/httpmock"
@@ -91,7 +94,7 @@ func Test_GetGatewayCerts(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			rc := NewClient(endpoint, false)
+			rc := NewClient(endpoint, logging.NewNopLogger(), false)
 
 			httpmock.ActivateNonDefault(rc.(*client).resty.GetClient())
 
@@ -115,6 +118,113 @@ func Test_GetGatewayCerts(t *testing.T) {
 			}
 			if diff := cmp.Diff(tc.want.out, got); diff != "" {
 				t.Errorf("GetGatewayCerts(...): -want result, +got result: %s", diff)
+			}
+		})
+	}
+}
+
+func Test_fetchNewJWT(t *testing.T) {
+	errBoom := errors.New("boom")
+
+	endpoint := "https://foo.com"
+	endpointToken := "platform-token"
+	clusterID := uuid.New()
+	defaultResponse := map[string]string{
+		"token": "test-jwt",
+	}
+
+	type args struct {
+		responderErr error
+		responseCode int
+		responseBody interface{}
+	}
+	type want struct {
+		jwt string
+		err error
+	}
+	cases := map[string]struct {
+		args
+		want
+	}{
+		"Success": {
+			args: args{
+				responseCode: http.StatusOK,
+				responseBody: defaultResponse,
+			},
+			want: want{
+				jwt: "test-jwt",
+				err: nil,
+			},
+		},
+		"ServerError": {
+			args: args{
+				responseCode: http.StatusInternalServerError,
+				responseBody: "some-error",
+			},
+			want: want{
+				err: errors.New("new token request failed with 500 - \"some-error\""),
+			},
+		},
+		"UnexpectedResponseBody": {
+			args: args{
+				responseCode: http.StatusOK,
+				responseBody: "test-ca",
+			},
+			want: want{
+				err: errors.WithStack(errors.New("failed to unmarshall nats token response: json: cannot unmarshal string into Go value of type map[string]string")),
+			},
+		},
+		"EmptyToken": {
+			args: args{
+				responseCode: http.StatusOK,
+				responseBody: map[string]string{
+					"token": "",
+				},
+			},
+			want: want{
+				err: errors.New("empty token received"),
+			},
+		},
+		"RestyTransportErr": {
+			args: args{
+				responderErr: errBoom,
+			},
+			want: want{
+				err: errors.Wrap(&url.Error{
+					Op:  "Post",
+					URL: "https://foo.com/v1/nats/token",
+					Err: errBoom,
+				}, "failed to request new token"),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			rc := NewClient(endpoint, logging.NewNopLogger(), false)
+
+			httpmock.ActivateNonDefault(rc.(*client).resty.GetClient())
+
+			b, err := json.Marshal(tc.responseBody)
+			if err != nil {
+				t.Errorf("cannot unmarshal tc.responseBody %v", err)
+			}
+
+			var responder httpmock.Responder
+			if tc.responderErr != nil {
+				responder = httpmock.NewErrorResponder(tc.responderErr)
+			} else {
+				responder = httpmock.NewStringResponder(tc.responseCode, string(b))
+			}
+
+			httpmock.RegisterResponder(http.MethodPost, endpoint+natsTokenPath, responder)
+
+			got, gotErr := rc.FetchNewJWTToken(endpointToken, clusterID.String(), "some-public-key")
+			if diff := cmp.Diff(tc.want.err, gotErr, test.EquateErrors()); diff != "" {
+				t.Fatalf("fetchNewJWTToken(...): -want error, +got error: %s", diff)
+			}
+			if diff := cmp.Diff(tc.want.jwt, got); diff != "" {
+				t.Errorf("fetchNewJWTToken(...): -want result, +got result: %s", diff)
 			}
 		})
 	}

@@ -14,6 +14,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
+
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
@@ -95,7 +97,7 @@ type Proxy struct {
 }
 
 // NewProxy returns a new Proxy
-func NewProxy(config *Config, restConfig *rest.Config, log logging.Logger, clusterID string) (*Proxy, error) {
+func NewProxy(config *Config, restConfig *rest.Config, upClient upbound.Client, log logging.Logger, clusterID string) (*Proxy, error) {
 	krt, err := roundTripperForRestConfig(restConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build round tripper for rest config")
@@ -123,7 +125,7 @@ func NewProxy(config *Config, restConfig *rest.Config, log logging.Logger, clust
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 	var nc *nats.Conn
-	natsConn, err := newNATSConnManager(log, clusterID, config.NATS.JWTEndpoint, config.NATS.ControlPlaneToken, config.NATS.CABundle, true)
+	natsConn, err := newNATSConnManager(log, upClient, clusterID, config.NATS.ControlPlaneToken, config.NATS.CABundle)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new nats connection manager")
 	}

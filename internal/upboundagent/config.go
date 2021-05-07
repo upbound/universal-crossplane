@@ -13,7 +13,7 @@ type NATSClientConfig struct {
 	JWTEndpoint string
 	// ControlPlaneToken is the token to authenticate against JWTEndpoint
 	ControlPlaneToken string
-	CABundleFile      string
+	CABundle          string
 }
 
 // Config maintains the configurations for the Upbound Agent

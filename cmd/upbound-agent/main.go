@@ -9,6 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
+
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/dgrijalva/jwt-go"
@@ -47,7 +49,6 @@ type AgentCmd struct {
 	NATSEndpoint        string `help:"Endpoint for nats"`
 	NATSJwtEndpoint     string `help:"Endpoint for nats jwt tokens"`
 	ControlPlaneToken   string `help:"Platform token to access Upbound Cloud connect endpoint"`
-	JWTPublicKey        string `help:"BASE64 encoded rsa public key to validate jwt tokens."`
 }
 
 var cli struct {
@@ -67,7 +68,12 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read control plane id from token"))
 	}
 
-	pem, err := base64.StdEncoding.DecodeString(a.JWTPublicKey)
+	upCli := upbound.NewClient(a.NATSJwtEndpoint, cli.Debug)
+	pubCerts, err := upCli.GetGatewayCerts(a.ControlPlaneToken)
+	if err != nil {
+		ctx.FatalIfErrorf(errors.Wrap(err, "failed to fetch public certs"))
+	}
+	pem, err := base64.StdEncoding.DecodeString(pubCerts.JWTPublicKey)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to base64 decode provided jwt public key"))
 	}
@@ -98,6 +104,7 @@ func main() { // nolint:gocyclo
 			Endpoint:          a.NATSEndpoint,
 			JWTEndpoint:       a.NATSJwtEndpoint,
 			ControlPlaneToken: a.ControlPlaneToken,
+			CABundle:          pubCerts.NATSCA,
 		},
 	}
 

@@ -18,10 +18,7 @@ import (
 
 const (
 	natsTokenPath = "/v1/nats/token"
-	natsCAPath    = "/v1/gw/certs"
-
-	keyNatsCA = "nats_ca"
-	keyToken  = "token"
+	keyToken      = "token"
 )
 
 type natsConnManager struct {
@@ -35,7 +32,7 @@ type natsConnManager struct {
 	caFile               string
 }
 
-func newNATSConnManager(log logging.Logger, cID, ubcNATSEndpoint, ubcNATSEndpointToken string, debug bool) (*natsConnManager, error) {
+func newNATSConnManager(log logging.Logger, cID, ubcNATSEndpoint, ubcNATSEndpointToken string, caBundle string, debug bool) (*natsConnManager, error) {
 	r := newRestyClient(ubcNATSEndpoint, debug)
 	kp, err := nkeys.CreateUser()
 	if err != nil {
@@ -45,7 +42,7 @@ func newNATSConnManager(log logging.Logger, cID, ubcNATSEndpoint, ubcNATSEndpoin
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get public key for nats user nkey")
 	}
-	caFile, err := getCABundleFile(r, log, ubcNATSEndpointToken)
+	caFile, err := caBundleToFile(caBundle)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get nats ca bundle file")
 	}
@@ -86,11 +83,7 @@ func (n *natsConnManager) signatureHandler(nonce []byte) ([]byte, error) {
 	return n.kp.Sign(nonce)
 }
 
-func getCABundleFile(client *resty.Client, log logging.Logger, ubcNATSEndpointToken string) (string, error) {
-	caBundle, err := fetchCABundle(client, log, ubcNATSEndpointToken)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to fetch ca bundle")
-	}
+func caBundleToFile(caBundle string) (string, error) {
 	b, err := base64.StdEncoding.DecodeString(caBundle)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to decode ca bundle")
@@ -104,31 +97,6 @@ func getCABundleFile(client *resty.Client, log logging.Logger, ubcNATSEndpointTo
 		return "", errors.Wrap(err, "failed to write nats ca to file")
 	}
 	return caFile.Name(), nil
-}
-
-func fetchCABundle(client *resty.Client, log logging.Logger, ubcNATSEndpointToken string) (string, error) {
-	log.Debug("fetching NATS CA bundle")
-
-	req := client.R()
-	req.SetHeader("Authorization", fmt.Sprintf("Bearer %s", ubcNATSEndpointToken))
-
-	resp, err := req.Get(natsCAPath)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to request ca bundle")
-	}
-	if resp.StatusCode() != http.StatusOK {
-		return "", errors.Errorf("ca bundle request failed with %s - %s", resp.Status(), string(resp.Body()))
-	}
-	respBody := map[string]string{}
-
-	if err := json.Unmarshal(resp.Body(), &respBody); err != nil {
-		return "", errors.Wrap(err, "failed to unmarshall nats ca bundle response")
-	}
-	if respBody[keyNatsCA] == "" {
-		return "", errors.New("empty nats ca bundle received")
-	}
-
-	return respBody[keyNatsCA], nil
 }
 
 func fetchNewJWTToken(client *resty.Client, log logging.Logger, ubcNATSEndpointToken, clusterID, publicKey string) (string, error) {

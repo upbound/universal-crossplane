@@ -123,7 +123,7 @@ func NewProxy(config *Config, restConfig *rest.Config, log logging.Logger, clust
 		logrus.SetLevel(logrus.DebugLevel)
 	}
 	var nc *nats.Conn
-	natsConn, err := newNATSConnManager(log, clusterID, config.NATS.JWTEndpoint, config.NATS.ControlPlaneToken, true)
+	natsConn, err := newNATSConnManager(log, clusterID, config.NATS.JWTEndpoint, config.NATS.ControlPlaneToken, config.NATS.CABundle, true)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create new nats connection manager")
 	}

@@ -136,7 +136,7 @@ olm: $(HELM) $(OLMBUNDLE)
 helm.prepare: generate-chart
 
 # Ensure a PR is ready for review.
-reviewable: helm.prepare olm lint
+reviewable: generate helm.prepare olm lint
 
 # Ensure branch is clean.
 check-diff: reviewable

@@ -1,3 +1,19 @@
+/*
+Copyright 2021 Upbound Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package upbound
 
 import (
@@ -28,7 +44,7 @@ type PublicCerts struct {
 }
 
 // Client is the client for upbound api
-//go:generate mockgen -destination ./mocks/upbound.go -package mocks github.com/upbound/universal-crossplane/internal/clients/upbound Client
+//go:generate go run github.com/golang/mock/mockgen -copyright_file ../../../hack/boilerplate.txt -destination mocks/upbound.go -package mocks github.com/upbound/universal-crossplane/internal/clients/upbound Client
 type Client interface {
 	GetGatewayCerts(cpToken string) (PublicCerts, error)
 	FetchNewJWTToken(cpToken, clusterID, publicKey string) (string, error)

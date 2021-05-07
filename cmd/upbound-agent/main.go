@@ -5,7 +5,6 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -94,7 +93,7 @@ func main() { // nolint:gocyclo
 
 	var xgqlCertPool *x509.CertPool
 	if a.XgqlCABundleFile != "" {
-		b, err := ioutil.ReadFile(filepath.Clean(a.XgqlCABundleFile))
+		b, err := os.ReadFile(filepath.Clean(a.XgqlCABundleFile))
 		if err != nil {
 			ctx.FatalIfErrorf(errors.Wrap(err, "failed to read xgql ca bundle file"))
 		}

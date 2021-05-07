@@ -3,7 +3,7 @@ package upboundagent
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -408,6 +408,6 @@ type mockRoundTripper struct {
 }
 
 func (mockRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
-	body := ioutil.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("mock success - proxied to: %+v", r.URL))))
+	body := io.NopCloser(bytes.NewReader([]byte(fmt.Sprintf("mock success - proxied to: %+v", r.URL))))
 	return &http.Response{StatusCode: http.StatusOK, Body: body, Request: r}, nil
 }

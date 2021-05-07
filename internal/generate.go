@@ -1,3 +1,5 @@
+// +build generate
+
 /*
 Copyright 2021 Upbound Inc.
 
@@ -14,14 +16,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package meta
+package internal
 
-const (
-	// LabelKeyManagedBy is the key for the label indicating resource is managed by bootstrapper
-	LabelKeyManagedBy = "upbound.io/managed-by"
-	// LabelValueManagedBy is the value for the label indicating resource is managed by bootstrapper
-	LabelValueManagedBy = "bootstrapper"
-	// SecretNameEntitlement is the name of the Secret that contains the tokens
-	// stored for entitlement of usage of Universal Crossplane.
-	SecretNameEntitlement = "upbound-entitlement"
+// NOTE(muvaf): We import the tools used un go:generate targets so that we can
+// track their versions using go.mod and let Go handle its installation. See
+// the following link for details: https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
+
+import (
+	_ "github.com/golang/mock/mockgen" //nolint:typecheck
 )

@@ -26,7 +26,12 @@ ${CP_KUBECTL} config set-context "self-hosted-test" --cluster="self-hosted-test"
 ${CP_KUBECTL} config use-context "self-hosted-test"
 
 echo_info "Validating \"kubectl\" queries work over Upbound Cloud..."
-${CP_KUBECTL} get ns
+
+for i in {1..10}; do
+  ${CP_KUBECTL} get ns && break || sleep 10;
+  echo "UXP may not be ready yet, retrying..."
+done
+
 validation_secret="uxp-validation"
 ${CP_KUBECTL} -n ${HELM_RELEASE_NAMESPACE} delete secret "${validation_secret}" --ignore-not-found
 ${CP_KUBECTL} -n ${HELM_RELEASE_NAMESPACE} create secret generic "${validation_secret}" --from-literal=foo=bar

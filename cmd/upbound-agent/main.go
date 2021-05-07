@@ -138,7 +138,7 @@ func main() { // nolint:gocyclo
 		"tls-private-key-file", a.TLSKeyFile,
 		"graphql-cabundle-file", a.GraphqlCABundleFile,
 		"nats-endpoint", a.NATSEndpoint,
-		"nats-jwt-endpoint", a.UpboundAPIEndpoint)
+		"upbound-api-endpoint", a.UpboundAPIEndpoint)
 
 	addr := fmt.Sprintf(":%s", a.ServerPort)
 	ctx.FatalIfErrorf(errors.Wrap(pxy.Run(addr, a.TLSCertFile, a.TLSKeyFile), "cannot run upbound agent proxy"))

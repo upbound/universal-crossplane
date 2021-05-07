@@ -7,7 +7,6 @@ echo_info "Verify all deployments are ready!"
 ${WAIT_DEPLOYMENT} crossplane
 ${WAIT_DEPLOYMENT} crossplane-rbac-manager
 ${WAIT_DEPLOYMENT} upbound-bootstrapper
-${WAIT_DEPLOYMENT} crossplane-graphql
 ${WAIT_DEPLOYMENT} upbound-agent
 ${WAIT_DEPLOYMENT} xgql
 echo_info "Successfully validated all deployments!"

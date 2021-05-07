@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: universal-crossplane-config
+  labels:
+    {{- include "labelsBootstrapper" . | nindent 4 }}
+data:
+  crossplaneVersion: {{ (trimPrefix "v" .Values.image.tag) }}
+  xgqlVersion: {{ (trimPrefix "v" .Values.xgql.image.tag) }}
+  agentVersion: {{ (trimPrefix "v" .Values.agent.image.tag) }}

@@ -44,11 +44,9 @@ const (
 
 	nameUpbound          = "upbound"
 	cnAgent              = "upbound-agent"
-	cnGraphql            = "crossplane-graphql"
 	cnXgql               = "xgql"
 	secretNameCA         = "uxp-ca"
 	secretNameGatewayTLS = "upbound-agent-tls"
-	secretNameGraphqlTLS = "crossplane-graphql-tls"
 	secretNameXgqlTLS    = "xgql-tls"
 )
 
@@ -79,13 +77,6 @@ var (
 			AltNames: certutil.AltNames{
 				// TODO(hasan): drop "tenant-gateway" once we stop using legacy service
 				DNSNames: []string{cnAgent, "tenant-gateway"},
-			},
-			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		},
-		secretNameGraphqlTLS: {
-			CommonName: cnGraphql,
-			AltNames: certutil.AltNames{
-				DNSNames: []string{cnGraphql},
 			},
 			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		},
@@ -130,7 +121,6 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		For(&corev1.Secret{}).
 		WithEventFilter(resource.NewPredicates(resource.AnyOf(
 			resource.IsNamed(secretNameGatewayTLS),
-			resource.IsNamed(secretNameGraphqlTLS),
 			resource.IsNamed(secretNameXgqlTLS),
 		))).
 		Complete(r)

@@ -31,14 +31,12 @@ spec:
           - /etc/certs/upbound-agent/tls.crt
           - --tls-key-file
           - /etc/certs/upbound-agent/tls.key
-          - --graphql-ca-bundle-file
+          - --xgql-ca-bundle-file
           - /etc/certs/upbound-agent/ca.crt
           - --nats-endpoint
           - nats://{{ .Values.upbound.connectHost }}:{{ .Values.upbound.connectPort | default "443" }}
-          - --nats-jwt-endpoint
+          - --upbound-api-endpoint
           - {{ .Values.upbound.apiURL }}
-          - --jwt-public-key
-          - $(JWT_PUBLIC_KEY)
           - --pod-name
           - $(POD_NAME)
           - --control-plane-token
@@ -59,11 +57,6 @@ spec:
               secretKeyRef:
                 name: upbound-control-plane-token
                 key: token
-          - name: JWT_PUBLIC_KEY
-            valueFrom:
-              secretKeyRef:
-                name: upbound-agent-public-certs
-                key: jwtPublicKey
           imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
           ports:
           - name: agent

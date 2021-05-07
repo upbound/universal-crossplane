@@ -20,6 +20,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/upbound/universal-crossplane/internal/clients/upbound"
 	"github.com/upbound/universal-crossplane/internal/upboundagent"
 	"github.com/upbound/universal-crossplane/internal/version"
 )
@@ -39,15 +40,14 @@ const (
 
 // AgentCmd represents the "upbound-agent" command
 type AgentCmd struct {
-	PodName             string `help:"Name of the agent pod."`
-	ServerPort          string `default:"6443" help:"Port to serve agent service."`
-	TLSCertFile         string `help:"File containing the default x509 Certificate for HTTPS."`
-	TLSKeyFile          string `help:"File containing the default x509 private key matching provided cert"`
-	GraphqlCABundleFile string `help:"CA bundle file for graphql server"`
-	NATSEndpoint        string `help:"Endpoint for nats"`
-	NATSJwtEndpoint     string `help:"Endpoint for nats jwt tokens"`
-	ControlPlaneToken   string `help:"Platform token to access Upbound Cloud connect endpoint"`
-	JWTPublicKey        string `help:"BASE64 encoded rsa public key to validate jwt tokens."`
+	PodName            string `help:"Name of the agent pod."`
+	ServerPort         string `default:"6443" help:"Port to serve agent service."`
+	TLSCertFile        string `help:"File containing the default x509 Certificate for HTTPS."`
+	TLSKeyFile         string `help:"File containing the default x509 private key matching provided cert"`
+	XgqlCABundleFile   string `help:"CA bundle file for xgql server"`
+	NATSEndpoint       string `help:"Endpoint for nats"`
+	UpboundAPIEndpoint string `help:"Endpoint for Upbound API"`
+	ControlPlaneToken  string `help:"Platform token to access Upbound Cloud connect endpoint"`
 }
 
 var cli struct {
@@ -60,6 +60,8 @@ func main() { // nolint:gocyclo
 	ctx := kong.Parse(&cli)
 
 	zl := zap.New(zap.UseDevMode(cli.Debug))
+	logger := logging.NewLogrLogger(zl.WithName("upbound-agent"))
+
 	a := cli.Agent
 
 	cpID, err := readCPIDFromToken(a.ControlPlaneToken)
@@ -67,24 +69,30 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read control plane id from token"))
 	}
 
-	pem, err := base64.StdEncoding.DecodeString(a.JWTPublicKey)
+	upClient := upbound.NewClient(a.UpboundAPIEndpoint, logger, cli.Debug)
+	pubCerts, err := upClient.GetGatewayCerts(a.ControlPlaneToken)
+	if err != nil {
+		ctx.FatalIfErrorf(errors.Wrap(err, "failed to fetch public certs"))
+	}
+	pem, err := base64.StdEncoding.DecodeString(pubCerts.JWTPublicKey)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to base64 decode provided jwt public key"))
 	}
+
 	pk, err := jwt.ParseRSAPublicKeyFromPEM(pem)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to parse public key"))
 	}
 
-	var graphqlCertPool *x509.CertPool
-	if a.GraphqlCABundleFile != "" {
-		b, err := ioutil.ReadFile(filepath.Clean(a.GraphqlCABundleFile))
+	var xgqlCertPool *x509.CertPool
+	if a.XgqlCABundleFile != "" {
+		b, err := ioutil.ReadFile(filepath.Clean(a.XgqlCABundleFile))
 		if err != nil {
-			ctx.FatalIfErrorf(errors.Wrap(err, "failed to read graphql ca bundle file"))
+			ctx.FatalIfErrorf(errors.Wrap(err, "failed to read xgql ca bundle file"))
 		}
-		graphqlCertPool, err = generateTrustedCertPool(b)
+		xgqlCertPool, err = generateTrustedCertPool(b)
 		if err != nil {
-			ctx.FatalIfErrorf(errors.Wrap(err, "failed to generate graphql ca cert pool"))
+			ctx.FatalIfErrorf(errors.Wrap(err, "failed to generate xgql ca cert pool"))
 		}
 	}
 
@@ -92,12 +100,13 @@ func main() { // nolint:gocyclo
 		DebugMode:         cli.Debug,
 		ControlPlaneID:    cpID,
 		TokenRSAPublicKey: pk,
-		GraphQLCACertPool: graphqlCertPool,
+		XGQLCACertPool:    xgqlCertPool,
 		NATS: &upboundagent.NATSClientConfig{
 			Name:              a.PodName,
 			Endpoint:          a.NATSEndpoint,
-			JWTEndpoint:       a.NATSJwtEndpoint,
+			JWTEndpoint:       a.UpboundAPIEndpoint,
 			ControlPlaneToken: a.ControlPlaneToken,
+			CABundle:          pubCerts.NATSCA,
 		},
 	}
 
@@ -114,8 +123,7 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read kube cluster ID"))
 	}
 
-	logger := logging.NewLogrLogger(zl.WithName("upbound-agent"))
-	pxy, err := upboundagent.NewProxy(tgConfig, restConfig, logger, kubeClusterID)
+	pxy, err := upboundagent.NewProxy(tgConfig, restConfig, upClient, logger, kubeClusterID)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to create new agent proxy"))
 	}
@@ -127,9 +135,9 @@ func main() { // nolint:gocyclo
 		"server-port", a.ServerPort,
 		"tls-cert-file", a.TLSCertFile,
 		"tls-private-key-file", a.TLSKeyFile,
-		"graphql-cabundle-file", a.GraphqlCABundleFile,
+		"xgql-ca-bundle-file", a.XgqlCABundleFile,
 		"nats-endpoint", a.NATSEndpoint,
-		"nats-jwt-endpoint", a.NATSJwtEndpoint)
+		"upbound-api-endpoint", a.UpboundAPIEndpoint)
 
 	addr := fmt.Sprintf(":%s", a.ServerPort)
 	ctx.FatalIfErrorf(errors.Wrap(pxy.Run(addr, a.TLSCertFile, a.TLSKeyFile), "cannot run upbound agent proxy"))

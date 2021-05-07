@@ -47,7 +47,7 @@ type AgentCmd struct {
 	TLSKeyFile          string `help:"File containing the default x509 private key matching provided cert"`
 	GraphqlCABundleFile string `help:"CA bundle file for graphql server"`
 	NATSEndpoint        string `help:"Endpoint for nats"`
-	NATSJwtEndpoint     string `help:"Endpoint for nats jwt tokens"`
+	UpboundAPIEndpoint  string `help:"Endpoint for Upbound api"`
 	ControlPlaneToken   string `help:"Platform token to access Upbound Cloud connect endpoint"`
 }
 
@@ -68,7 +68,7 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read control plane id from token"))
 	}
 
-	upCli := upbound.NewClient(a.NATSJwtEndpoint, cli.Debug)
+	upCli := upbound.NewClient(a.UpboundAPIEndpoint, cli.Debug)
 	pubCerts, err := upCli.GetGatewayCerts(a.ControlPlaneToken)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to fetch public certs"))
@@ -102,7 +102,7 @@ func main() { // nolint:gocyclo
 		NATS: &upboundagent.NATSClientConfig{
 			Name:              a.PodName,
 			Endpoint:          a.NATSEndpoint,
-			JWTEndpoint:       a.NATSJwtEndpoint,
+			JWTEndpoint:       a.UpboundAPIEndpoint,
 			ControlPlaneToken: a.ControlPlaneToken,
 			CABundle:          pubCerts.NATSCA,
 		},
@@ -136,7 +136,7 @@ func main() { // nolint:gocyclo
 		"tls-private-key-file", a.TLSKeyFile,
 		"graphql-cabundle-file", a.GraphqlCABundleFile,
 		"nats-endpoint", a.NATSEndpoint,
-		"nats-jwt-endpoint", a.NATSJwtEndpoint)
+		"nats-jwt-endpoint", a.UpboundAPIEndpoint)
 
 	addr := fmt.Sprintf(":%s", a.ServerPort)
 	ctx.FatalIfErrorf(errors.Wrap(pxy.Run(addr, a.TLSCertFile, a.TLSKeyFile), "cannot run upbound agent proxy"))

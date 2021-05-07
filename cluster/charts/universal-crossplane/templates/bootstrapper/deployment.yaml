@@ -37,8 +37,6 @@ spec:
             - --upbound-api-url
             - {{ .Values.upbound.apiURL }}
             - --controller
-            - ubc-certs
-            - --controller
             - tls-secrets
           {{- if .Values.billing.awsMarketplace.enabled }}
             - --controller

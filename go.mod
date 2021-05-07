@@ -10,7 +10,7 @@ require (
 	github.com/crossplane/crossplane-runtime v0.13.1-0.20210504165942-53874539b310
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-resty/resty/v2 v2.5.0
-	github.com/golang/mock v1.4.1
+	github.com/golang/mock v1.5.0
 	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.1.2
 	github.com/imdario/mergo v0.3.11 // indirect

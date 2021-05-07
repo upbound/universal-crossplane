@@ -25,30 +25,45 @@ import (
 	upbound "github.com/upbound/universal-crossplane/internal/clients/upbound"
 )
 
-// MockClient is a mock of Client interface
+// MockClient is a mock of Client interface.
 type MockClient struct {
 	ctrl     *gomock.Controller
 	recorder *MockClientMockRecorder
 }
 
-// MockClientMockRecorder is the mock recorder for MockClient
+// MockClientMockRecorder is the mock recorder for MockClient.
 type MockClientMockRecorder struct {
 	mock *MockClient
 }
 
-// NewMockClient creates a new mock instance
+// NewMockClient creates a new mock instance.
 func NewMockClient(ctrl *gomock.Controller) *MockClient {
 	mock := &MockClient{ctrl: ctrl}
 	mock.recorder = &MockClientMockRecorder{mock}
 	return mock
 }
 
-// EXPECT returns an object that allows the caller to indicate expected use
+// EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockClient) EXPECT() *MockClientMockRecorder {
 	return m.recorder
 }
 
-// GetGatewayCerts mocks base method
+// FetchNewJWTToken mocks base method.
+func (m *MockClient) FetchNewJWTToken(arg0, arg1, arg2 string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FetchNewJWTToken", arg0, arg1, arg2)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FetchNewJWTToken indicates an expected call of FetchNewJWTToken.
+func (mr *MockClientMockRecorder) FetchNewJWTToken(arg0, arg1, arg2 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNewJWTToken", reflect.TypeOf((*MockClient)(nil).FetchNewJWTToken), arg0, arg1, arg2)
+}
+
+// GetGatewayCerts mocks base method.
 func (m *MockClient) GetGatewayCerts(arg0 string) (upbound.PublicCerts, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetGatewayCerts", arg0)
@@ -57,7 +72,7 @@ func (m *MockClient) GetGatewayCerts(arg0 string) (upbound.PublicCerts, error) {
 	return ret0, ret1
 }
 
-// GetGatewayCerts indicates an expected call of GetGatewayCerts
+// GetGatewayCerts indicates an expected call of GetGatewayCerts.
 func (mr *MockClientMockRecorder) GetGatewayCerts(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGatewayCerts", reflect.TypeOf((*MockClient)(nil).GetGatewayCerts), arg0)

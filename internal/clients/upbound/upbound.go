@@ -44,7 +44,7 @@ type PublicCerts struct {
 }
 
 // Client is the client for upbound api
-//go:generate go run github.com/golang/mock/mockgen -copyright_file ../../../hack/boilerplate.txt -destination mocks/upbound.go -package mocks github.com/upbound/universal-crossplane/internal/clients/upbound Client
+//go:generate go run github.com/golang/mock/mockgen -copyright_file ../../../hack/boilerplate.txt -destination ./mocks/upbound.go -package mocks github.com/upbound/universal-crossplane/internal/clients/upbound Client
 type Client interface {
 	GetGatewayCerts(cpToken string) (PublicCerts, error)
 	FetchNewJWTToken(cpToken, clusterID, publicKey string) (string, error)

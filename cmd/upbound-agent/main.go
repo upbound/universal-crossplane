@@ -128,6 +128,8 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to create new agent proxy"))
 	}
 
+	logger.Info("Demo Time!")
+
 	logger.Info("Starting Upbound Agent ", "version", version.Version,
 		"control-plane-id", cpID,
 		"debug", cli.Debug,

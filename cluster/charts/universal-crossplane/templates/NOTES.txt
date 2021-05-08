@@ -1,0 +1,15 @@
+By proceeding, you are accepting to comply with terms and conditions in https://licenses.upbound.io/upbound-software-license.html
+
+✨ Thank you for installing Universal Crossplane!
+{{- if or (eq .Values.upbound.controlPlane.permission "view") (eq .Values.upbound.controlPlane.permission "edit") }}
+🚀 You can now connect your cluster to Upbound Cloud!
+
+Example command:
+{{ if eq .Values.upbound.controlPlane.permission "edit" }}
+$ up cloud controlplane attach <control plane name> | \
+up uxp connect --token-secret-name {{ .Values.upbound.controlPlane.tokenSecretName }} --namespace {{ .Release.Namespace }} -
+{{- else if eq .Values.upbound.controlPlane.permission "view" }}
+$ up cloud controlplane attach --view-only <control plane name> | \
+up uxp connect --token-secret-name {{ .Values.upbound.controlPlane.tokenSecretName }} --namespace {{ .Release.Namespace }} -
+{{- end }}
+{{- end }}

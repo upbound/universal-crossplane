@@ -1,13 +1,26 @@
-# Upbound Distribution of Crossplane
+# Upbound Universal Crossplane (UXP)
 
-Upbound releases a distribution of Crossplane that can connect to Upbound Cloud
-and let users manage their Crossplane resources through the UI.
+Upbound Universal Crossplane (UXP) is Upbound's official enterprise-grade distribution of Crossplane. It's fully compatible with downstream Crossplane, open source, capable of connecting to Upbound Cloud for real-time dashboard visibility, and maintained by Upbound. It's the easiest way for both individual community members and enterprises to start deploying control plane architectures to production.
 
-This repository contains the Helm chart and necessary manifests to deploy all
-components of Upbound Distribution.
+## Quick Start
+#### Install the Upbound CLI
+`curl -sL https://cli.upbound.io | sh`
+#### Install UXP to a Kubernetes cluster (make sure to have Kubeconfig setup with your cluster info)
+`up uxp install`
+#### [Create an Upbound account](https://cloud.upbound.io/register) for a free real-time dashboard
+#### Connect UXP to Upbound Cloud (go here for more details)
+```
+up cloud login --profile=<CHOOSE PROFILE NAME> --account=<USERNAME> --username=<USERNAME> --password=<PASSWORD>
+up cloud controlplane attach $NAME --profile=<YOUR PROFILE NAME> | up uxp connect -
+```
 
-## Local Development
+#### View your UXP instance live by [signing into your Upbound account](https://cloud.upbound.io/login)
 
+< SCREENSHOT GOES HERE >
+
+## Developer Guide
+
+### Local Development
 To spin up a local development environment with locally built artifacts, run:
 
 ```

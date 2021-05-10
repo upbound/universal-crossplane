@@ -22,6 +22,11 @@ package internal
 // track their versions using go.mod and let Go handle its installation. See
 // the following link for details: https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
 
+
+// Add license headers to all files.
+//go:generate go run -tags generate github.com/google/addlicense -v -c "Upbound Inc" . ../cmd
+
 import (
 	_ "github.com/golang/mock/mockgen" //nolint:typecheck
+	_ "github.com/google/addlicense" //nolint:typecheck
 )

@@ -56,6 +56,17 @@ CRDS_DIR=$(ROOT_DIR)/cluster/crds
 OLM_DIR=$(ROOT_DIR)/cluster/olm
 -include build/makelib/k8s_tools.mk
 
+# up download and install
+# TODO(hasheddan): move to build submodule when appropriate
+UP_VERSION ?= v0.0.0-124.g60dbbb4
+export UP := $(TOOLS_HOST_DIR)/up-$(UP_VERSION)
+$(UP):
+	@$(INFO) installing up $(UP_VERSION)
+	@mkdir -p $(TOOLS_HOST_DIR)
+	@curl -fsSLo $(UP) https://cli.upbound.io/main/$(UP_VERSION)/bin/$(SAFEHOST_PLATFORM)/up || $(FAIL)
+	@chmod +x $(UP)
+	@$(OK) installing up $(UP)
+
 # ====================================================================================
 # Setup Helm
 
@@ -147,7 +158,7 @@ check-diff: reviewable
 	@test -z "$$(git status --porcelain)" || $(FAIL)
 	@$(OK) branch is clean
 
-local-dev: local.up local.deploy.$(PACKAGE_NAME)
+local-dev: $(UP) local.up local.deploy.$(PACKAGE_NAME)
 
 e2e.run: build local-dev local.deploy.validation
 e2e.done: local.down

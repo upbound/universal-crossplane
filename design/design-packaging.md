@@ -2,13 +2,19 @@
 
 * Owner: Muvaffak Onuş (@muvaf)
 * Reviewers: Upbound Engineering
-* Status: Draft
+* Status: Accepted
 
 > Project Uruk-hai is the temporary code name for the Upbound Distro.
 
 > "Do you know how the Orcs first came to being? They were Elves once, taken by
 > the dark powers, tortured and mutilated. A ruined and terrible form of life.
 > And now, perfected. My fighting Uruk-hai." —Saruman
+
+## Revisions
+
+* 1.1 - Muvaffak Onuş (@muvaf)
+  * Versioning the artifacts.
+  * Release branches.
 
 ## Problem Statement
 
@@ -72,7 +78,43 @@ The `values.yaml` will contain the default values for all components deployed in
 the Helm chart.
 
 Additional to manifests of components, we will include a `ConfigMap` that lists the
-deployed versions of all component. 
+deployed versions of all components.
+
+### Versioning
+
+All artifacts produced in this repository will have the same version tags. The
+versions of external components will be pinned down in `Makefile`.
+
+Upbound appends a patch version to the Crossplane semantically versioned industry
+standard (`x.y.z-up.n`). An Upbound patch release with a `-up.n` suffix
+(such as `1.2.1-up.1`) includes security updates and/or bug fixes for Project
+Uruk-hai alongside the upstream Crossplane software. These updates or fixes are
+required for compatibility and interoperability with Upbound Cloud. Users can
+expect non-breaking changes for any patch version, which includes the `-up.n`
+section. The following is an example timeline of versions:
+- `v1.2.0-up.1`
+- `v1.2.0-up.2`
+- `v1.2.0-up.3`
+- Crossplane made a patch release, `v1.2.1`
+- `v1.2.1-up.1`
+- `v1.2.1-up.2`
+
+We never release `v1.2.0-up.4` unless Crossplane has a breaking change in the patch
+release.
+
+The definition of breaking change depends on the API that each component exposes.
+For example, Upbound Agent does not expose an API to end users, but it provides
+connection to Upbound Cloud so that connection should not be broken after a patch
+release. However, XGQL does provide a GraphQL API to users, so usual GraphQL
+version contract conventions apply.
+
+#### Release Branches
+
+The release branches should be same as upstream Crossplane, i.e. for a release
+that starts with `1.2.x`, there should be a `release-1.2` branch. When Crossplane
+releases a patch version, we'll accomodate it in that branch and note it in the
+final version of the artifact, i.e. `v1.2.0-up.2` will become `v1.2.1-up.1` and
+it will be released from the same `release-1.2` branch.
 
 ### Upgrade
 

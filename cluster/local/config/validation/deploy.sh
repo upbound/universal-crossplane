@@ -2,13 +2,12 @@ scriptdir="$( dirname "${BASH_SOURCE[0]}")"
 
 echo "Running validation..."
 
-login_ubc
-CONTROL_PLANE_ID=$(get_control_plane_id)
+CONTROL_PLANE_ID=$("${UP}" cloud xp list --profile=uxp-e2e | awk '$1 == "'"${LOCALDEV_CONNECT_CP_NAME}"'" {print $2}')
 export CONTROL_PLANE_ID
 
 source "${scriptdir}/validate.sh"
 
 if [ "${LOCALDEV_CONNECT_CLEANUP}" == "true" ]; then
   echo "Deleting self hosted control plane with id ${CONTROL_PLANE_ID}"
-  delete_control_plane "${CONTROL_PLANE_ID}"
+  "${UP}" cloud xp delete --profile=uxp-e2e "${CONTROL_PLANE_ID}"
 fi

@@ -41,11 +41,6 @@ jobs:
         with:
           submodules: true
 
-      # TODO(turkenh): remove once there is no private dependency (e.g. nats-proxy)
-      - name: Granting private modules access
-        run: |
-          git config --global url."https://${{ secrets.UPBOUND_BOT_GITHUB_TOKEN }}:x-oauth-basic@github.com/upbound".insteadOf "https://github.com/upbound"
-
       - name: Fetch History
         run: git fetch --prune --unshallow
 

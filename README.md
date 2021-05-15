@@ -34,13 +34,7 @@ production control planes.
    # The name of your new UXP control plane.
    UXP_NAME=mycrossplane
 
-   # Your Upbound Cloud user.
-   UP_USER=myuser
-
-   # Write your Upbound Cloud password to a file.
-   vim password
-
-   cat password | up cloud login --username=${UP_USER} --password=-
+   up cloud login
    up cloud controlplane attach ${UXP_NAME} | up uxp connect -
    ```
 

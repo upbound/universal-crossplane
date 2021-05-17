@@ -3,7 +3,7 @@ appVersion: 0.0.1
 description: Upbound Universal Crossplane allows you to connect your Crossplane-enabled cluster to Upbound Cloud.
 name: universal-crossplane
 version: 0.0.1
-icon: https://crossplane.io/images/favicon_192x192.png
+icon: https://raw.githubusercontent.com/upbound/universal-crossplane/66ce9eb2c5a0c3af8ed7d19551a2c4d743b933b9/docs/media/logo.png
 home: https://upbound.io
 maintainers:
   - name: Upbound Inc.

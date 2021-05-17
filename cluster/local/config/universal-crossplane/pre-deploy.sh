@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -aeuo pipefail
 
-if [ "${LOCALDEV_UBC_PERMISSION}" != "edit" ] && [ "${LOCALDEV_UBC_PERMISSION}" != "view" ]; then
-  echo "LOCALDEV_UBC_PERMISSION is neither edit nor view, skipping self hosted control plane creation"
+if [ -z "${LOCALDEV_CONNECT_API_TOKEN}" ]; then
+  echo "LOCALDEV_CONNECT_API_TOKEN is not set, skipping self hosted control plane creation"
   return 0
 fi
 

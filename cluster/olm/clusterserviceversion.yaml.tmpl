@@ -4,7 +4,20 @@ metadata:
   creationTimestamp: null
   annotations:
     operatorframework.io/suggested-namespace: upbound-system
+    operatorframework.io/initialization-resource: |
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: upbound-control-plane-token
+        namespace: upbound-system
+      type: Opaque
+      data:
+        token: "Output of `up cloud controlplane attach | base64` command"
+    operators.operatorframework.io/internal-objects: '["locks.pkg.crossplane.io"]'
+    categories: "Cloud Provider, Integration & Delivery"
+    capabilities: Seamless Upgrades
 spec:
+  displayName: Upbound Universal Crossplane (UXP)
   minKubeVersion: 1.16.0
   maturity: stable
   installModes:
@@ -16,3 +29,6 @@ spec:
       type: MultiNamespace
     - supported: true
       type: AllNamespaces
+  provider:
+    name: Upbound Inc.
+    url: https://upbound.io

@@ -186,7 +186,11 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 			},
 			want: want{
 				respCode: http.StatusBadRequest,
-				respBody: fmt.Sprintf(`{"message":"%s"}`, errors.Wrap(errors.New("crypto/rsa: verification error"), errUnableToValidateToken).Error()),
+				respBody: fmt.Sprintf(`{"message":"%s"}`,
+					errors.Wrap(
+						errors.Wrap(errors.New("crypto/rsa: verification error"), errInvalidToken),
+						errUnableToValidateToken).
+						Error()),
 			},
 		},
 		"WrongEnvironmentId": {
@@ -342,9 +346,7 @@ func TestProxy_reviewToken(t *testing.T) {
 				},
 			},
 			want: want{
-				err: &jwt.ValidationError{
-					Inner: errors.New(fmt.Sprintf(errUnexpectedSigningMethod, "HS256")),
-				},
+				err: errors.Wrap(jwt.NewValidationError(fmt.Sprintf(errUnexpectedSigningMethod, "HS256"), jwt.ValidationErrorSignatureInvalid), errInvalidToken),
 			},
 		},
 		"SignedWithWrongKey": {
@@ -364,9 +366,7 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 				},
 			},
 			want: want{
-				err: &jwt.ValidationError{
-					Inner: errors.New("crypto/rsa: verification error"),
-				},
+				err: errors.Wrap(jwt.NewValidationError("crypto/rsa: verification error", jwt.ValidationErrorSignatureInvalid), errInvalidToken),
 			},
 		},
 		"Success": {
@@ -398,7 +398,7 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			p := &Proxy{}
+			p := &Proxy{log: logging.NewNopLogger()}
 			if tc.publicKey != nil {
 				k, err := jwt.ParseRSAPublicKeyFromPEM(tc.publicKey)
 				if err != nil {

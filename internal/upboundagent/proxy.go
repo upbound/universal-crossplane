@@ -69,6 +69,8 @@ const (
 	keepAliveInterval = 5 * time.Second
 	drainTimeout      = 20 * time.Second
 	shutdownTimeout   = 20 * time.Second
+
+	clockSkewTolerance = 120 * time.Second
 )
 
 const (
@@ -420,13 +422,23 @@ func (p *Proxy) reviewToken(requestHeaders http.Header) (*internal.TokenClaims, 
 		}
 		return p.config.TokenRSAPublicKey, nil
 	})
-	if err != nil {
-		return nil, err
+
+	if token.Valid {
+		return tcs, nil
+	} else if ve, ok := err.(*jwt.ValidationError); ok {
+		if ve.Errors == jwt.ValidationErrorIssuedAt {
+			// We observe this (token used before issued) due to clock skew
+			// between Upbound Cloud and Agent and intentionally re-run this validation
+			// with some tolerance here.
+			// Related issue: https://github.com/dgrijalva/jwt-go/issues/383
+			shouldBeIssuedBefore := time.Now().Add(clockSkewTolerance)
+			if tcs.VerifyIssuedAt(shouldBeIssuedBefore.Unix(), true) {
+				p.log.Debug("token used before issued, probably due to clock skew, ignoring...")
+				return tcs, nil
+			}
+		}
 	}
-	if !token.Valid {
-		return nil, errors.New(errInvalidToken)
-	}
-	return tcs, err
+	return nil, errors.Wrap(err, errInvalidToken)
 }
 
 func roundTripperForRestConfig(config *rest.Config) (http.RoundTripper, error) {

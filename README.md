@@ -18,6 +18,11 @@ production control planes.
    ```console
    curl -sL https://cli.upbound.io | sh
    ```
+   
+    To install with Homebrew:
+    ```console
+    brew install upbound/tap/up
+    ```
 
 2. Install UXP to a Kubernetes cluster.
 

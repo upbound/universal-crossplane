@@ -14,7 +14,6 @@ variables [here](https://github.com/upbound/universal-crossplane/blob/main/clust
 For example, the following will enable connecting your local development environment to Upbound Cloud:
 
 ```
-export LOCALDEV_UBC_PERMISSION=edit
 export LOCALDEV_CONNECT_CP_ORG=<YOUR_UBC_ORG>
 export LOCALDEV_CONNECT_API_TOKEN=<YOUR_ACCESS_TOKEN>
 
@@ -35,5 +34,14 @@ make local.down
 To run validation tests locally, run:
 
 ```
+make e2e.run
+```
+
+To run validation test including Upbound Cloud connectivity, run:
+
+```
+export LOCALDEV_CONNECT_CP_ORG=<YOUR_UBC_ORG>
+export LOCALDEV_CONNECT_API_TOKEN=<YOUR_ACCESS_TOKEN>
+
 make e2e.run
 ```

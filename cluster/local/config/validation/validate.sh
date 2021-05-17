@@ -11,12 +11,13 @@ ${WAIT_DEPLOYMENT} upbound-agent
 ${WAIT_DEPLOYMENT} xgql
 echo_info "Successfully validated all deployments!"
 
-if [ "${LOCALDEV_UBC_PERMISSION}" != "edit" ] && [ "${LOCALDEV_UBC_PERMISSION}" != "view" ]; then
-  echo "LOCALDEV_UBC_PERMISSION is neither edit nor view, skipping validating Upbound Cloud connectivity"
+if [ -z "${LOCALDEV_CONNECT_API_TOKEN}" ]; then
+  echo "LOCALDEV_CONNECT_API_TOKEN is not set,  skipping validating Upbound Cloud connectivity"
   return 0
 fi
 
 echo_info "Validating connectivity to Upbound Cloud..."
+
 cp_kubeconfig=/tmp/cp_kubeconfig
 touch "${cp_kubeconfig}"
 CP_KUBECTL="${KUBECTL} --kubeconfig ${cp_kubeconfig}"

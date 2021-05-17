@@ -68,21 +68,38 @@ flag is only a workaround, you will always get the latest stable version of UXP.
 
 ### Upgrade from upstream Crossplane
 
+In order to upgrade from upstream Crossplane, the target UXP version has to match
+the Crossplane version until the `-up.N` suffix. For example, you can upgrade from
+Crossplane `v1.2.1` only to a UXP version that looks like `v1.2.1-up.N` but not to
+a `v1.3.0-up.N`. It'd need to be upgraded to upstream Crossplane `v1.3.0` and then
+UXP `v1.3.0-up.N`.
+
 #### Using up CLI
 
-1. Upgrade the Crossplane installation in given namespace.
+   ```console
+   # Assuming it is installed in "crossplane-system" with release name "crossplane".
+   up uxp upgrade -n crossplane-system
+   ```
+
+If you'd like to upgrade to a specific version, run the following:
 
    ```console
-   up uxp upgrade -n crossplane-system
+   # Assuming it is installed in "crossplane-system" with release name "crossplane".
+   up uxp upgrade vX.Y.Z-up.N -n crossplane-system
    ```
 
 #### Using Helm 3
 
-1. Upgrade the existing installation of Crossplane with UXP chart.
-
    ```console
    # Assuming it is installed in "crossplane-system" with release name "crossplane".
    helm upgrade crossplane --namespace crossplane-system upbound-stable/universal-crossplane --devel
+   ```
+
+If you'd like to upgrade to a specific version, run the following:
+
+   ```console
+   # Assuming it is installed in "crossplane-system" with release name "crossplane".
+   helm upgrade crossplane --namespace crossplane-system upbound-stable/universal-crossplane --devel --version vX.Y.Z-up.N
    ```
 
 ## Additional Resources

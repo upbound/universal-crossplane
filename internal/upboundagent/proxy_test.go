@@ -1,18 +1,16 @@
-/*
-Copyright 2021 Upbound Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright 2021 Upbound Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package upboundagent
 
@@ -27,12 +25,13 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
-	"github.com/crossplane/crossplane-runtime/pkg/test"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/go-cmp/cmp"
 	"github.com/labstack/echo/v4"
 	"github.com/pkg/errors"
 	"k8s.io/client-go/transport"
+
+	"github.com/crossplane/crossplane-runtime/pkg/test"
 
 	"github.com/upbound/universal-crossplane/internal/upboundagent/internal"
 )
@@ -187,7 +186,11 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 			},
 			want: want{
 				respCode: http.StatusBadRequest,
-				respBody: fmt.Sprintf(`{"message":"%s"}`, errors.Wrap(errors.New("crypto/rsa: verification error"), errUnableToValidateToken).Error()),
+				respBody: fmt.Sprintf(`{"message":"%s"}`,
+					errors.Wrap(
+						errors.Wrap(errors.New("crypto/rsa: verification error"), errInvalidToken),
+						errUnableToValidateToken).
+						Error()),
 			},
 		},
 		"WrongEnvironmentId": {
@@ -343,9 +346,7 @@ func TestProxy_reviewToken(t *testing.T) {
 				},
 			},
 			want: want{
-				err: &jwt.ValidationError{
-					Inner: errors.New(fmt.Sprintf(errUnexpectedSigningMethod, "HS256")),
-				},
+				err: errors.Wrap(jwt.NewValidationError(fmt.Sprintf(errUnexpectedSigningMethod, "HS256"), jwt.ValidationErrorSignatureInvalid), errInvalidToken),
 			},
 		},
 		"SignedWithWrongKey": {
@@ -365,9 +366,7 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 				},
 			},
 			want: want{
-				err: &jwt.ValidationError{
-					Inner: errors.New("crypto/rsa: verification error"),
-				},
+				err: errors.Wrap(jwt.NewValidationError("crypto/rsa: verification error", jwt.ValidationErrorSignatureInvalid), errInvalidToken),
 			},
 		},
 		"Success": {
@@ -399,7 +398,7 @@ WNF1xiFz8ZOCiTgLAgMBAAE=
 	}
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			p := &Proxy{}
+			p := &Proxy{log: logging.NewNopLogger()}
 			if tc.publicKey != nil {
 				k, err := jwt.ParseRSAPublicKeyFromPEM(tc.publicKey)
 				if err != nil {

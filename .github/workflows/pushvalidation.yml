@@ -90,3 +90,5 @@ jobs:
           UPBOUND_API_ENDPOINT: ${{ secrets.UPBOUND_API_ENDPOINT }}
           UPBOUND_CONNECT_ENDPOINT: ${{ secrets.UPBOUND_CONNECT_ENDPOINT }}
           UPBOUND_PROXY_ENDPOINT: ${{ secrets.UPBOUND_PROXY_ENDPOINT }}
+          # CLI Configuration
+          UP_ENDPOINT: https://${{ secrets.UPBOUND_API_ENDPOINT }}

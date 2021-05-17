@@ -1,45 +1,61 @@
-# Upbound Distribution of Crossplane
+# Upbound Universal Crossplane (UXP)
 
-Upbound releases a distribution of Crossplane that can connect to Upbound Cloud
-and let users manage their Crossplane resources through the UI.
+<a href="https://upbound.io/uxp">
+    <img align="right" style="margin-left: 20px" src="docs/media/logo.png" width=200 />
+</a>
 
-This repository contains the Helm chart and necessary manifests to deploy all
-components of Upbound Distribution.
+Upbound Universal Crossplane (UXP) is [Upbound's][upbound] official
+enterprise-grade distribution of [Crossplane][crossplane]. It's fully compatible
+with upstream Crossplane, open source, capable of connecting to Upbound Cloud
+for real-time dashboard visibility, and maintained by Upbound. It's the easiest
+way for both individual community members and enterprises to build their
+production control planes.
 
-## Local Development
+## Quick Start
 
-To spin up a local development environment with locally built artifacts, run:
+1. Install the [Upbound CLI][upbound-cli].
 
-```
-make build local-dev
-```
+   ```console
+   curl -sL https://cli.upbound.io | sh
+   ```
 
-You can override default local development configuration by overriding environment
-variables [here](https://github.com/upbound/universal-crossplane/blob/main/cluster/local/config/config.env).
+2. Install UXP to a Kubernetes cluster.
 
-For example, the following will enable connecting your local development environment to Upbound Cloud:
+   ```console
+   # Make sure your ~/.kube/config file points to your cluster
+   up uxp install
+   ```
 
-```
-export LOCALDEV_UBC_PERMISSION=edit
-export LOCALDEV_CONNECT_CP_ORG=<YOUR_UBC_ORG>
-export LOCALDEV_CONNECT_API_TOKEN=<YOUR_ACCESS_TOKEN>
+3. [Create an Upbound account][create-account] for a free dashboard for UXP.
 
-make build local-dev
-```
+4. Connect UXP to Upbound Cloud.
 
-### Cleanup
+   ```console
+   # The name of your new UXP control plane.
+   UXP_NAME=mycrossplane
 
-To clean up local dev environment, first delete self hosted control plane (if connected) from Upbound Cloud Console
-and then run:
+   up cloud login
+   up cloud controlplane attach ${UXP_NAME} | up uxp connect -
+   ```
 
-```
-make local.down
-```
+5. Manage your UXP control plane by [signing in][login] to your Upbound account.
 
-### Validation
+![UXP in Upbound Cloud](docs/media/uxp-in-ubc.png)
 
-To run validation tests locally, run:
+## Additional Resources
 
-```
-make e2e.run
-```
+- The [UXP Documentation][uxp-documentation] provides additional information
+  about UXP and resources for developers, like examples.
+- The [developer guide][developer-guide] describes how to build and run UXP
+  locally from source.
+- [UXP Slack][uxp-slack] is where you can go to get all of your UXP questions
+  answered.
+
+[upbound]: https://upbound.io
+[crossplane]: https://crossplane.io/
+[upbound-cli]: https://github.com/upbound/up
+[create-account]: https://cloud.upbound.io/register
+[login]: https://cloud.upbound.io/login
+[uxp-documentation]: https://cloud.upbound.io/uxp
+[developer-guide]: docs/developer-guide.md
+[uxp-slack]: https://crossplane.slack.com/archives/uxp

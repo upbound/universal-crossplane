@@ -1,18 +1,16 @@
-/*
-Copyright 2021 Upbound Inc.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
+// Copyright 2021 Upbound Inc
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 package upboundagent
 
@@ -30,7 +28,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/labstack/echo-contrib/jaegertracing"
@@ -44,6 +41,8 @@ import (
 	"github.com/upbound/nats-proxy/pkg/natsproxy"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/transport"
+
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
 	"github.com/upbound/universal-crossplane/internal/clients/upbound"
 	"github.com/upbound/universal-crossplane/internal/upboundagent/internal"
@@ -70,6 +69,8 @@ const (
 	keepAliveInterval = 5 * time.Second
 	drainTimeout      = 20 * time.Second
 	shutdownTimeout   = 20 * time.Second
+
+	clockSkewTolerance = 120 * time.Second
 )
 
 const (
@@ -421,13 +422,23 @@ func (p *Proxy) reviewToken(requestHeaders http.Header) (*internal.TokenClaims, 
 		}
 		return p.config.TokenRSAPublicKey, nil
 	})
-	if err != nil {
-		return nil, err
+
+	if token.Valid {
+		return tcs, nil
+	} else if ve, ok := err.(*jwt.ValidationError); ok {
+		if ve.Errors == jwt.ValidationErrorIssuedAt {
+			// We observe this (token used before issued) due to clock skew
+			// between Upbound Cloud and Agent and intentionally re-run this validation
+			// with some tolerance here.
+			// Related issue: https://github.com/dgrijalva/jwt-go/issues/383
+			shouldBeIssuedBefore := time.Now().Add(clockSkewTolerance)
+			if tcs.VerifyIssuedAt(shouldBeIssuedBefore.Unix(), true) {
+				p.log.Debug("token used before issued, probably due to clock skew, ignoring...")
+				return tcs, nil
+			}
+		}
 	}
-	if !token.Valid {
-		return nil, errors.New(errInvalidToken)
-	}
-	return tcs, err
+	return nil, errors.Wrap(err, errInvalidToken)
 }
 
 func roundTripperForRestConfig(config *rest.Config) (http.RoundTripper, error) {

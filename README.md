@@ -66,7 +66,17 @@ flag is only a workaround, you will always get the latest stable version of UXP.
    helm install uxp --namespace upbound-system upbound-stable/universal-crossplane --devel
    ```
 
-#### Upgrade from upstream Crossplane
+### Upgrade from upstream Crossplane
+
+#### Using up CLI
+
+1. Upgrade the Crossplane installation in given namespace.
+
+   ```console
+   up uxp upgrade -n crossplane-system
+   ```
+
+#### Using Helm 3
 
 1. Upgrade the existing installation of Crossplane with UXP chart.
 

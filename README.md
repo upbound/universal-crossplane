@@ -42,6 +42,39 @@ production control planes.
 
 ![UXP in Upbound Cloud](docs/media/uxp-in-ubc.png)
 
+### Installation With Helm 3
+
+Helm requires the use of `--devel` flag for versions with suffixes, like
+`v1.2.1-up.3`. But Helm repository we use is the stable repository so use of that
+flag is only a workaround, you will always get the latest stable version of UXP.
+
+1. Create the namespace to install UXP.
+
+   ```console
+   kubectl create namespace upbound-system
+   ```
+
+1. Add `upbound-stable` chart repository.
+
+   ```console
+   helm repo add upbound-stable https://charts.upbound.io/stable && helm repo update
+   ```
+
+1. Install the latest stable version of UXP.
+
+   ```console
+   helm install uxp --namespace upbound-system upbound-stable/universal-crossplane --devel
+   ```
+
+#### Upgrade from upstream Crossplane
+
+1. Upgrade the existing installation of Crossplane with UXP chart.
+
+   ```console
+   # Assuming it is installed in "crossplane-system" with release name "crossplane".
+   helm upgrade crossplane --namespace crossplane-system upbound-stable/universal-crossplane --devel
+   ```
+
 ## Additional Resources
 
 - The [UXP Documentation][uxp-documentation] provides additional information

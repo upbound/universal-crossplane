@@ -1,6 +1,6 @@
-**/manifests/*.ClusterServiceVersion.yaml
+**/manifests/*.clusterserviceversion.yaml
 
 # This is an exception because it includes the $(VERSION) from build submodule,
 # which contains a "-dirty" prefix if there are files not committed. As per other
 # manifests that include the version of the repo, we need to ignore this, too.
-bundle/manifests/universal-crossplane-config.ConfigMap.yaml
+bundle/manifests/universal-crossplane-config.configmap.yaml

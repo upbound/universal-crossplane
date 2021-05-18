@@ -50,7 +50,7 @@ GO111MODULE = on
 # ====================================================================================
 # Setup Kubernetes tools
 
-OLMBUNDLE_VERSION = v0.4.1
+OLMBUNDLE_VERSION = v0.4.2
 USE_HELM3 = true
 HELM_CHART_LINT_STRICT = false
 CRDS_DIR=$(ROOT_DIR)/cluster/crds

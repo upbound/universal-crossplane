@@ -1,0 +1,12 @@
+apiVersion: meta.pkg.crossplane.io/v1
+kind: Configuration
+metadata:
+  name: getting-started-with-aws
+  annotations:
+    uxp-guide: getting-started
+spec:
+  crossplane:
+    version: ">=v1.2.1"
+  dependsOn:
+    - provider: crossplane/provider-aws
+      version: "v0.18.1"

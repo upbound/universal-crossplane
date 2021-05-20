@@ -59,12 +59,12 @@ OLM_DIR=$(ROOT_DIR)/cluster/olm
 
 # up download and install
 # TODO(hasheddan): move to build submodule when appropriate
-UP_VERSION ?= v0.0.0-124.g60dbbb4
+UP_VERSION ?= v0.1.0
 export UP := $(TOOLS_HOST_DIR)/up-$(UP_VERSION)
 $(UP):
 	@$(INFO) installing up $(UP_VERSION)
 	@mkdir -p $(TOOLS_HOST_DIR)
-	@curl -fsSLo $(UP) https://cli.upbound.io/main/$(UP_VERSION)/bin/$(SAFEHOST_PLATFORM)/up || $(FAIL)
+	@curl -fsSLo $(UP) https://cli.upbound.io/stable/$(UP_VERSION)/bin/$(SAFEHOST_PLATFORM)/up || $(FAIL)
 	@chmod +x $(UP)
 	@$(OK) installing up $(UP)
 

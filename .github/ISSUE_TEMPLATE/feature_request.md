@@ -2,7 +2,7 @@
 name: Feature Request
 about: Help us make Crossplane more useful
 title: ''
-labels: enhancement
+labels: enhancement, needs-triage
 assignees: ''
 
 ---

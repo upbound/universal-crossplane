@@ -1,8 +1,12 @@
 ---
 name: Feature Request
 about: Help us make Crossplane more useful
+title: ''
 labels: enhancement
+assignees: ''
+
 ---
+
 ### What problem are you facing?
 <!--
 Please tell us a little about your use case - it's okay if it's hypothetical!

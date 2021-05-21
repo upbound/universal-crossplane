@@ -1,8 +1,12 @@
 ---
 name: Bug Report
 about: Help us diagnose and fix bugs in Crossplane
-labels: bug
+title: ''
+labels: bug, needs-triage
+assignees: ''
+
 ---
+
 ### What happened?
 
 

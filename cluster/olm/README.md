@@ -86,5 +86,5 @@ Now create the `Subscription`:
 kubectl apply -f cluster/olm/test/subscription.yaml
 ```
 
-This will install your operator to `operators` namespace. You can watch `Subscription`
-and `InstallPlan` CRs in that namespace.
+This will install your operator to `upbound-system` namespace. You can watch
+`Subscription` and `ClusterServiceVersion` CRs in that namespace.

@@ -14,8 +14,26 @@ metadata:
       data:
         token: "Output of `up cloud controlplane attach | base64` command"
     operators.operatorframework.io/internal-objects: '["locks.pkg.crossplane.io"]'
-    categories: "Cloud Provider, Integration & Delivery"
     capabilities: Seamless Upgrades
+    categories: "Application Runtime, Cloud Provider, Database, Integration & Delivery, Networking, Storage"
+    containerImage: upbound/uxp-bootstrapper
+    createdAt: "2021-05-18T00:00:00+0000"
+    support: Upbound Inc.
+    repository: https://github.com/upbound/universal-crossplane
+    description: Upbound Universal Crossplane (UXP) is Upbound's official enterprise-grade distribution of Crossplane.
+    alm-examples: |-
+      [
+        {
+           "apiVersion": "pkg.crossplane.io/v1",
+           "kind": "Configuration",
+           "metadata": {
+              "name": "xp-getting-started-with-aws"
+           },
+           "spec": {
+              "package": "registry.upbound.io/xp/getting-started-with-aws:v1.3.0"
+           }
+        }
+      ]
 spec:
   displayName: Upbound Universal Crossplane (UXP)
   minKubeVersion: 1.16.0
@@ -32,3 +50,12 @@ spec:
   provider:
     name: Upbound Inc.
     url: https://upbound.io
+  links:
+    - name: GitHub
+      url: https://github.com/upbound/universal-crossplane
+    - name: Website
+      url: https://upbound.io
+    - name: Twitter
+      url: https://twitter.com/upbound_io
+    - name: Slack
+      url: https://slack.crossplane.io/

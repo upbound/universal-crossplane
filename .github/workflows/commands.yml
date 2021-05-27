@@ -1,0 +1,61 @@
+name: Comment Commands
+
+on: issue_comment
+
+jobs:
+  points:
+    runs-on: ubuntu-18.04
+    if: ${{ startsWith(github.event.comment.body, '/points') }}
+
+    steps:
+    - name: Handle Command
+      uses: actions/github-script@v4
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+
+          const parts = context.payload.comment.body.split(" ")
+
+          if (parts.length !== 2 || isNaN(parseInt(parts[1]))) {
+            console.log("Malformed command - expected '/points <int>'")
+            github.reactions.createForIssueComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: context.payload.comment.id,
+              content: "confused"
+            })
+            return
+          }
+          const points = "points/" + parts[1]
+
+          // Ack that we saw the comment.
+          github.reactions.createForIssueComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: context.payload.comment.id,
+            content: "eyes"
+          })
+          console.log("Reacted to comment.")
+
+          // Delete our needs-points-label label.
+          try {
+            await github.issues.deleteLabel({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: ['needs-points-label']
+            })
+            console.log("Deleted 'needs-points-label' label.")
+          }
+          catch(e) {
+            console.log("Label 'needs-points-label' probably didn't exist.")
+          }
+
+          // Add our points label.
+          github.issues.addLabels({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: [points]
+          })
+          console.log("Added '" + points + "' label.")

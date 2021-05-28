@@ -147,21 +147,11 @@ olm: $(HELM) $(OLMBUNDLE)
 
 helm.prepare: generate-chart
 
-generate: go.vendor go.generate helm.prepare olm
-	@$(OK) Finished generating
-
-# Ensure a PR is ready for review.
-reviewable: generate lint
-
-# Ensure branch is clean.
-check-diff: reviewable
-	@$(INFO) checking that branch is clean
-	@test -z "$$(git status --porcelain)" || $(FAIL)
-	@$(OK) branch is clean
+generate.run: helm.prepare olm
 
 local-dev: $(UP) local.up local.deploy.$(PACKAGE_NAME)
 
 e2e.run: build local-dev local.deploy.validation
 e2e.done: local.down
 
-.PHONY: generate-chart olm crossplane submodules fallthrough generate reviewable
+.PHONY: generate-chart olm crossplane submodules fallthrough

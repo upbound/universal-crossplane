@@ -5,18 +5,29 @@ on: issue_comment
 jobs:
   points:
     runs-on: ubuntu-18.04
-    if: ${{ startsWith(github.event.comment.body, '/points') }}
+    if: startsWith(github.event.comment.body, '/points')
 
     steps:
+    - name: Extract Command
+      id: command
+      uses: xt0rted/slash-command-action@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        command: points
+        reaction: "true"
+        reaction-type: "eyes"
+        allow-edits: "false"
+        permission-level: write
     - name: Handle Command
       uses: actions/github-script@v4
+      env:
+        POINTS: ${{ steps.command.outputs.command-arguments }}
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         script: |
+          const points = process.env.POINTS
 
-          const parts = context.payload.comment.body.split(" ")
-
-          if (parts.length !== 2 || isNaN(parseInt(parts[1]))) {
+          if (isNaN(parseInt(points))) {
             console.log("Malformed command - expected '/points <int>'")
             github.reactions.createForIssueComment({
               owner: context.repo.owner,
@@ -26,16 +37,7 @@ jobs:
             })
             return
           }
-          const points = "points/" + parts[1]
-
-          // Ack that we saw the comment.
-          github.reactions.createForIssueComment({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            comment_id: context.payload.comment.id,
-            content: "eyes"
-          })
-          console.log("Reacted to comment.")
+          const label = "points/" + points
 
           // Delete our needs-points-label label.
           try {
@@ -56,6 +58,35 @@ jobs:
             issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            labels: [points]
+            labels: [label]
           })
-          console.log("Added '" + points + "' label.")
+          console.log("Added '" + label + "' label.")
+
+  # NOTE(negz): See also backport.yml, which is the variant that triggers on PR
+  # merge rather than on comment.
+  backport:
+    runs-on: ubuntu-18.04
+    if: github.event.issue.pull_request && startsWith(github.event.comment.body, '/backport')
+    steps:
+    - name: Extract Command
+      id: command
+      uses: xt0rted/slash-command-action@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        command: backport
+        reaction: "true"
+        reaction-type: "eyes"
+        allow-edits: "false"
+        permission-level: write
+
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Open Backport PR
+      uses: zeebe-io/backport-action@v0.0.4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_workspace: ${{ github.workspace }}
+        version: v0.0.4

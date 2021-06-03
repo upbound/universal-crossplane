@@ -1,0 +1,21 @@
+name: Labels
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    - cron:  '0 0 * * *'
+
+jobs:
+  create-labels:
+    runs-on: ubuntu-18.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Create Default Labels
+        uses: crazy-max/ghaction-github-labeler@v3
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          yaml-file: .github/default-labels.yml
+          skip-delete: true

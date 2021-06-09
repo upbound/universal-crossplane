@@ -138,18 +138,26 @@ helm.prepare.universal-crossplane: crossplane
 # where the operator is deployed. See https://github.com/operator-framework/operator-lifecycle-manager/issues/1361
 # and https://github.com/operator-framework/operator-lifecycle-manager/issues/2039
 
-olm: $(HELM) $(OLMBUNDLE)
+olm.build: $(HELM) $(OLMBUNDLE)
 	@$(INFO) Generating OLM bundle
 	@$(HELM) -n upbound-system template $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) --set upbound.controlPlane.permission=edit > $(WORK_DIR)/olm.yaml
 	@$(SED_CMD) 's|RELEASE-NAME|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
 	@rm -rf $(OLM_DIR)/bundle
 	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --version $(HELM_CHART_VERSION) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
 
-generate.run: helm.prepare olm
+olm.artifacts: olm.build
+	@mkdir -p $(abspath $(OUTPUT_DIR)/olm/$(VERSION))
+	@cp -r $(OLM_DIR)/bundle/. $(abspath $(OUTPUT_DIR)/olm/$(VERSION))
+
+build.artifacts: olm.artifacts
+
+helm.prepare: generate-chart
+
+generate.run: helm.prepare olm.build
 
 local-dev: $(UP) local.up local.deploy.$(PACKAGE_NAME)
 
 e2e.run: build local-dev local.deploy.validation
 e2e.done: local.down
 
-.PHONY: olm crossplane submodules fallthrough
+.PHONY: generate-chart olm.build olm.artifacts crossplane submodules fallthrough

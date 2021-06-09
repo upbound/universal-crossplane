@@ -2,30 +2,42 @@
 
 This folder contains the OLM bundle to be published in OperatorHub.
 
-What you need to do when you'd like to release a new version is the following:
+> Note: We currently manually strip off the `runAsUser` and `runAsGroup` fields
+> from the Crossplane and RBAC Manager `Deployments` to work around
+> https://github.com/upbound/universal-crossplane/issues/116. This should be
+> handled automatically in the future. 
+
+Every PR that is merged and version that is tagged and promoted results in the
+publishing of the OLM bundle to
+https://releases.upbound.io/universal-crossplane. To publish a new version to
+OperatorHub, download the subdirectory named `$VERSION` in the `olm` directory
+and open two separate PRs to the following directories with it copied into the
+specified path:
+* https://github.com/operator-framework/community-operators/tree/master/community-operators/universal-crossplane
+* https://github.com/operator-framework/community-operators/tree/master/upstream-community-operators/universal-crossplane
+
+The bundle output is specified by the contents of the helm chart and can be
+modified by altering the following files. Any changes made to these files should
+be committed to the repository before tag and release of a new version.
 * `Chart.yaml` is used for metadata, so make sure it contains the new version.
-* `annotations.yaml.tmpl` is used as base annotations, make sure channel information
-  is correct for that release.
-* `clusterserviceversion.yaml.tmpl` is used as base `ClusterServiceVersion` and it
-  contains metadata that cannot be extracted from `Chart.yaml`, such as `installModes`.
-  Make sure new version doesn't make any changes there.
+* `annotations.yaml.tmpl` is used as base annotations, make sure channel
+  information is correct for that release.
+* `clusterserviceversion.yaml.tmpl` is used as base `ClusterServiceVersion` and
+  it contains metadata that cannot be extracted from `Chart.yaml`, such as
+  `installModes`. Make sure new version doesn't make any changes there.
 
-> If you would like to connect to a different Upbound endpoint, you need to change
-> the default one in the `values.yaml.tmpl` in Helm chart in `cluster/charts`.
+> If you would like to connect to a different Upbound endpoint, you need to
+> change the default one in the `values.yaml.tmpl` in Helm chart in
+> `cluster/charts`.
 
-After all is ready, run the following command to get the current bundle generated:
+After all is ready, run the following command to get the current bundle
+generated:
 ```bash
-make olm
+make olm.build
 ```
 
-> YAML of ClusterServiceVersion is not committed to git because the image tag
-> in that file is generated using the hash of the last commit.
-
-A new folder will be created here named with the version number. After making sure
-it all looks good, open PRs to the following targets to publish it:
-* https://github.com/operator-framework/community-operators/tree/master/community-operators
-* https://github.com/operator-framework/community-operators/tree/master/upstream-community-operators
-
+> YAML of ClusterServiceVersion is not committed to git because the image tag in
+> that file is generated using the hash of the last commit.
 
 # Testing OLM Bundle
 

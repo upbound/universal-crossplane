@@ -8,3 +8,4 @@ data:
   crossplaneVersion: {{ (trimPrefix "v" .Values.image.tag) }}
   xgqlVersion: {{ (trimPrefix "v" .Values.xgql.image.tag) }}
   agentVersion: {{ (trimPrefix "v" .Values.agent.image.tag) }}
+  uxpVersion: {{ .Chart.Version }}

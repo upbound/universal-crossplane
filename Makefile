@@ -124,13 +124,13 @@ crossplane:
 	@cp -a $(WORK_DIR)/crossplane/cluster/crds/* $(CRDS_DIR)
 	@$(OK) Crossplane chart has been fetched
 
-generate-chart: crossplane
+helm.prepare.universal-crossplane: crossplane
 	@$(INFO) Generating values.yaml for the chart
 	@cp -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml.tmpl $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
-	cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' values.yaml
-	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' values.yaml
-	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' values.yaml
-	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%XGQL_TAG%%|$(XGQL_TAG)|g' values.yaml
+	@$(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|%%XGQL_TAG%%|$(XGQL_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Generating values.yaml for the chart
 
 # We have to give a static namespace for OLM bundle because it does not interpret

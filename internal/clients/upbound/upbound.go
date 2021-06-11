@@ -1,16 +1,16 @@
 package upbound
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/go-resty/resty/v2"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"go.opencensus.io/plugin/ochttp"
-
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
 )
 
 const (
@@ -41,7 +41,7 @@ type client struct {
 }
 
 // NewClient returns a new Upbound client
-func NewClient(host string, log logging.Logger, debug bool) Client {
+func NewClient(host string, log logging.Logger, debug, insecure bool) Client {
 	c := resty.New().
 		SetHostURL(host).
 		SetDebug(debug).
@@ -54,7 +54,11 @@ func NewClient(host string, log logging.Logger, debug bool) Client {
 		// Warnf(format string, v ...interface{})
 		SetLogger(logrus.StandardLogger())
 
-	c.SetTransport(&ochttp.Transport{})
+	if insecure {
+		c.SetTLSClientConfig(&tls.Config{InsecureSkipVerify: true}) // nolint:gosec
+	} else {
+		c.SetTransport(&ochttp.Transport{})
+	}
 
 	c.OnRequestLog(func(r *resty.RequestLog) error {
 		// masking authorization header

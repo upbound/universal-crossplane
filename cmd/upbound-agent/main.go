@@ -66,6 +66,7 @@ type AgentCmd struct {
 	NATSEndpoint          string `help:"Endpoint for nats"`
 	UpboundAPIEndpoint    string `help:"Endpoint for Upbound API"`
 	ControlPlaneTokenPath string `help:"File path of the platform token to access Upbound Cloud connect endpoint"`
+	Insecure              bool   `help:"Disable TLS certificate checks for local testing. Do not enable this in production."`
 }
 
 var cli struct {
@@ -90,7 +91,7 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read control plane id from token"))
 	}
 
-	upClient := upbound.NewClient(a.UpboundAPIEndpoint, log, cli.Debug)
+	upClient := upbound.NewClient(a.UpboundAPIEndpoint, log, cli.Debug, cli.Agent.Insecure)
 	pubCerts, err := upClient.GetGatewayCerts(token)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to fetch public certs"))
@@ -144,7 +145,7 @@ func main() { // nolint:gocyclo
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read kube cluster ID"))
 	}
 
-	pxy, err := upboundagent.NewProxy(tgConfig, restConfig, upClient, log, kubeClusterID)
+	pxy, err := upboundagent.NewProxy(tgConfig, restConfig, upClient, log, kubeClusterID, cli.Agent.Insecure)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to create new agent proxy"))
 	}

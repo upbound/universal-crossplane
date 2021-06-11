@@ -110,7 +110,8 @@ type Proxy struct {
 }
 
 // NewProxy returns a new Proxy
-func NewProxy(config *Config, restConfig *rest.Config, upClient upbound.Client, log logging.Logger, clusterID string) (*Proxy, error) {
+func NewProxy(config *Config, restConfig *rest.Config, upClient upbound.Client,
+	log logging.Logger, clusterID string, insecure bool) (*Proxy, error) {
 	krt, err := roundTripperForRestConfig(restConfig)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to build round tripper for rest config")
@@ -140,6 +141,10 @@ func NewProxy(config *Config, restConfig *rest.Config, upClient upbound.Client, 
 	nopts := []nats.Option{nats.Name(fmt.Sprintf("%s-%s", config.ControlPlaneID, config.NATS.Name))}
 	nopts = natsproxy.SetupConnOptions(nopts)
 	nopts = append(nopts, natsConn.setupAuthOption(), natsConn.setupTLSOption())
+	if insecure {
+		nopts = append(nopts, nats.Secure(&tls.Config{InsecureSkipVerify: true})) // nolint:gosec
+	}
+
 	// Connect to NATS
 	nc, err = nats.Connect(config.NATS.Endpoint, nopts...)
 	if err != nil {

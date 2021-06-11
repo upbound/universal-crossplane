@@ -107,7 +107,7 @@ func Test_GetGatewayCerts(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			rc := NewClient(endpoint, logging.NewNopLogger(), false)
+			rc := NewClient(endpoint, logging.NewNopLogger(), false, false)
 
 			httpmock.ActivateNonDefault(rc.(*client).resty.GetClient())
 
@@ -214,7 +214,7 @@ func Test_fetchNewJWT(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			rc := NewClient(endpoint, logging.NewNopLogger(), false)
+			rc := NewClient(endpoint, logging.NewNopLogger(), false, false)
 
 			httpmock.ActivateNonDefault(rc.(*client).resty.GetClient())
 

@@ -123,4 +123,4 @@ If you'd like to upgrade to a specific version, run the following:
 [login]: https://cloud.upbound.io/login
 [uxp-documentation]: https://cloud.upbound.io/docs/uxp
 [developer-guide]: docs/developer-guide.md
-[uxp-slack]: https://crossplane.slack.com/archives/uxp
+[uxp-slack]: https://crossplane.slack.com/archives/upbound

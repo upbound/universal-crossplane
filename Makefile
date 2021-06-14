@@ -146,8 +146,8 @@ olm.build: $(HELM) $(OLMBUNDLE)
 	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --version $(HELM_CHART_VERSION) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
 
 olm.artifacts: olm.build
-	@mkdir -p $(abspath $(OUTPUT_DIR)/olm/$(VERSION))
-	@cp -r $(OLM_DIR)/bundle/. $(abspath $(OUTPUT_DIR)/olm/$(VERSION))
+	@mkdir -p $(abspath $(OUTPUT_DIR)/olm)
+	@tar -czvf $(abspath $(OUTPUT_DIR)/olm/$(VERSION)).tar.gz  -C $(OLM_DIR)/bundle .
 
 build.artifacts: olm.artifacts
 

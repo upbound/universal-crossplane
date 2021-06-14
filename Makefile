@@ -151,8 +151,6 @@ olm.artifacts: olm.build
 
 build.artifacts: olm.artifacts
 
-helm.prepare: generate-chart
-
 generate.run: helm.prepare olm.build
 
 local-dev: $(UP) local.up local.deploy.$(PACKAGE_NAME)
@@ -160,4 +158,4 @@ local-dev: $(UP) local.up local.deploy.$(PACKAGE_NAME)
 e2e.run: build local-dev local.deploy.validation
 e2e.done: local.down
 
-.PHONY: generate-chart olm.build olm.artifacts crossplane submodules fallthrough
+.PHONY: olm.build olm.artifacts crossplane submodules fallthrough

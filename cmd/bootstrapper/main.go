@@ -17,6 +17,8 @@ package main
 import (
 	"time"
 
+	appsv1 "k8s.io/api/apps/v1"
+
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/pkg/errors"
@@ -27,15 +29,17 @@ import (
 
 	"github.com/upbound/universal-crossplane/internal/controllers/billing"
 	"github.com/upbound/universal-crossplane/internal/controllers/tlssecrets"
+	"github.com/upbound/universal-crossplane/internal/controllers/upboundagent"
 	"github.com/upbound/universal-crossplane/internal/version"
 )
 
 // BootstrapCmd represents the "bootstrap" command
 type BootstrapCmd struct {
-	SyncPeriod    time.Duration `default:"10m"`
-	Namespace     string        `default:"upbound-system"`
-	UpboundAPIUrl string        `default:"https://api.upbound.io"`
-	Controllers   []string      `default:"tls-secrets" name:"controller" help:"List of controllers you want to run"`
+	SyncPeriod         time.Duration `default:"10m"`
+	Namespace          string        `default:"upbound-system"`
+	UpboundAPIUrl      string        `default:"https://api.upbound.io"`
+	UpboundTokenSecret string        `default:"upbound-control-plane-token"`
+	Controllers        []string      `default:"tls-secrets" name:"controller" help:"List of controllers you want to run"`
 }
 
 var cli struct {
@@ -49,7 +53,8 @@ func main() {
 	zl := zap.New(zap.UseDevMode(cli.Debug))
 	ctrl.SetLogger(zl)
 	s := runtime.NewScheme()
-	ctx.FatalIfErrorf(corev1.AddToScheme(s), "cannot add client-go scheme")
+	ctx.FatalIfErrorf(corev1.AddToScheme(s), "cannot add corev1 to client-go scheme")
+	ctx.FatalIfErrorf(appsv1.AddToScheme(s), "cannot add appsv1 to client-go scheme")
 
 	cfg, err := ctrl.GetConfig()
 	ctx.FatalIfErrorf(errors.Wrap(err, "cannot get config"))
@@ -65,6 +70,8 @@ func main() {
 		switch c {
 		case "tls-secrets":
 			ctx.FatalIfErrorf(errors.Wrapf(tlssecrets.Setup(mgr, logger), "cannot start %s controller", c))
+		case "upbound-agent":
+			ctx.FatalIfErrorf(errors.Wrapf(upboundagent.Setup(mgr, logger, cli.Bootstrap.UpboundTokenSecret), "cannot start %s controller", c))
 		case "aws-marketplace":
 			ctx.FatalIfErrorf(errors.Wrapf(billing.SetupAWSMarketplace(mgr, logger), "cannot setup %s controller", c))
 		default:

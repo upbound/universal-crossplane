@@ -36,6 +36,10 @@ spec:
             - {{ .Release.Namespace }}
             - --upbound-api-url
             - {{ .Values.upbound.apiURL }}
+            - --upbound-token-secret
+            - {{ .Values.upbound.controlPlane.tokenSecretName }}
+            - --controller
+            - upbound-agent
             - --controller
             - tls-secrets
           {{- if .Values.billing.awsMarketplace.enabled }}

@@ -31,7 +31,7 @@ type PublicCerts struct {
 // Client is the client for upbound api
 //go:generate go run github.com/golang/mock/mockgen -copyright_file ../../../hack/boilerplate.txt -destination ./mocks/upbound.go -package mocks github.com/upbound/universal-crossplane/internal/clients/upbound Client
 type Client interface {
-	GetGatewayCerts(cpToken string) (PublicCerts, error)
+	GetAgentCerts(cpToken string) (PublicCerts, error)
 	FetchNewJWTToken(cpToken, clusterID, publicKey string) (string, error)
 }
 
@@ -78,22 +78,22 @@ func NewClient(host string, log logging.Logger, debug, insecure bool) Client {
 	}
 }
 
-// GetGatewayCerts function returns public certificates to interact with Upbound Cloud.
-func (c *client) GetGatewayCerts(cpToken string) (PublicCerts, error) {
+// GetAgentCerts function returns public certificates to interact with Upbound Cloud.
+func (c *client) GetAgentCerts(cpToken string) (PublicCerts, error) {
 	req := c.resty.R()
 	req.SetHeader("Authorization", fmt.Sprintf("Bearer %s", cpToken))
 
 	resp, err := req.Get(gwCertsPath)
 	if err != nil {
-		return PublicCerts{}, errors.Wrap(err, "failed to request gateway certs")
+		return PublicCerts{}, errors.Wrap(err, "failed to request agent certs")
 	}
 	if resp.StatusCode() != http.StatusOK {
-		return PublicCerts{}, errors.Errorf("gateway certs request failed with %s - %s", resp.Status(), string(resp.Body()))
+		return PublicCerts{}, errors.Errorf("agent certs request failed with %s - %s", resp.Status(), string(resp.Body()))
 	}
 	respBody := map[string]string{}
 
 	if err := json.Unmarshal(resp.Body(), &respBody); err != nil {
-		return PublicCerts{}, errors.Wrap(err, "failed to unmarshall gw certs response")
+		return PublicCerts{}, errors.Wrap(err, "failed to unmarshall agent certs response")
 	}
 	j := respBody[keyJWTPublicKey]
 	n := respBody[keyNATSCA]

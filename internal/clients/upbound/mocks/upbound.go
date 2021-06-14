@@ -63,17 +63,17 @@ func (mr *MockClientMockRecorder) FetchNewJWTToken(arg0, arg1, arg2 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchNewJWTToken", reflect.TypeOf((*MockClient)(nil).FetchNewJWTToken), arg0, arg1, arg2)
 }
 
-// GetGatewayCerts mocks base method.
-func (m *MockClient) GetGatewayCerts(arg0 string) (upbound.PublicCerts, error) {
+// GetAgentCerts mocks base method.
+func (m *MockClient) GetAgentCerts(arg0 string) (upbound.PublicCerts, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetGatewayCerts", arg0)
+	ret := m.ctrl.Call(m, "GetAgentCerts", arg0)
 	ret0, _ := ret[0].(upbound.PublicCerts)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetGatewayCerts indicates an expected call of GetGatewayCerts.
-func (mr *MockClientMockRecorder) GetGatewayCerts(arg0 interface{}) *gomock.Call {
+// GetAgentCerts indicates an expected call of GetAgentCerts.
+func (mr *MockClientMockRecorder) GetAgentCerts(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetGatewayCerts", reflect.TypeOf((*MockClient)(nil).GetGatewayCerts), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAgentCerts", reflect.TypeOf((*MockClient)(nil).GetAgentCerts), arg0)
 }

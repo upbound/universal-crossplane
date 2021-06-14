@@ -22,7 +22,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/alecthomas/kong"
 	"github.com/dgrijalva/jwt-go"
@@ -35,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/upbound/universal-crossplane/internal/clients/upbound"
 	"github.com/upbound/universal-crossplane/internal/upboundagent"
@@ -43,8 +41,7 @@ import (
 )
 
 const (
-	prefixPlatformTokenSubject   = "controlPlane|"
-	controlPlaneTokenCheckPeriod = time.Second * 3
+	prefixPlatformTokenSubject = "controlPlane|"
 )
 
 const (
@@ -58,15 +55,15 @@ const (
 
 // AgentCmd represents the "upbound-agent" command
 type AgentCmd struct {
-	PodName               string `help:"Name of the agent pod."`
-	ServerPort            string `default:"6443" help:"Port to serve agent service."`
-	TLSCertFile           string `help:"File containing the default x509 Certificate for HTTPS."`
-	TLSKeyFile            string `help:"File containing the default x509 private key matching provided cert"`
-	XgqlCABundleFile      string `help:"CA bundle file for xgql server"`
-	NATSEndpoint          string `help:"Endpoint for nats"`
-	UpboundAPIEndpoint    string `help:"Endpoint for Upbound API"`
-	ControlPlaneTokenPath string `help:"File path of the platform token to access Upbound Cloud connect endpoint"`
-	Insecure              bool   `help:"Disable TLS certificate checks for local testing. Do not enable this in production."`
+	PodName            string `help:"Name of the agent pod."`
+	ServerPort         string `default:"6443" help:"Port to serve agent service."`
+	TLSCertFile        string `help:"File containing the default x509 Certificate for HTTPS."`
+	TLSKeyFile         string `help:"File containing the default x509 private key matching provided cert"`
+	XgqlCABundleFile   string `help:"CA bundle file for xgql server"`
+	NATSEndpoint       string `help:"Endpoint for nats"`
+	UpboundAPIEndpoint string `help:"Endpoint for Upbound API"`
+	ControlPlaneToken  string `help:"Platform token to access Upbound Cloud connect endpoint"`
+	Insecure           bool   `help:"Disable TLS certificate checks for local testing. Do not enable this in production."`
 }
 
 var cli struct {
@@ -81,18 +78,13 @@ func main() { // nolint:gocyclo
 	log := logging.NewLogrLogger(zl.WithName("upbound-agent"))
 	a := cli.Agent
 
-	token, err := waitForControlPlaneToken(a.ControlPlaneTokenPath, controlPlaneTokenCheckPeriod, log)
-	if err != nil {
-		ctx.FatalIfErrorf(errors.Wrap(err, "failed to wait for control plane token"))
-	}
-
-	cpID, err := readCPIDFromToken(token)
+	cpID, err := readCPIDFromToken(a.ControlPlaneToken)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to read control plane id from token"))
 	}
 
 	upClient := upbound.NewClient(a.UpboundAPIEndpoint, log, cli.Debug, cli.Agent.Insecure)
-	pubCerts, err := upClient.GetAgentCerts(token)
+	pubCerts, err := upClient.GetAgentCerts(a.ControlPlaneToken)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to fetch public certs"))
 	}
@@ -127,7 +119,7 @@ func main() { // nolint:gocyclo
 			Name:              a.PodName,
 			Endpoint:          a.NATSEndpoint,
 			JWTEndpoint:       a.UpboundAPIEndpoint,
-			ControlPlaneToken: token,
+			ControlPlaneToken: a.ControlPlaneToken,
 			CABundle:          pubCerts.NATSCA,
 		},
 	}
@@ -163,29 +155,6 @@ func main() { // nolint:gocyclo
 
 	addr := fmt.Sprintf(":%s", a.ServerPort)
 	ctx.FatalIfErrorf(errors.Wrap(pxy.Run(addr, a.TLSCertFile, a.TLSKeyFile), "cannot run upbound agent proxy"))
-}
-
-func waitForControlPlaneToken(path string, d time.Duration, log logging.Logger) (string, error) {
-	ticker := time.NewTicker(d)
-	log.Info("waiting for control plane token to be mounted", "path", path, "check-period", d.String())
-	defer ticker.Stop()
-	for {
-		// We should wait until file exists and has content.
-		f, err := os.ReadFile(filepath.Clean(path))
-		if resource.Ignore(os.IsNotExist, err) != nil {
-			return "", errors.Wrapf(err, "cannot read control plane token file")
-		}
-		if len(f) != 0 {
-			log.Info("control plane token has been read")
-			return string(f), nil
-		}
-		log.Debug("control plane token file is empty")
-		// TODO(muvaf): We can probably replace this with an implementation
-		// that uses time.Ticker but I couldn't figure out to have a simple
-		// implementation with no timeout and single select case without wasting
-		// the initial period.
-		time.Sleep(d)
-	}
 }
 
 func generateTrustedCertPool(b []byte) (*x509.CertPool, error) {

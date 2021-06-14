@@ -24,14 +24,155 @@ metadata:
     alm-examples: |-
       [
         {
-           "apiVersion": "pkg.crossplane.io/v1",
-           "kind": "Configuration",
-           "metadata": {
-              "name": "xp-getting-started-with-aws"
-           },
-           "spec": {
-              "package": "registry.upbound.io/xp/getting-started-with-aws:v1.3.0"
-           }
+          "apiVersion":"pkg.crossplane.io/v1",
+          "kind":"Configuration",
+          "metadata":{
+            "name":"xp-getting-started-with-aws"
+          },
+          "spec":{
+            "package":"registry.upbound.io/xp/getting-started-with-aws:v1.2.2"
+          }
+        },
+        {
+          "apiVersion":"apiextensions.crossplane.io/v1",
+          "kind":"CompositeResourceDefinition",
+          "metadata":{
+            "name":"compositepostgresqlinstances.database.example.org"
+          },
+          "spec":{
+            "group":"database.example.org",
+            "names":{
+              "kind":"CompositePostgreSQLInstance",
+              "plural":"compositepostgresqlinstances"
+            },
+            "claimNames":{
+              "kind":"PostgreSQLInstance",
+              "plural":"postgresqlinstances"
+            },
+            "connectionSecretKeys":[
+                "username",
+                "password",
+                "endpoint",
+                "port"
+            ],
+            "versions":[
+              {
+                "name":"v1alpha1",
+                "served":true,
+                "referenceable":true,
+                "schema":{
+                  "openAPIV3Schema":{
+                    "type":"object",
+                    "properties":{
+                      "spec":{
+                        "type":"object",
+                        "properties":{
+                          "parameters":{
+                            "type":"object",
+                            "properties":{
+                              "storageGB":{
+                                "type":"integer"
+                              }
+                            },
+                            "required":[
+                                "storageGB"
+                            ]
+                          }
+                        },
+                        "required":[
+                            "parameters"
+                        ]
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion":"apiextensions.crossplane.io/v1",
+          "kind":"Composition",
+          "metadata":{
+            "name":"compositepostgresqlinstances.aws.database.example.org",
+            "labels":{
+              "provider":"aws",
+              "guide":"quickstart",
+              "vpc":"default"
+            }
+          },
+          "spec":{
+            "writeConnectionSecretsToNamespace":"crossplane-system",
+            "compositeTypeRef":{
+              "apiVersion":"database.example.org/v1alpha1",
+              "kind":"CompositePostgreSQLInstance"
+            },
+            "resources":[
+              {
+                "name":"rdsinstance",
+                "base":{
+                  "apiVersion":"database.aws.crossplane.io/v1beta1",
+                  "kind":"RDSInstance",
+                  "spec":{
+                    "forProvider":{
+                      "region":"us-east-1",
+                      "dbInstanceClass":"db.t2.small",
+                      "masterUsername":"masteruser",
+                      "engine":"postgres",
+                      "engineVersion":"9.6",
+                      "skipFinalSnapshotBeforeDeletion":true,
+                      "publiclyAccessible":true
+                    },
+                    "writeConnectionSecretToRef":{
+                      "namespace":"crossplane-system"
+                    }
+                  }
+                },
+                "patches":[
+                  {
+                    "fromFieldPath":"metadata.uid",
+                    "toFieldPath":"spec.writeConnectionSecretToRef.name",
+                    "transforms":[
+                      {
+                        "type":"string",
+                        "string":{
+                          "fmt":"%s-postgresql"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "fromFieldPath":"spec.parameters.storageGB",
+                    "toFieldPath":"spec.forProvider.allocatedStorage"
+                  }
+                ],
+                "connectionDetails":[
+                  {
+                    "fromConnectionSecretKey":"username"
+                  },
+                  {
+                    "fromConnectionSecretKey":"password"
+                  },
+                  {
+                    "fromConnectionSecretKey":"endpoint"
+                  },
+                  {
+                    "fromConnectionSecretKey":"port"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "apiVersion":"pkg.crossplane.io/v1",
+          "kind":"Provider",
+          "metadata":{
+            "name":"provider-aws"
+          },
+          "spec":{
+            "package":"crossplane/provider-aws:master"
+          }
         }
       ]
 spec:
@@ -59,3 +200,55 @@ spec:
       url: https://twitter.com/upbound_io
     - name: Slack
       url: https://slack.crossplane.io/
+  # TODO(muvaf): Consider copying this from README automatically, preserving the
+  # indentation.
+  # NOTE(muvaf): Preview your changes using https://operatorhub.io/preview
+  description: |
+    ## Overview
+
+    Upbound Universal Crossplane (UXP) is [Upbound's][upbound] official
+    enterprise-grade distribution of [Crossplane][crossplane]. It's fully compatible
+    with upstream Crossplane, open source, capable of connecting to Upbound Cloud
+    for real-time dashboard visibility, and maintained by Upbound. It's the easiest
+    way for both individual community members and enterprises to build their
+    production control planes.
+
+    ## Quick Start
+
+    1. Install the [Upbound CLI][upbound-cli].
+        ```console
+        curl -sL https://cli.upbound.io | sh
+        # Install with Homebrew
+        brew install upbound/tap/up
+        ```
+
+    2. [Create an Upbound account][create-account] for a free dashboard for UXP.
+
+    3. Connect UXP to Upbound Cloud.
+        ```console
+        # The name of your new UXP control plane.
+        UXP_NAME=mycrossplane
+
+        up cloud login
+        up cloud controlplane attach ${UXP_NAME} | up uxp connect -
+        ```
+
+    4. Manage your UXP control plane by [signing in][login] to your Upbound account.
+
+    ## Additional Resources
+
+    - The [UXP Documentation][uxp-documentation] provides additional information
+      about UXP and resources for developers, like examples.
+    - The [developer guide][developer-guide] describes how to build and run UXP
+      locally from source.
+    - [UXP Slack][uxp-slack] is where you can go to get all of your UXP questions
+      answered.
+
+    [upbound]: https://upbound.io
+    [crossplane]: https://crossplane.io/
+    [upbound-cli]: https://github.com/upbound/up
+    [create-account]: https://cloud.upbound.io/register
+    [login]: https://cloud.upbound.io/login
+    [uxp-documentation]: https://cloud.upbound.io/docs/uxp
+    [developer-guide]: https://github.com/upbound/universal-crossplane/blob/main/docs/developer-guide.md
+    [uxp-slack]: https://crossplane.slack.com/archives/upbound

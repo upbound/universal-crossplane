@@ -24,6 +24,7 @@ rules:
   - ""
   resources:
   - secrets
+  - configmaps
   verbs:
   - watch
   - list
@@ -41,3 +42,20 @@ rules:
   - get
   - update
   - patch
+- apiGroups:
+  - ""
+  resourceNames:
+  - upbound-agent-deployment-spec
+  resources:
+  - configmaps
+  verbs:
+  - get
+- apiGroups:
+  - apps
+  resources:
+  - deployments
+  verbs:
+  - create
+  - update
+  - watch
+  - list

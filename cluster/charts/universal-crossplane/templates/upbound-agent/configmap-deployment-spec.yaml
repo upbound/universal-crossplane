@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ template "agent-name" . }}-deployment-spec
+  name: upbound-agent-deployment-spec
   labels:
     {{- include "labelsAgent" . | nindent 4 }}
 data:

@@ -1,103 +1,99 @@
-{{- if or (eq .Values.upbound.controlPlane.permission "view") (eq .Values.upbound.controlPlane.permission "edit") }}
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: v1
+kind: ConfigMap
 metadata:
-  name: {{ template "agent-name" . }}
+  name: {{ template "agent-name" . }}-deployment-spec
   labels:
     {{- include "labelsAgent" . | nindent 4 }}
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      {{- include "selectorLabelsAgent" . | nindent 6 }}
-  template:
-    metadata:
-      labels:
+data:
+  spec.yaml: |-
+    replicas: 1
+    selector:
+      matchLabels:
         {{- include "selectorLabelsAgent" . | nindent 8 }}
-    spec:
-      serviceAccountName: {{ template "agent-name" . }}
-      {{- if .Values.imagePullSecrets }}
-      imagePullSecrets:
-      {{- range $index, $secret := .Values.imagePullSecrets }}
-      - name: {{ $secret }}
-      {{- end }}
-      {{ end }}
-      containers:
-        - name: agent
-          image: "{{ .Values.agent.image.repository }}:{{ .Values.agent.image.tag }}"
-          args:
-          - agent
-          - --tls-cert-file
-          - /etc/certs/upbound-agent/tls.crt
-          - --tls-key-file
-          - /etc/certs/upbound-agent/tls.key
-          - --xgql-ca-bundle-file
-          - /etc/certs/upbound-agent/ca.crt
-          - --nats-endpoint
-          - nats://{{ .Values.upbound.connectHost }}:{{ .Values.upbound.connectPort | default "443" }}
-          - --upbound-api-endpoint
-          - {{ .Values.upbound.apiURL }}
-          - --pod-name
-          - $(POD_NAME)
-          - --control-plane-token-path
-          - /etc/tokens/control-plane/token
-          {{- if .Values.agent.config.debugMode }}
-          - "--debug"
-          {{- end }}
-          {{- range $arg := .Values.agent.config.args }}
-          - {{ $arg }}
-          {{- end }}
-          env:
-          - name: POD_NAME
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.name
-          imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
-          ports:
+    template:
+      metadata:
+        labels:
+          {{- include "selectorLabelsAgent" . | nindent 10 }}
+      spec:
+        serviceAccountName: {{ template "agent-name" . }}
+        {{- if .Values.imagePullSecrets }}
+        imagePullSecrets:
+        {{- range $index, $secret := .Values.imagePullSecrets }}
+        - name: {{ $secret }}
+        {{- end }}
+        {{ end }}
+        containers:
           - name: agent
-            containerPort: 6443
-            protocol: TCP
-          resources:
-            {{- toYaml .Values.agent.resources | nindent 12 }}
-# TODO(muvaf): Disabled temporarily since we'd like to complete the installation
-# even if the control plane token is not there, which makes these probes return
-# false.
-#          readinessProbe:
-#            httpGet:
-#              scheme: HTTPS
-#              path: /readyz
-#              port: 6443
-#            initialDelaySeconds: 5
-#            timeoutSeconds: 5
-#            periodSeconds: 5
-#            failureThreshold: 3
-#          livenessProbe:
-#            httpGet:
-#              scheme: HTTPS
-#              path: /livez
-#              port: 6443
-#            initialDelaySeconds: 10
-#            timeoutSeconds: 5
-#            periodSeconds: 30
-#            failureThreshold: 5
-          volumeMounts:
-            - mountPath: /etc/certs/upbound-agent
-              name: certs
-              readOnly: true
-            - mountPath: /etc/tokens/control-plane
-              name: upbound-control-plane-token
-              readOnly: true
-      volumes:
-        - name: certs
-          secret:
-            defaultMode: 420
-            secretName: upbound-agent-tls
-        - name: upbound-control-plane-token
-          secret:
-            defaultMode: 420
-            secretName: {{ .Values.upbound.controlPlane.tokenSecretName }}
-            optional: true
-            items:
-            - key: token
-              path: token
-{{- end }}
+            image: "{{ .Values.agent.image.repository }}:{{ .Values.agent.image.tag }}"
+            args:
+            - agent
+            - --tls-cert-file
+            - /etc/certs/upbound-agent/tls.crt
+            - --tls-key-file
+            - /etc/certs/upbound-agent/tls.key
+            - --xgql-ca-bundle-file
+            - /etc/certs/upbound-agent/ca.crt
+            - --nats-endpoint
+            - nats://{{ .Values.upbound.connectHost }}:{{ .Values.upbound.connectPort | default "443" }}
+            - --upbound-api-endpoint
+            - {{ .Values.upbound.apiURL }}
+            - --pod-name
+            - $(POD_NAME)
+            - --control-plane-token-path
+            - /etc/tokens/control-plane/token
+            {{- if .Values.agent.config.debugMode }}
+            - "--debug"
+            {{- end }}
+            {{- range $arg := .Values.agent.config.args }}
+            - {{ $arg }}
+            {{- end }}
+            env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
+            ports:
+            - name: agent
+              containerPort: 6443
+              protocol: TCP
+            resources:
+              {{- toYaml .Values.agent.resources | nindent 14 }}
+            readinessProbe:
+              httpGet:
+                scheme: HTTPS
+                path: /readyz
+                port: 6443
+              initialDelaySeconds: 5
+              timeoutSeconds: 5
+              periodSeconds: 5
+              failureThreshold: 3
+            livenessProbe:
+              httpGet:
+                scheme: HTTPS
+                path: /livez
+                port: 6443
+              initialDelaySeconds: 10
+              timeoutSeconds: 5
+              periodSeconds: 30
+              failureThreshold: 5
+            volumeMounts:
+              - mountPath: /etc/certs/upbound-agent
+                name: certs
+                readOnly: true
+              - mountPath: /etc/tokens/control-plane
+                name: upbound-control-plane-token
+                readOnly: true
+        volumes:
+          - name: certs
+            secret:
+              defaultMode: 420
+              secretName: upbound-agent-tls
+          - name: upbound-control-plane-token
+            secret:
+              defaultMode: 420
+              secretName: {{ .Values.upbound.controlPlane.tokenSecretName }}
+              optional: true
+              items:
+              - key: token
+                path: token

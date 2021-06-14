@@ -10,21 +10,50 @@ This folder contains the OLM bundle to be published in OperatorHub.
 Every PR that is merged and version that is tagged and promoted results in the
 publishing of the OLM bundle to
 https://releases.upbound.io/universal-crossplane. To publish a new version to
-OperatorHub, download the subdirectory named `$VERSION` in the `olm` directory
-and open two separate PRs to the following directories with it copied into the
-specified path:
+OperatorHub, download the tarball named `$VERSION` in the `olm` directory,
+extract the contents, and open two separate PRs to the following directories
+with the contents copied into the specified path:
 * https://github.com/operator-framework/community-operators/tree/master/community-operators/universal-crossplane
 * https://github.com/operator-framework/community-operators/tree/master/upstream-community-operators/universal-crossplane
 
-The bundle output is specified by the contents of the helm chart and can be
-modified by altering the following files. Any changes made to these files should
-be committed to the repository before tag and release of a new version.
-* `Chart.yaml` is used for metadata, so make sure it contains the new version.
+
+Example workflow for `community-operators`:
+
+```
+$ VERSION=v1.2.2-up.1
+$ cd github.com/operator-framework/community-operators/tree/master/community-operators/universal-crossplane
+$ git checkout -b community-operators-$VERSION
+$ mkdir ${VERSION:1} && cd "$_"
+$ curl -sL https://releases.upbound.io/universal-crossplane/stable/$VERSION/olm/$VERSION.tar.gz | tar xz
+$ git add . && git commit -sm "Add Universal Crossplane $VERSION"
+$ git push -u origin community-operators-$VERSION
+```
+
+Example workflow for `upstream-community-operators`:
+
+```
+$ VERSION=v1.2.2-up.1
+$ cd github.com/operator-framework/community-operators/tree/master/upstream-community-operators/universal-crossplane
+$ git checkout -b upstream-community-operators-$VERSION
+$ mkdir ${VERSION:1} && cd "$_"
+$ curl -sL https://releases.upbound.io/universal-crossplane/stable/$VERSION/olm/$VERSION.tar.gz | tar xz
+$ git add . && git commit -sm "Add Universal Crossplane $VERSION"
+$ git push -u origin upstream-community-operators-$VERSION
+```
+
+The bundle output is specified by the contents of the Helm chart and can be
+modified by altering the following files in the `cluster/olm` directory. Any
+changes made to these files should be committed to the repository before tag and
+release of a new version.
 * `annotations.yaml.tmpl` is used as base annotations, make sure channel
   information is correct for that release.
 * `clusterserviceversion.yaml.tmpl` is used as base `ClusterServiceVersion` and
   it contains metadata that cannot be extracted from `Chart.yaml`, such as
   `installModes`. Make sure new version doesn't make any changes there.
+
+Some of the metadata included in the generated OLM bundle comes the Helm
+`Chart.yaml`. Make sure all information is up to date, including the correct
+version. 
 
 > If you would like to connect to a different Upbound endpoint, you need to
 > change the default one in the `values.yaml.tmpl` in Helm chart in

@@ -9,7 +9,7 @@ rules:
     resources: ["events"]
     verbs: ["create", "update", "patch", "delete"]
   - apiGroups: [""]
-    resources: ["secrets"]
+    resources: ["secrets", "configmaps"]
     verbs: ["watch", "list"]
   - apiGroups: [""]
     resources: ["secrets"]
@@ -23,3 +23,10 @@ rules:
     {{- if .Values.billing.awsMarketplace.enabled }}
     - upbound-entitlement
     {{- end}}
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get"]
+    resourceNames: ["upbound-agent-deployment-spec"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["create", "update", "watch", "list"]

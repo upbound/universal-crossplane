@@ -23,10 +23,16 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 	"sigs.k8s.io/yaml"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -50,6 +56,12 @@ const (
 	errGetSpecCM = "failed to get agent spec configmap"
 )
 
+var (
+	secretsKind     = schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"}
+	configmapsKind  = schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ConfigMap"}
+	deploymentsKind = schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"}
+)
+
 // ReconcilerOption is used to configure the Reconciler.
 type ReconcilerOption func(*Reconciler)
 
@@ -68,30 +80,31 @@ func Setup(mgr ctrl.Manager, l logging.Logger, ts string) error {
 		WithLogger(l.WithValues("controller", name)),
 	)
 
-	// TODO(turkenh): should we watch spec configmap for changes? alternatively we can use following helm trick
-	//  assuming this configmap will always needs to be changed with an helm upgrade.
-	//  https://helm.sh/docs/howto/charts_tips_and_tricks/#automatically-roll-deployments
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&corev1.Secret{}).
-		WithEventFilter(resource.NewPredicates(resource.IsNamed(ts))).
+		Owns(&corev1.ConfigMap{}).
+		Owns(&appsv1.Deployment{}).
+		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForObject{}).
+		WithEventFilter(resource.NewPredicates(resource.AnyOf(
+			resource.AllOf(IsOfKind(secretsKind, mgr.GetScheme()), resource.IsNamed(ts)),
+			resource.AllOf(IsOfKind(configmapsKind, mgr.GetScheme()), resource.IsNamed(configMapAgentDeploymentSpec)),
+			resource.AllOf(IsOfKind(deploymentsKind, mgr.GetScheme()), resource.IsNamed(deploymentUpboundAgent)),
+		))).
 		Complete(r)
 }
 
 // Reconciler reconciles on control plane token secret and manages Upbound Agent deployment
 type Reconciler struct {
 	tokenSecret string
-	client      resource.ClientApplicator
+	client      client.Client
 	log         logging.Logger
 }
 
 // NewReconciler returns a new reconciler
 func NewReconciler(mgr manager.Manager, ts string, opts ...ReconcilerOption) *Reconciler {
 	r := &Reconciler{
-		client: resource.ClientApplicator{
-			Client:     mgr.GetClient(),
-			Applicator: resource.NewAPIUpdatingApplicator(mgr.GetClient()),
-		},
+		client:      mgr.GetClient(),
 		tokenSecret: ts,
 		log:         logging.NewNopLogger(),
 	}
@@ -112,7 +125,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	defer cancel()
 
 	ts := &corev1.Secret{}
-	err := r.client.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, ts)
+	err := r.client.Get(ctx, types.NamespacedName{Name: r.tokenSecret, Namespace: req.Namespace}, ts)
 
 	// We are using owner references to get agent deployment deleted when token secret is deleted.
 	// Nothing to do here if token secret deleted.
@@ -161,9 +174,28 @@ func (r *Reconciler) syncAgentDeployment(ctx context.Context, ts *corev1.Secret)
 			OwnerReferences: []metav1.OwnerReference{meta.AsController(meta.TypedReferenceTo(ts, ts.GroupVersionKind()))},
 		},
 	}
-	if err := yaml.Unmarshal([]byte(ds), &agentDeployment.Spec); err != nil {
-		return errors.Wrap(err, "failed to unmarshall as deployment spec")
-	}
 
-	return errors.Wrap(r.client.Apply(ctx, agentDeployment), "failed to apply agent deployment")
+	// crossplane runtime NewAPIUpdatingApplicator causes constant updates on the object
+	// no matter it is really changed or not. This triggers another reconcile loop hence another
+	// update. NewAPIPatchingApplicator does not cause above but we need update rather than
+	// patch here (e.g. we removed an env var from agent deployment in an upcoming version).
+	_, err := controllerutil.CreateOrUpdate(ctx, r.client, agentDeployment, func() error {
+		if err := yaml.Unmarshal([]byte(ds), &agentDeployment.Spec); err != nil {
+			return errors.Wrap(err, "failed to unmarshall as deployment spec")
+		}
+		return nil
+	})
+	return errors.Wrap(err, "failed to sync agent deployment")
+}
+
+// IsOfKind accepts objects that are of the supplied managed resource kind.
+// TODO(turkenh): move to crossplane-runtime?
+func IsOfKind(k schema.GroupVersionKind, ot runtime.ObjectTyper) resource.PredicateFn {
+	return func(obj runtime.Object) bool {
+		gvk, err := resource.GetKind(obj, ot)
+		if err != nil {
+			return false
+		}
+		return gvk == k
+	}
 }

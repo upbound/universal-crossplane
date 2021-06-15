@@ -52,8 +52,12 @@ const (
 )
 
 const (
-	errGetSecret = "failed to get control plane token secret"
-	errGetSpecCM = "failed to get agent spec configmap"
+	errGetSecret              = "failed to get control plane token secret"
+	errNoTokenInSecret        = "secret %s does not contain a token for key \"%s\""
+	errGetSpecCM              = "failed to get agent spec configmap"
+	errNoSpecInCM             = "configmap %s does not contain deployment spec for Upbound agent for key \"%s\""
+	errFailedToSyncDeployment = "failed to sync agent deployment"
+	errFailedToUnmarshall     = "failed to unmarshall as deployment spec"
 )
 
 var (
@@ -139,7 +143,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	// Ensure secret has token
 	t := ts.Data[keyToken]
 	if string(t) == "" {
-		err := errors.Errorf("secret %s does not contain a token for key \"%s\"", r.tokenSecret, keyToken)
+		err := errors.Errorf(errNoTokenInSecret, r.tokenSecret, keyToken)
 		log.Info(err.Error())
 		return reconcile.Result{}, err
 	}
@@ -161,7 +165,7 @@ func (r *Reconciler) syncAgentDeployment(ctx context.Context, ts *corev1.Secret)
 
 	ds := cm.Data[keySpec]
 	if ds == "" {
-		return errors.Errorf("configmap %s does not contain deployment spec for Upbound agent for key \"%s\"", configMapAgentDeploymentSpec, keySpec)
+		return errors.Errorf(errNoSpecInCM, configMapAgentDeploymentSpec, keySpec)
 	}
 
 	agentDeployment := &appsv1.Deployment{
@@ -181,11 +185,11 @@ func (r *Reconciler) syncAgentDeployment(ctx context.Context, ts *corev1.Secret)
 	// patch here (e.g. we removed an env var from agent deployment in an upcoming version).
 	_, err := controllerutil.CreateOrUpdate(ctx, r.client, agentDeployment, func() error {
 		if err := yaml.Unmarshal([]byte(ds), &agentDeployment.Spec); err != nil {
-			return errors.Wrap(err, "failed to unmarshall as deployment spec")
+			return errors.Wrap(err, errFailedToUnmarshall)
 		}
 		return nil
 	})
-	return errors.Wrap(err, "failed to sync agent deployment")
+	return errors.Wrap(err, errFailedToSyncDeployment)
 }
 
 // IsOfKind accepts objects that are of the supplied managed resource kind.

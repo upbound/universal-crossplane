@@ -28,7 +28,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func Test_GetGatewayCerts(t *testing.T) {
+func Test_GetAgentCerts(t *testing.T) {
 	errBoom := errors.New("boom")
 
 	endpoint := "https://foo.com"
@@ -70,7 +70,7 @@ func Test_GetGatewayCerts(t *testing.T) {
 				responseBody: "some-error",
 			},
 			want: want{
-				err: errors.New("gateway certs request failed with 500 - \"some-error\""),
+				err: errors.New("agent certs request failed with 500 - \"some-error\""),
 			},
 		},
 		"UnexpectedResponseBody": {
@@ -79,7 +79,7 @@ func Test_GetGatewayCerts(t *testing.T) {
 				responseBody: "test-ca",
 			},
 			want: want{
-				err: errors.WithStack(errors.New("failed to unmarshall gw certs response: json: cannot unmarshal string into Go value of type map[string]string")),
+				err: errors.WithStack(errors.New("failed to unmarshall agent certs response: json: cannot unmarshal string into Go value of type map[string]string")),
 			},
 		},
 		"EmptyCerts": {
@@ -100,7 +100,7 @@ func Test_GetGatewayCerts(t *testing.T) {
 					Op:  "Get",
 					URL: "https://foo.com/v1/gw/certs",
 					Err: errBoom,
-				}, "failed to request gateway certs"),
+				}, "failed to request agent certs"),
 			},
 		},
 	}
@@ -125,12 +125,12 @@ func Test_GetGatewayCerts(t *testing.T) {
 
 			httpmock.RegisterResponder(http.MethodGet, endpoint+gwCertsPath, responder)
 
-			got, gotErr := rc.GetGatewayCerts(endpointToken)
+			got, gotErr := rc.GetAgentCerts(endpointToken)
 			if diff := cmp.Diff(tc.want.err, gotErr, test.EquateErrors()); diff != "" {
-				t.Fatalf("GetGatewayCerts(...): -want error, +got error: %s", diff)
+				t.Fatalf("GetAgentCerts(...): -want error, +got error: %s", diff)
 			}
 			if diff := cmp.Diff(tc.want.out, got); diff != "" {
-				t.Errorf("GetGatewayCerts(...): -want result, +got result: %s", diff)
+				t.Errorf("GetAgentCerts(...): -want result, +got result: %s", diff)
 			}
 		})
 	}

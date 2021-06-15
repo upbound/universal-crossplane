@@ -57,12 +57,12 @@ const (
 	keyTLSCert = "tls.crt"
 	keyTLSKey  = "tls.key"
 
-	nameUpbound          = "upbound"
-	cnAgent              = "upbound-agent"
-	cnXgql               = "xgql"
-	secretNameCA         = "uxp-ca"
-	secretNameGatewayTLS = "upbound-agent-tls"
-	secretNameXgqlTLS    = "xgql-tls"
+	nameUpbound        = "upbound"
+	cnAgent            = "upbound-agent"
+	cnXgql             = "xgql"
+	secretNameCA       = "uxp-ca"
+	secretNameAgentTLS = "upbound-agent-tls"
+	secretNameXgqlTLS  = "xgql-tls"
 )
 
 const (
@@ -87,11 +87,10 @@ var (
 		Organization: []string{nameUpbound},
 	}
 	certConfigs = map[string]*certutil.Config{
-		secretNameGatewayTLS: {
+		secretNameAgentTLS: {
 			CommonName: cnAgent,
 			AltNames: certutil.AltNames{
-				// TODO(hasan): drop "tenant-gateway" once we stop using legacy service
-				DNSNames: []string{cnAgent, "tenant-gateway"},
+				DNSNames: []string{cnAgent},
 			},
 			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		},
@@ -135,7 +134,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		Named(name).
 		For(&corev1.Secret{}).
 		WithEventFilter(resource.NewPredicates(resource.AnyOf(
-			resource.IsNamed(secretNameGatewayTLS),
+			resource.IsNamed(secretNameAgentTLS),
 			resource.IsNamed(secretNameXgqlTLS),
 		))).
 		Complete(r)

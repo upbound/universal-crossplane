@@ -92,7 +92,7 @@ func main() { // nolint:gocyclo
 	}
 
 	upClient := upbound.NewClient(a.UpboundAPIEndpoint, log, cli.Debug, cli.Agent.Insecure)
-	pubCerts, err := upClient.GetGatewayCerts(token)
+	pubCerts, err := upClient.GetAgentCerts(token)
 	if err != nil {
 		ctx.FatalIfErrorf(errors.Wrap(err, "failed to fetch public certs"))
 	}

@@ -7,7 +7,6 @@ echo_info "Verify all deployments are ready!"
 ${WAIT_DEPLOYMENT} crossplane
 ${WAIT_DEPLOYMENT} crossplane-rbac-manager
 ${WAIT_DEPLOYMENT} upbound-bootstrapper
-${WAIT_DEPLOYMENT} upbound-agent
 ${WAIT_DEPLOYMENT} xgql
 echo_info "Successfully validated all deployments!"
 
@@ -17,6 +16,7 @@ if [ -z "${LOCALDEV_CONNECT_API_TOKEN}" ]; then
 fi
 
 echo_info "Validating connectivity to Upbound Cloud..."
+${WAIT_DEPLOYMENT} upbound-agent
 
 cp_kubeconfig=/tmp/cp_kubeconfig
 touch "${cp_kubeconfig}"

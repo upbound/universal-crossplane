@@ -124,13 +124,13 @@ crossplane:
 	@cp -a $(WORK_DIR)/crossplane/cluster/crds/* $(CRDS_DIR)
 	@$(OK) Crossplane chart has been fetched
 
-generate-chart: crossplane
+helm.prepare.universal-crossplane: crossplane
 	@$(INFO) Generating values.yaml for the chart
 	@cp -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml.tmpl $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
-	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' values.yaml
-	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' values.yaml
-	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' values.yaml
-	@cd $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) && $(SED_CMD) 's|%%XGQL_TAG%%|$(XGQL_TAG)|g' values.yaml
+	@$(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|%%XGQL_TAG%%|$(XGQL_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Generating values.yaml for the chart
 
 # We have to give a static namespace for OLM bundle because it does not interpret
@@ -138,30 +138,24 @@ generate-chart: crossplane
 # where the operator is deployed. See https://github.com/operator-framework/operator-lifecycle-manager/issues/1361
 # and https://github.com/operator-framework/operator-lifecycle-manager/issues/2039
 
-olm: $(HELM) $(OLMBUNDLE)
+olm.build: $(HELM) $(OLMBUNDLE)
 	@$(INFO) Generating OLM bundle
 	@$(HELM) -n upbound-system template $(HELM_CHARTS_DIR)/$(PACKAGE_NAME) --set upbound.controlPlane.permission=edit > $(WORK_DIR)/olm.yaml
 	@$(SED_CMD) 's|RELEASE-NAME|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
 	@rm -rf $(OLM_DIR)/bundle
 	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --version $(HELM_CHART_VERSION) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
 
-helm.prepare: generate-chart
+olm.artifacts: olm.build
+	@mkdir -p $(abspath $(OUTPUT_DIR)/olm)
+	@tar -czvf $(abspath $(OUTPUT_DIR)/olm/$(VERSION)).tar.gz  -C $(OLM_DIR)/bundle .
 
-generate: go.vendor go.generate helm.prepare olm
-	@$(OK) Finished generating
+build.artifacts: olm.artifacts
 
-# Ensure a PR is ready for review.
-reviewable: generate lint
-
-# Ensure branch is clean.
-check-diff: reviewable
-	@$(INFO) checking that branch is clean
-	@test -z "$$(git status --porcelain)" || $(FAIL)
-	@$(OK) branch is clean
+generate.run: helm.prepare olm.build
 
 local-dev: $(UP) local.up local.deploy.$(PACKAGE_NAME)
 
 e2e.run: build local-dev local.deploy.validation
 e2e.done: local.down
 
-.PHONY: generate-chart olm crossplane submodules fallthrough generate reviewable
+.PHONY: olm.build olm.artifacts crossplane submodules fallthrough

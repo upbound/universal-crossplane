@@ -107,6 +107,10 @@ If you'd like to upgrade to a specific version, run the following:
    helm upgrade crossplane --namespace crossplane-system upbound-stable/universal-crossplane --devel --version vX.Y.Z-up.N
    ```
 
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md)
+
 ## Additional Resources
 
 - The [UXP Documentation][uxp-documentation] provides additional information
@@ -122,5 +126,5 @@ If you'd like to upgrade to a specific version, run the following:
 [create-account]: https://cloud.upbound.io/register
 [login]: https://cloud.upbound.io/login
 [uxp-documentation]: https://cloud.upbound.io/docs/uxp
-[developer-guide]: docs/developer-guide.md
+[developer-guide]: developer-guide.md
 [uxp-slack]: https://crossplane.slack.com/archives/upbound

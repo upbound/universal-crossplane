@@ -38,6 +38,8 @@ spec:
             - {{ .Values.upbound.apiURL }}
             - --upbound-token-secret
             - {{ .Values.upbound.controlPlane.tokenSecretName }}
+            - --agent-manifest
+            - {{ include "agent-spec" . | b64enc }}
             - --controller
             - upbound-agent
             - --controller

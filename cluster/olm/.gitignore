@@ -4,4 +4,3 @@
 # which contains a "-dirty" prefix if there are files not committed. As per other
 # manifests that include the version of the repo, we need to ignore these, too.
 bundle/manifests/universal-crossplane-config.configmap.yaml
-bundle/manifests/upbound-agent-deployment-spec.configmap.yaml

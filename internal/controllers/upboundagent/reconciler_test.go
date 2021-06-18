@@ -21,6 +21,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
@@ -36,7 +37,10 @@ func TestReconcile(t *testing.T) {
 	errBoom := errors.New("boom")
 	errItemNotFound := kerrors.NewNotFound(schema.GroupResource{}, "mock resource")
 	tokenSecret := "upbound-control-plane-token"
-	deploymentSpec := appsv1.DeploymentSpec{}
+	one := int32(1)
+	deploymentSpec := appsv1.DeploymentSpec{
+		Replicas: &one,
+	}
 
 	type args struct {
 		mgr manager.Manager
@@ -86,6 +90,102 @@ func TestReconcile(t *testing.T) {
 			},
 			want: want{
 				err: errors.Errorf(errNoTokenInSecret, tokenSecret, keyToken),
+			},
+		},
+		"FailedToCreate": {
+			args: args{
+				mgr: &fake.Manager{
+					Client: &test.MockClient{
+						MockGet: test.NewMockGetFn(nil, func(obj client.Object) error {
+							if s, ok := obj.(*corev1.Secret); ok {
+								s.Data = map[string][]byte{
+									keyToken: []byte("some-token"),
+								}
+							}
+							if _, ok := obj.(*appsv1.Deployment); ok {
+								return errItemNotFound
+							}
+							return nil
+						}),
+						MockCreate: test.NewMockCreateFn(errBoom),
+					},
+				},
+			},
+			want: want{
+				err: errors.Wrap(errBoom, errFailedToSyncDeployment),
+			},
+		},
+		"SuccessfulCreate": {
+			args: args{
+				mgr: &fake.Manager{
+					Client: &test.MockClient{
+						MockGet: test.NewMockGetFn(nil, func(obj client.Object) error {
+							if s, ok := obj.(*corev1.Secret); ok {
+								s.Data = map[string][]byte{
+									keyToken: []byte("some-token"),
+								}
+							}
+							if _, ok := obj.(*appsv1.Deployment); ok {
+								return errItemNotFound
+							}
+							return nil
+						}),
+						MockCreate: test.NewMockCreateFn(nil),
+					},
+				},
+			},
+			want: want{
+				err: nil,
+			},
+		},
+		"FailedToUpdate": {
+			args: args{
+				mgr: &fake.Manager{
+					Client: &test.MockClient{
+						MockGet: test.NewMockGetFn(nil, func(obj client.Object) error {
+							if s, ok := obj.(*corev1.Secret); ok {
+								s.Data = map[string][]byte{
+									keyToken: []byte("some-token"),
+								}
+							}
+							if d, ok := obj.(*appsv1.Deployment); ok {
+								two := int32(2)
+								d.Spec.Replicas = &two
+								return nil
+							}
+							return nil
+						}),
+						MockUpdate: test.NewMockUpdateFn(errBoom),
+					},
+				},
+			},
+			want: want{
+				err: errors.Wrap(errBoom, errFailedToSyncDeployment),
+			},
+		},
+		"SuccessfulUpdate": {
+			args: args{
+				mgr: &fake.Manager{
+					Client: &test.MockClient{
+						MockGet: test.NewMockGetFn(nil, func(obj client.Object) error {
+							if s, ok := obj.(*corev1.Secret); ok {
+								s.Data = map[string][]byte{
+									keyToken: []byte("some-token"),
+								}
+							}
+							if d, ok := obj.(*appsv1.Deployment); ok {
+								two := int32(2)
+								d.Spec.Replicas = &two
+								return nil
+							}
+							return nil
+						}),
+						MockUpdate: test.NewMockUpdateFn(nil),
+					},
+				},
+			},
+			want: want{
+				err: nil,
 			},
 		},
 	}

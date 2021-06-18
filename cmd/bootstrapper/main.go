@@ -18,8 +18,6 @@ import (
 	"encoding/base64"
 	"time"
 
-	"sigs.k8s.io/yaml"
-
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/pkg/errors"
@@ -28,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+	"sigs.k8s.io/yaml"
 
 	"github.com/upbound/universal-crossplane/internal/controllers/billing"
 	"github.com/upbound/universal-crossplane/internal/controllers/tlssecrets"

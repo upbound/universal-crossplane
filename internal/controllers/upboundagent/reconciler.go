@@ -18,6 +18,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -29,15 +32,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
-	"sigs.k8s.io/yaml"
-
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/crossplane/crossplane-runtime/pkg/meta"
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	internalmeta "github.com/upbound/universal-crossplane/internal/meta"
 )
@@ -45,24 +41,18 @@ import (
 const (
 	reconcileTimeout = 1 * time.Minute
 
-	deploymentUpboundAgent       = "upbound-agent"
-	configMapAgentDeploymentSpec = "upbound-agent-deployment-spec"
-	keySpec                      = "spec.yaml"
-	keyToken                     = "token"
+	deploymentUpboundAgent = "upbound-agent"
+	keyToken               = "token"
 )
 
 const (
 	errGetSecret              = "failed to get control plane token secret"
 	errNoTokenInSecret        = "secret %s does not contain a token for key \"%s\""
-	errGetSpecCM              = "failed to get agent spec configmap"
-	errNoSpecInCM             = "configmap %s does not contain deployment spec for Upbound agent for key \"%s\""
 	errFailedToSyncDeployment = "failed to sync agent deployment"
-	errFailedToUnmarshall     = "failed to unmarshall as deployment spec"
 )
 
 var (
 	secretsKind     = schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"}
-	configmapsKind  = schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ConfigMap"}
 	deploymentsKind = schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"}
 )
 
@@ -77,22 +67,19 @@ func WithLogger(log logging.Logger) ReconcilerOption {
 }
 
 // Setup adds a controller that reconciles on control plane token secret and manages Upbound Agent deployment
-func Setup(mgr ctrl.Manager, l logging.Logger, ts string) error {
+func Setup(mgr ctrl.Manager, l logging.Logger, ds appsv1.DeploymentSpec, ts string) error {
 	name := "upboundAgent"
 
-	r := NewReconciler(mgr, ts,
+	r := NewReconciler(mgr, ds, ts,
 		WithLogger(l.WithValues("controller", name)),
 	)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		For(&corev1.Secret{}).
-		Owns(&corev1.ConfigMap{}).
 		Owns(&appsv1.Deployment{}).
-		Watches(&source.Kind{Type: &corev1.ConfigMap{}}, &handler.EnqueueRequestForObject{}).
 		WithEventFilter(resource.NewPredicates(resource.AnyOf(
 			resource.AllOf(IsOfKind(secretsKind, mgr.GetScheme()), resource.IsNamed(ts)),
-			resource.AllOf(IsOfKind(configmapsKind, mgr.GetScheme()), resource.IsNamed(configMapAgentDeploymentSpec)),
 			resource.AllOf(IsOfKind(deploymentsKind, mgr.GetScheme()), resource.IsNamed(deploymentUpboundAgent)),
 		))).
 		Complete(r)
@@ -100,17 +87,19 @@ func Setup(mgr ctrl.Manager, l logging.Logger, ts string) error {
 
 // Reconciler reconciles on control plane token secret and manages Upbound Agent deployment
 type Reconciler struct {
-	tokenSecret string
-	client      client.Client
-	log         logging.Logger
+	client         client.Client
+	deploymentSpec appsv1.DeploymentSpec
+	tokenSecret    string
+	log            logging.Logger
 }
 
 // NewReconciler returns a new reconciler
-func NewReconciler(mgr manager.Manager, ts string, opts ...ReconcilerOption) *Reconciler {
+func NewReconciler(mgr manager.Manager, ds appsv1.DeploymentSpec, ts string, opts ...ReconcilerOption) *Reconciler {
 	r := &Reconciler{
-		client:      mgr.GetClient(),
-		tokenSecret: ts,
-		log:         logging.NewNopLogger(),
+		client:         mgr.GetClient(),
+		deploymentSpec: ds,
+		tokenSecret:    ts,
+		log:            logging.NewNopLogger(),
 	}
 
 	for _, f := range opts {
@@ -129,7 +118,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	defer cancel()
 
 	ts := &corev1.Secret{}
-	err := r.client.Get(ctx, types.NamespacedName{Name: r.tokenSecret, Namespace: req.Namespace}, ts)
+	err := r.client.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, ts)
 
 	// We are using owner references to get agent deployment deleted when token secret is deleted.
 	// Nothing to do here if token secret deleted.
@@ -158,16 +147,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 }
 
 func (r *Reconciler) syncAgentDeployment(ctx context.Context, ts *corev1.Secret) error {
-	cm := &corev1.ConfigMap{}
-	if err := r.client.Get(ctx, types.NamespacedName{Name: configMapAgentDeploymentSpec, Namespace: ts.Namespace}, cm); err != nil {
-		return errors.Wrap(err, errGetSpecCM)
-	}
-
-	ds := cm.Data[keySpec]
-	if ds == "" {
-		return errors.Errorf(errNoSpecInCM, configMapAgentDeploymentSpec, keySpec)
-	}
-
 	agentDeployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentUpboundAgent,
@@ -184,9 +163,7 @@ func (r *Reconciler) syncAgentDeployment(ctx context.Context, ts *corev1.Secret)
 	// update. NewAPIPatchingApplicator does not cause above but we need update rather than
 	// patch here (e.g. we removed an env var from agent deployment in an upcoming version).
 	_, err := controllerutil.CreateOrUpdate(ctx, r.client, agentDeployment, func() error {
-		if err := yaml.Unmarshal([]byte(ds), &agentDeployment.Spec); err != nil {
-			return errors.Wrap(err, errFailedToUnmarshall)
-		}
+		agentDeployment.Spec = r.deploymentSpec
 		return nil
 	})
 	return errors.Wrap(err, errFailedToSyncDeployment)

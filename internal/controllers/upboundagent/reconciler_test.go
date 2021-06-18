@@ -18,15 +18,13 @@ import (
 	"context"
 	"testing"
 
-	corev1 "k8s.io/api/core/v1"
-
-	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	appsv1 "k8s.io/api/apps/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/types"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource/fake"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
@@ -38,10 +36,10 @@ func TestReconcile(t *testing.T) {
 	errBoom := errors.New("boom")
 	errItemNotFound := kerrors.NewNotFound(schema.GroupResource{}, "mock resource")
 	tokenSecret := "upbound-control-plane-token"
+	deploymentSpec := appsv1.DeploymentSpec{}
 
 	type args struct {
 		mgr manager.Manager
-		req reconcile.Request
 	}
 	type want struct {
 		err error
@@ -80,7 +78,7 @@ func TestReconcile(t *testing.T) {
 				err: nil,
 			},
 		},
-		"ErrNotTokenInSecret": {
+		"ErrNoTokenInSecret": {
 			args: args{
 				mgr: &fake.Manager{
 					Client: &test.MockClient{MockGet: test.NewMockGetFn(nil)},
@@ -90,73 +88,17 @@ func TestReconcile(t *testing.T) {
 				err: errors.Errorf(errNoTokenInSecret, tokenSecret, keyToken),
 			},
 		},
-		"ErrGetSpecConfigMap": {
-			args: args{
-				mgr: &fake.Manager{
-					Client: &test.MockClient{MockGet: test.NewMockGetFn(nil, func(obj client.Object) error {
-						if s, ok := obj.(*corev1.Secret); ok {
-							s.Data = map[string][]byte{
-								keyToken: []byte("some-token"),
-							}
-							return nil
-						}
-						return errBoom
-					})},
-				},
-			},
-			want: want{
-				err: errors.Wrap(errBoom, errGetSpecCM),
-			},
-		},
-		"ErrNoSpecInConfigMap": {
-			args: args{
-				mgr: &fake.Manager{
-					Client: &test.MockClient{MockGet: test.NewMockGetFn(nil, func(obj client.Object) error {
-						if s, ok := obj.(*corev1.Secret); ok {
-							s.Data = map[string][]byte{
-								keyToken: []byte("some-token"),
-							}
-							return nil
-						}
-						return nil
-					})},
-				},
-			},
-			want: want{
-				err: errors.Errorf(errNoSpecInCM, configMapAgentDeploymentSpec, keySpec),
-			},
-		},
-		"ErrFailedToUnmarshallAsSpec": {
-			args: args{
-				mgr: &fake.Manager{
-					Client: &test.MockClient{MockGet: test.NewMockGetFn(nil, func(obj client.Object) error {
-						if s, ok := obj.(*corev1.Secret); ok {
-							s.Data = map[string][]byte{
-								keyToken: []byte("some-token"),
-							}
-							return nil
-						}
-						if s, ok := obj.(*corev1.ConfigMap); ok {
-							s.Data = map[string]string{
-								keySpec: "not-a-valid-spec",
-							}
-							return nil
-						}
-						return nil
-					})},
-				},
-			},
-			want: want{
-				err: errors.Wrap(errors.Wrap(errors.New("error unmarshaling JSON: while decoding JSON: json: cannot unmarshal string into Go value of type v1.DeploymentSpec"),
-					errFailedToUnmarshall), errFailedToSyncDeployment),
-			},
-		},
 	}
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			r := NewReconciler(tc.args.mgr, tokenSecret)
-			_, err := r.Reconcile(context.Background(), tc.args.req)
+			r := NewReconciler(tc.args.mgr, deploymentSpec, tokenSecret)
+			_, err := r.Reconcile(context.Background(), reconcile.Request{
+				NamespacedName: types.NamespacedName{
+					Namespace: "upbound-system",
+					Name:      tokenSecret,
+				},
+			})
 
 			if diff := cmp.Diff(tc.want.err, err, test.EquateErrors()); diff != "" {
 				t.Errorf("\n\nr.Reconcile(...): -want error, +got error:\n%s", diff)

@@ -19,6 +19,10 @@ rules:
     - upbound-agent-public-certs
     - upbound-agent-tls
     - xgql-tls
+    - {{ .Values.upbound.controlPlane.tokenSecretName }}
     {{- if .Values.billing.awsMarketplace.enabled }}
     - upbound-entitlement
     {{- end}}
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["create", "update", "watch", "list"]

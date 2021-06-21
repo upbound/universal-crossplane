@@ -47,7 +47,6 @@ const (
 
 const (
 	errGetSecret              = "failed to get control plane token secret"
-	errNoTokenInSecret        = "secret %s does not contain a token for key \"%s\""
 	errFailedToSyncDeployment = "failed to sync agent deployment"
 )
 
@@ -132,9 +131,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	// Ensure secret has token
 	t := ts.Data[keyToken]
 	if string(t) == "" {
-		err := errors.Errorf(errNoTokenInSecret, r.tokenSecret, keyToken)
-		log.Info(err.Error())
-		return reconcile.Result{}, err
+		log.Info("Secret does not contain a token for key", "secret", r.tokenSecret, "key", keyToken)
+		// We just log this as an error and do not return error since we will get another update
+		// when the secret is updated with token. No need to keep retrying until then.
+		return reconcile.Result{}, nil
 	}
 
 	if err := r.syncAgentDeployment(ctx, ts); err != nil {

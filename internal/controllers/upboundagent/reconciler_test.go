@@ -82,14 +82,14 @@ func TestReconcile(t *testing.T) {
 				err: nil,
 			},
 		},
-		"ErrNoTokenInSecret": {
+		"NoTokenInSecret": {
 			args: args{
 				mgr: &fake.Manager{
 					Client: &test.MockClient{MockGet: test.NewMockGetFn(nil)},
 				},
 			},
 			want: want{
-				err: errors.Errorf(errNoTokenInSecret, tokenSecret, keyToken),
+				err: nil,
 			},
 		},
 		"FailedToCreate": {

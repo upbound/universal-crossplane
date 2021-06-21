@@ -30,10 +30,6 @@ template:
         - nats://{{ .Values.upbound.connectHost }}:{{ .Values.upbound.connectPort | default "443" }}
         - --upbound-api-endpoint
         - {{ .Values.upbound.apiURL }}
-        - --pod-name
-        - $(POD_NAME)
-        - --control-plane-token
-        - $(CP_TOKEN)
         {{- if .Values.agent.config.debugMode }}
         - "--debug"
         {{- end }}
@@ -45,7 +41,7 @@ template:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        - name: CP_TOKEN
+        - name: CONTROL_PLANE_TOKEN
           valueFrom:
             secretKeyRef:
               name: {{ .Values.upbound.controlPlane.tokenSecretName }}

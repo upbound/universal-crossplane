@@ -55,14 +55,14 @@ const (
 
 // AgentCmd represents the "upbound-agent" command
 type AgentCmd struct {
-	PodName            string `help:"Name of the agent pod."`
+	PodName            string `env:"POD_NAME" help:"Name of the agent pod."`
 	ServerPort         string `default:"6443" help:"Port to serve agent service."`
 	TLSCertFile        string `help:"File containing the default x509 Certificate for HTTPS."`
 	TLSKeyFile         string `help:"File containing the default x509 private key matching provided cert"`
 	XgqlCABundleFile   string `help:"CA bundle file for xgql server"`
 	NATSEndpoint       string `help:"Endpoint for nats"`
 	UpboundAPIEndpoint string `help:"Endpoint for Upbound API"`
-	ControlPlaneToken  string `help:"Platform token to access Upbound Cloud connect endpoint"`
+	ControlPlaneToken  string `env:"CONTROL_PLANE_TOKEN" help:"Control plane token to access Upbound Cloud connect endpoint"`
 	Insecure           bool   `help:"Disable TLS certificate checks for local testing. Do not enable this in production."`
 }
 

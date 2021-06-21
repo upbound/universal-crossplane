@@ -129,4 +129,11 @@ so you need to push the images there manually.
 
 ### Rancher Marketplace
 
-To be filled...
+UXP is available as a partner chart in the Rancher Marketplace. Rancher partner charts are served from the
+Rancher's [partner-charts repository](https://github.com/rancher/partner-charts). To get UXP chart updated,
+we need to open a PR against the [main-source branch](https://github.com/rancher/partner-charts/tree/main-source) there.
+
+To prepare the PR, we need to follow the workflow steps listed [here](https://github.com/rancher/partner-charts/tree/main-source#workflow).
+Due to the reasons outlined in [this issue](https://github.com/upbound/universal-crossplane/issues/119), we need an
+additional change in `Chart.yaml` where we convert UXP version from `x.y.z-up.t` to `x.y.z00t` in the [make changes step](https://github.com/rancher/partner-charts/tree/main-source#4-make-changes).
+See [this](https://github.com/rancher/partner-charts/pull/89#discussion_r640533267) as an example.

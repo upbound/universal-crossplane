@@ -81,7 +81,7 @@ Here is a set of commands you can use to build a bundle, add it to a custom
 
 Specify your image prefix to point to your personal organization in the registry:
 ```bash
-IMAGE_PREFIX="docker.io/upbound"
+IMAGE_PREFIX="docker.io/<your-org>"
 ```
 
 Building a bundle:

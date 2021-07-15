@@ -55,6 +55,7 @@ const (
 	livenessHandlerPath  = "/livez"
 	k8sHandlerPath       = "/k8s/*"
 	xgqlHandlerPath      = "/query"
+	xpMetricsHandlerPath = "/xpmetrics"
 
 	headerAuthorization      = "Authorization"
 	groupSystemAuthenticated = "system:authenticated"
@@ -62,7 +63,8 @@ const (
 	impersonatorExtraKeyUpboundID = "upbound-id"
 	impersonatorUserUpboundCloud  = "upbound-cloud-impersonator"
 
-	serviceXgql = "xgql"
+	serviceXgql       = "xgql"
+	serviceCrossplane = "crossplane:8080"
 
 	readHeaderTimeout = 5 * time.Second
 	readTimeout       = 10 * time.Second
@@ -107,6 +109,7 @@ type Proxy struct {
 	agent         *natsproxy.Agent
 	server        *http.Server
 	isReady       *atomic.Value
+	xpHost        *url.URL
 }
 
 // NewProxy returns a new Proxy
@@ -126,6 +129,11 @@ func NewProxy(config *Config, restConfig *rest.Config, upClient upbound.Client,
 	xgqlHost, err := url.Parse(fmt.Sprintf("https://%s", serviceXgql))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse xgql url")
+	}
+
+	xpHost, err := url.Parse(fmt.Sprintf("http://%s", serviceCrossplane))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse crossplane url")
 	}
 
 	// TODO(turkenh): remove once nats-proxy starts using logging interface: https://github.com/upbound/nats-proxy/issues/3
@@ -158,6 +166,7 @@ func NewProxy(config *Config, restConfig *rest.Config, upClient upbound.Client,
 		kubeTransport: krt,
 		config:        config,
 		xgqlHost:      xgqlHost,
+		xpHost:        xpHost,
 		k8sBearer:     restConfig.BearerToken,
 		isReady:       &atomic.Value{},
 	}
@@ -256,6 +265,7 @@ func (p *Proxy) setupRouter() (*echo.Echo, error) {
 	e.Any(xgqlHandlerPath, p.xgql())
 	e.Any(readynessHandlerPath, p.readyz())
 	e.Any(livenessHandlerPath, p.livez())
+	e.Any(xpMetricsHandlerPath, p.xpMetrics())
 
 	agentID, err := uuid.Parse(p.config.ControlPlaneID)
 	if err != nil {
@@ -317,6 +327,23 @@ func (p *Proxy) xgql() echo.HandlerFunc {
 
 		rp.ServeHTTP(c.Response(), reqCopy)
 		p.log.Debug("response from xgql", "status", c.Response().Status)
+		return nil
+	}
+}
+
+func (p *Proxy) xpMetrics() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		p.log.Debug("incoming crossplane metrics request", "url", c.Request().URL.String())
+
+		rp := httputil.NewSingleHostReverseProxy(p.xpHost)
+		rp.ErrorHandler = p.error
+
+		reqCopy := sanitizeRequest(c.Request())
+		reqCopy.URL.Host = p.xpHost.Host
+		reqCopy.URL.Path = "metrics"
+
+		rp.ServeHTTP(c.Response(), reqCopy)
+		p.log.Debug("response from crossplane", "status", c.Response().Status)
 		return nil
 	}
 }

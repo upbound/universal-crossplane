@@ -14,7 +14,7 @@
 
 package internal
 
-import "github.com/dgrijalva/jwt-go"
+import "github.com/golang-jwt/jwt"
 
 // CrossplaneAccessor is the struct holding accessor info in JWT custom claims
 type CrossplaneAccessor struct {

@@ -37,3 +37,5 @@ require (
 	sigs.k8s.io/controller-runtime v0.8.0
 	sigs.k8s.io/yaml v1.2.0
 )
+
+replace github.com/dgrijalva/jwt-go => github.com/golang-jwt/jwt v3.2.1+incompatible

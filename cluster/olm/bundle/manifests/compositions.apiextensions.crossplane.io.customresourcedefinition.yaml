@@ -63,6 +63,40 @@ spec:
                       items:
                         description: Patch objects are applied between composite and composed resources. Their behaviour depends on the Type selected. The default Type, FromCompositeFieldPath, copies a value from the composite resource to the composed resource, applying any defined transformers.
                         properties:
+                          combine:
+                            description: Combine is the patch configuration for a CombineFromComposite or CombineToComposite patch.
+                            properties:
+                              strategy:
+                                description: Strategy defines the strategy to use to combine the input variable values. Currently only string is supported.
+                                enum:
+                                - string
+                                type: string
+                              string:
+                                description: String declares that input variables should be combined into a single string, using the relevant settings for formatting purposes.
+                                properties:
+                                  fmt:
+                                    description: Format the input using a Go format string. See https://golang.org/pkg/fmt/ for details.
+                                    type: string
+                                required:
+                                - fmt
+                                type: object
+                              variables:
+                                description: Variables are the list of variables whose values will be retrieved and combined.
+                                items:
+                                  description: A CombineVariable defines the source of a value that is combined with others to form and patch an output value. Currently, this only supports retrieving values from a field path.
+                                  properties:
+                                    fromFieldPath:
+                                      description: FromFieldPath is the path of the field on the source whose value is to be used as input.
+                                      type: string
+                                  required:
+                                  - fromFieldPath
+                                  type: object
+                                minItems: 1
+                                type: array
+                            required:
+                            - strategy
+                            - variables
+                            type: object
                           fromFieldPath:
                             description: FromFieldPath is the path of the field on the resource whose value is to be used as input. Required when type is FromCompositeFieldPath or ToCompositeFieldPath.
                             type: string
@@ -143,6 +177,8 @@ spec:
                             - FromCompositeFieldPath
                             - PatchSet
                             - ToCompositeFieldPath
+                            - CombineFromComposite
+                            - CombineToComposite
                             type: string
                         type: object
                       type: array
@@ -195,6 +231,40 @@ spec:
                       items:
                         description: Patch objects are applied between composite and composed resources. Their behaviour depends on the Type selected. The default Type, FromCompositeFieldPath, copies a value from the composite resource to the composed resource, applying any defined transformers.
                         properties:
+                          combine:
+                            description: Combine is the patch configuration for a CombineFromComposite or CombineToComposite patch.
+                            properties:
+                              strategy:
+                                description: Strategy defines the strategy to use to combine the input variable values. Currently only string is supported.
+                                enum:
+                                - string
+                                type: string
+                              string:
+                                description: String declares that input variables should be combined into a single string, using the relevant settings for formatting purposes.
+                                properties:
+                                  fmt:
+                                    description: Format the input using a Go format string. See https://golang.org/pkg/fmt/ for details.
+                                    type: string
+                                required:
+                                - fmt
+                                type: object
+                              variables:
+                                description: Variables are the list of variables whose values will be retrieved and combined.
+                                items:
+                                  description: A CombineVariable defines the source of a value that is combined with others to form and patch an output value. Currently, this only supports retrieving values from a field path.
+                                  properties:
+                                    fromFieldPath:
+                                      description: FromFieldPath is the path of the field on the source whose value is to be used as input.
+                                      type: string
+                                  required:
+                                  - fromFieldPath
+                                  type: object
+                                minItems: 1
+                                type: array
+                            required:
+                            - strategy
+                            - variables
+                            type: object
                           fromFieldPath:
                             description: FromFieldPath is the path of the field on the resource whose value is to be used as input. Required when type is FromCompositeFieldPath or ToCompositeFieldPath.
                             type: string
@@ -275,6 +345,8 @@ spec:
                             - FromCompositeFieldPath
                             - PatchSet
                             - ToCompositeFieldPath
+                            - CombineFromComposite
+                            - CombineToComposite
                             type: string
                         type: object
                       type: array
@@ -360,7 +432,7 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: Composition defines the group of resources to be created when a compatible type is created with reference to the composition.
+        description: 'Composition defines the group of resources to be created when a compatible type is created with reference to the composition. [DEPRECATED]: Please use the identical v1 API instead. The v1beta1 API is scheduled to be removed in Crossplane v1.6.'
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -399,6 +471,40 @@ spec:
                       items:
                         description: Patch objects are applied between composite and composed resources. Their behaviour depends on the Type selected. The default Type, FromCompositeFieldPath, copies a value from the composite resource to the composed resource, applying any defined transformers.
                         properties:
+                          combine:
+                            description: Combine is the patch configuration for a CombineFromComposite or CombineToComposite patch.
+                            properties:
+                              strategy:
+                                description: Strategy defines the strategy to use to combine the input variable values. Currently only string is supported.
+                                enum:
+                                - string
+                                type: string
+                              string:
+                                description: String declares that input variables should be combined into a single string, using the relevant settings for formatting purposes.
+                                properties:
+                                  fmt:
+                                    description: Format the input using a Go format string. See https://golang.org/pkg/fmt/ for details.
+                                    type: string
+                                required:
+                                - fmt
+                                type: object
+                              variables:
+                                description: Variables are the list of variables whose values will be retrieved and combined.
+                                items:
+                                  description: A CombineVariable defines the source of a value that is combined with others to form and patch an output value. Currently, this only supports retrieving values from a field path.
+                                  properties:
+                                    fromFieldPath:
+                                      description: FromFieldPath is the path of the field on the source whose value is to be used as input.
+                                      type: string
+                                  required:
+                                  - fromFieldPath
+                                  type: object
+                                minItems: 1
+                                type: array
+                            required:
+                            - strategy
+                            - variables
+                            type: object
                           fromFieldPath:
                             description: FromFieldPath is the path of the field on the resource whose value is to be used as input. Required when type is FromCompositeFieldPath or ToCompositeFieldPath.
                             type: string
@@ -478,6 +584,8 @@ spec:
                             - FromCompositeFieldPath
                             - PatchSet
                             - ToCompositeFieldPath
+                            - CombineFromComposite
+                            - CombineToComposite
                             type: string
                         type: object
                       type: array
@@ -530,6 +638,40 @@ spec:
                       items:
                         description: Patch objects are applied between composite and composed resources. Their behaviour depends on the Type selected. The default Type, FromCompositeFieldPath, copies a value from the composite resource to the composed resource, applying any defined transformers.
                         properties:
+                          combine:
+                            description: Combine is the patch configuration for a CombineFromComposite or CombineToComposite patch.
+                            properties:
+                              strategy:
+                                description: Strategy defines the strategy to use to combine the input variable values. Currently only string is supported.
+                                enum:
+                                - string
+                                type: string
+                              string:
+                                description: String declares that input variables should be combined into a single string, using the relevant settings for formatting purposes.
+                                properties:
+                                  fmt:
+                                    description: Format the input using a Go format string. See https://golang.org/pkg/fmt/ for details.
+                                    type: string
+                                required:
+                                - fmt
+                                type: object
+                              variables:
+                                description: Variables are the list of variables whose values will be retrieved and combined.
+                                items:
+                                  description: A CombineVariable defines the source of a value that is combined with others to form and patch an output value. Currently, this only supports retrieving values from a field path.
+                                  properties:
+                                    fromFieldPath:
+                                      description: FromFieldPath is the path of the field on the source whose value is to be used as input.
+                                      type: string
+                                  required:
+                                  - fromFieldPath
+                                  type: object
+                                minItems: 1
+                                type: array
+                            required:
+                            - strategy
+                            - variables
+                            type: object
                           fromFieldPath:
                             description: FromFieldPath is the path of the field on the resource whose value is to be used as input. Required when type is FromCompositeFieldPath or ToCompositeFieldPath.
                             type: string
@@ -609,6 +751,8 @@ spec:
                             - FromCompositeFieldPath
                             - PatchSet
                             - ToCompositeFieldPath
+                            - CombineFromComposite
+                            - CombineToComposite
                             type: string
                         type: object
                       type: array

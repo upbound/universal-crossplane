@@ -16,6 +16,7 @@ spec:
     plural: compositeresourcedefinitions
     shortNames:
     - xrd
+    - xrds
     singular: compositeresourcedefinition
   scope: Cluster
   versions:
@@ -272,7 +273,7 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: An CompositeResourceDefinition defines a new kind of composite infrastructure resource. The new resource is composed of other composite or managed infrastructure resources.
+        description: 'An CompositeResourceDefinition defines a new kind of composite infrastructure resource. The new resource is composed of other composite or managed infrastructure resources. [DEPRECATED]: Please use the identical v1 API instead. The v1beta1 API is scheduled to be removed in Crossplane v1.6.'
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'

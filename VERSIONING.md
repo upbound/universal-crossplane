@@ -95,7 +95,7 @@ illustrates examples of each guarantee in practice.
    an incremented components version (e.g. the tag after `v1.2.2-up.2` must
    include `-up.3`).
 8. A release for an embedded Crossplane version that has not yet been included
-   in a UXP release must have a components marker of `-up.0`.
+   in a UXP release must have a components marker of `-up.1`.
 9. The components marker does not indicate the same components across Crossplane
    versions or release branches. It is specific to the Crossplane version it is
    appended to (e.g. `v1.2.2-up.1` does not indicate the same version of `xgql`
@@ -125,8 +125,8 @@ that is not an official release.
 
 The UXP version (i.e. `-up.0`) is independent for every Crossplane version. The
 version in main should always be `-up.0` because we cannot release `-up.0` for a
-given version until it has its first patch release (i.e. `vX.Y.0-up.0`). A UXP
-release candidate (e.g. `v1.4.0-up.0-rc.0`) should be tagged and tested prior to
+given version until it has its first patch release (i.e. `vX.Y.0-up.1`). A UXP
+release candidate (e.g. `v1.4.0-up.1-rc.0`) should be tagged and tested prior to
 any official release. In practice, this is accomplished by _always_ tagging the
 next release candidate after cutting an official release.
 

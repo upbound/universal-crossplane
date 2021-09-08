@@ -24,7 +24,7 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: Composition defines the group of resources to be created when a compatible type is created with reference to the composition.
+        description: A Composition specifies how a composite resource should be composed.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -35,7 +35,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CompositionSpec specifies the desired state of the definition.
+            description: CompositionSpec specifies desired state of a composition.
             properties:
               compositeTypeRef:
                 description: CompositeTypeRef specifies the type of composite resource that this composition is compatible with.
@@ -112,6 +112,16 @@ spec:
                                 - Optional
                                 - Required
                                 type: string
+                              mergeOptions:
+                                description: MergeOptions Specifies merge options on a field path
+                                properties:
+                                  appendSlice:
+                                    description: Specifies that already existing elements in a merged slice should be preserved
+                                    type: boolean
+                                  keepMapValues:
+                                    description: Specifies that already existing values in a merged map should be preserved
+                                    type: boolean
+                                type: object
                             type: object
                           toFieldPath:
                             description: ToFieldPath is the path of the field on the resource whose value will be changed with the result of transforms. Leave empty if you'd like to propagate to the same path as fromFieldPath.
@@ -280,6 +290,16 @@ spec:
                                 - Optional
                                 - Required
                                 type: string
+                              mergeOptions:
+                                description: MergeOptions Specifies merge options on a field path
+                                properties:
+                                  appendSlice:
+                                    description: Specifies that already existing elements in a merged slice should be preserved
+                                    type: boolean
+                                  keepMapValues:
+                                    description: Specifies that already existing values in a merged map should be preserved
+                                    type: boolean
+                                type: object
                             type: object
                           toFieldPath:
                             description: ToFieldPath is the path of the field on the resource whose value will be changed with the result of transforms. Leave empty if you'd like to propagate to the same path as fromFieldPath.
@@ -388,43 +408,10 @@ spec:
             - compositeTypeRef
             - resources
             type: object
-          status:
-            description: CompositionStatus shows the observed state of the composition.
-            properties:
-              conditions:
-                description: Conditions of the resource.
-                items:
-                  description: A Condition that may apply to a resource.
-                  properties:
-                    lastTransitionTime:
-                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
-                      format: date-time
-                      type: string
-                    message:
-                      description: A Message containing details about this condition's last transition from one status to another, if any.
-                      type: string
-                    reason:
-                      description: A Reason for this condition's last transition from one status to another.
-                      type: string
-                    status:
-                      description: Status of this condition; is it currently True, False, or Unknown?
-                      type: string
-                    type:
-                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
-                      type: string
-                  required:
-                  - lastTransitionTime
-                  - reason
-                  - status
-                  - type
-                  type: object
-                type: array
-            type: object
         type: object
     served: true
     storage: true
-    subresources:
-      status: {}
+    subresources: {}
   - additionalPrinterColumns:
     - jsonPath: .metadata.creationTimestamp
       name: AGE
@@ -443,7 +430,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: CompositionSpec specifies the desired state of the definition.
+            description: CompositionSpec specifies the desired state of the composition.
             properties:
               compositeTypeRef:
                 description: CompositeTypeRef specifies the type of composite resource that this composition is compatible with.
@@ -520,6 +507,16 @@ spec:
                                 - Optional
                                 - Required
                                 type: string
+                              mergeOptions:
+                                description: MergeOptions Specifies merge options on a field path
+                                properties:
+                                  appendSlice:
+                                    description: Specifies that already existing elements in a merged slice should be preserved
+                                    type: boolean
+                                  keepMapValues:
+                                    description: Specifies that already existing values in a merged map should be preserved
+                                    type: boolean
+                                type: object
                             type: object
                           toFieldPath:
                             description: ToFieldPath is the path of the field on the resource whose value will be changed with the result of transforms. Leave empty if you'd like to propagate to the same path as fromFieldPath.
@@ -687,6 +684,16 @@ spec:
                                 - Optional
                                 - Required
                                 type: string
+                              mergeOptions:
+                                description: MergeOptions Specifies merge options on a field path
+                                properties:
+                                  appendSlice:
+                                    description: Specifies that already existing elements in a merged slice should be preserved
+                                    type: boolean
+                                  keepMapValues:
+                                    description: Specifies that already existing values in a merged map should be preserved
+                                    type: boolean
+                                type: object
                             type: object
                           toFieldPath:
                             description: ToFieldPath is the path of the field on the resource whose value will be changed with the result of transforms. Leave empty if you'd like to propagate to the same path as fromFieldPath.
@@ -793,38 +800,6 @@ spec:
             required:
             - compositeTypeRef
             - resources
-            type: object
-          status:
-            description: CompositionStatus shows the observed state of the composition.
-            properties:
-              conditions:
-                description: Conditions of the resource.
-                items:
-                  description: A Condition that may apply to a resource.
-                  properties:
-                    lastTransitionTime:
-                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
-                      format: date-time
-                      type: string
-                    message:
-                      description: A Message containing details about this condition's last transition from one status to another, if any.
-                      type: string
-                    reason:
-                      description: A Reason for this condition's last transition from one status to another.
-                      type: string
-                    status:
-                      description: Status of this condition; is it currently True, False, or Unknown?
-                      type: string
-                    type:
-                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
-                      type: string
-                  required:
-                  - lastTransitionTime
-                  - reason
-                  - status
-                  - type
-                  type: object
-                type: array
             type: object
         type: object
     served: true

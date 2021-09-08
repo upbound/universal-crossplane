@@ -11,6 +11,7 @@ spec:
   names:
     categories:
     - crossplane
+    - pkgrev
     kind: ConfigurationRevision
     listKind: ConfigurationRevisionList
     plural: configurationrevisions

@@ -71,7 +71,7 @@ The UXP versioning strategy can be expressed through a series of guarantees,
 each of which are elaborated in the subsequent sections. The diagram above
 illustrates examples of each guarantee in practice.
 
-1. The components marker on UXP main should always end in `-up.0` (i.e. no
+1. The components marker on UXP main should always end in `-up.1` (i.e. no
    components release candidates).
 2. The Crossplane version on UXP main must always be a release candidate version
    for the first release of a major/minor pair (i.e. `vX.Y.0-rc.Z`).
@@ -95,7 +95,7 @@ illustrates examples of each guarantee in practice.
    an incremented components version (e.g. the tag after `v1.2.2-up.2` must
    include `-up.3`).
 8. A release for an embedded Crossplane version that has not yet been included
-   in a UXP release must have a components marker of `-up.0`.
+   in a UXP release must have a components marker of `-up.1`.
 9. The components marker does not indicate the same components across Crossplane
    versions or release branches. It is specific to the Crossplane version it is
    appended to (e.g. `v1.2.2-up.1` does not indicate the same version of `xgql`
@@ -107,7 +107,7 @@ The Crossplane version on the UXP repository `main` branch should always match
 that of the latest Crossplane tag on `master`. This ensures that we are always
 moving towards the next release branch cut that both Crossplane and UXP will
 make. By definition, this also means that the Crossplane version on UXP `main`
-will always be an RC version (e.g.`v1.4.0-rc.0-up.0`)
+will always be an RC version (e.g.`v1.4.0-rc.0-up.1`)
 
 ### Crossplane Version on Release Branches
 
@@ -123,10 +123,10 @@ that is not an official release.
 
 ### UXP Version
 
-The UXP version (i.e. `-up.0`) is independent for every Crossplane version. The
-version in main should always be `-up.0` because we cannot release `-up.0` for a
-given version until it has its first patch release (i.e. `vX.Y.0-up.0`). A UXP
-release candidate (e.g. `v1.4.0-up.0-rc.0`) should be tagged and tested prior to
+The UXP version (i.e. `-up.1`) is independent for every Crossplane version. The
+version in main should always be `-up.1` because we cannot release `-up.1` for a
+given version until it has its first patch release (i.e. `vX.Y.0-up.2`). A UXP
+release candidate (e.g. `v1.4.0-up.1-rc.0`) should be tagged and tested prior to
 any official release. In practice, this is accomplished by _always_ tagging the
 next release candidate after cutting an official release.
 

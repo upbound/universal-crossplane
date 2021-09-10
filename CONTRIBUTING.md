@@ -84,8 +84,8 @@ OLM uses its own packaging format for its marketplaces.
    ```
 1. **open pull requests**: Extract the content into a new folder named `$VERSION`
    and open the PRs to the following directories:
-    * https://github.com/operator-framework/community-operators/tree/master/community-operators/universal-crossplane
-    * https://github.com/operator-framework/community-operators/tree/master/upstream-community-operators/universal-crossplane
+    * https://github.com/redhat-openshift-ecosystem/community-operators-prod/tree/main/operators/universal-crossplane
+    * https://github.com/k8s-operatorhub/community-operators/tree/main/operators/universal-crossplane
 1. **sanity check**: Once the PRs are merged and CI in main branch completes the
    propagation, you should see the new version in [OperatorHub product page](https://operatorhub.io/operator/universal-crossplane).
 

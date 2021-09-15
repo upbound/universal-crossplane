@@ -50,6 +50,43 @@ make e2e.run
 
 ## Release Process
 
+### Update Crossplane Version (skip if not necessary)
+
+UXP bundles [Upbound maintained version of Crossplane](https://github.com/upbound/crossplane) 
+which might contain **additional** features and bug fixes on top of 
+corresponding upstream Crossplane version. For example, **Upbound Crossplane**
+`v1.4.0-up.1` should include everything in **Crossplane** `v1.4.0` but _might_
+include additional changes. All additional changes that could be included should
+have been merged into master of Upstream Crossplane. This is to prevent 
+diverging from Upstream Crossplane project, but we would still be able to ship 
+fixes and features early, independent of Upstream Crossplane release cadence.
+
+To update Crossplane version in UXP:
+
+1. Prepare corresponding release branch in [Upbound Crossplane](https://github.com/upbound/crossplane)
+   1. Make sure to include all changes in Upstream Crossplane version. 
+   For example, if we are planning to tag `v1.4.1-up.x`, `release-1.4` branch
+   should include everything in upstream Crossplane `v1.4.1`.
+   2. If additional features and/or fixes to be included, cherry-pick them into
+   the release branch.
+2. Run the [Tag action](https://github.com/upbound/crossplane/actions/workflows/tag.yml)
+in Upbound Crossplane by following the [versioning schema](VERSIONING.md). 
+Please note, for both UXP and Upbound Crossplane, we use the same versioning 
+schema.
+3. Run the [CI action](https://github.com/upbound/crossplane/actions/workflows/ci.yml)
+in Upbound Crossplane for the release branch.
+4. Update the `CROSSPLANE_TAG` and `CROSSPLANE_COMMIT` in the UXP[Makefile](Makefile).
+At this point you should be able to pull the following docker image:
+`docker pull upbound/crossplane:[CROSSPLANE_TAG]`.
+
+Please note our build module [converts the latter dash to dot](https://github.com/upbound/build/pull/155)
+to make the version [sortable as semver](https://github.com/upbound/universal-crossplane/issues/109).
+This causes [Upbound Crossplane](https://github.com/upbound/crossplane) to
+produce a docker image with tag `v1.5.0-rc.0.up.1` for git tag 
+`v1.5.0-rc.0-up.1`.
+
+### Cut UXP Release
+
 A UXP release is cut by following the steps below:
 
 1. **branch repo**: Create a new release branch using the GitHub UI for the
@@ -114,7 +151,7 @@ so you need to push the images there manually.
    ```
    # You can check the full repository URLs from Repositories list of the product
    # in AWS Marketplace Management Portal
-   docker tag crossplane/crossplane:<tag-in-values.yaml> "709825985650.dkr.ecr.us-east-1.amazonaws.com/upbound/crossplane:<tag-in-values.yaml>"
+   docker tag upbound/crossplane:<tag-in-values.yaml> "709825985650.dkr.ecr.us-east-1.amazonaws.com/upbound/crossplane:<tag-in-values.yaml>"
    ```
    Note that all images, including the ones under crossplane DockerHub organization,
    need to be re-tagged pushed to ECR.

@@ -2,11 +2,6 @@
 
 This folder contains the OLM bundle to be published in OperatorHub.
 
-> Note: We currently manually strip off the `runAsUser` and `runAsGroup` fields
-> from the Crossplane and RBAC Manager `Deployments` to work around
-> https://github.com/upbound/universal-crossplane/issues/116. This should be
-> handled automatically in the future. 
-
 Every PR that is merged and version that is tagged and promoted results in the
 publishing of the OLM bundle to
 https://releases.upbound.io/universal-crossplane. To publish a new version to

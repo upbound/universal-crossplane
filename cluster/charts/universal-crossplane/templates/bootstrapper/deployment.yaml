@@ -54,6 +54,11 @@ spec:
           {{- range $arg := .Values.bootstrapper.config.args }}
             - {{ $arg }}
           {{- end }}
+          env:
+          {{- range $key, $value := .Values.bootstrapper.config.envVars }}
+            - name: {{ $key | replace "." "_" }}
+              value: {{ $value | quote }}
+          {{- end}}
           imagePullPolicy: {{ .Values.bootstrapper.image.pullPolicy }}
           resources:
             {{- toYaml .Values.bootstrapper.resources | nindent 12 }}

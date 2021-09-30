@@ -81,8 +81,8 @@ metrics:
 # List of extra environment variables to set in the crossplane deployment.
 # EXAMPLE
 # extraEnvironmentVars:
-#   sample.key=value1
-#   ANOTHER.KEY=value2
+#   sample.key: value1
+#   ANOTHER.KEY: value2
 # RESULT
 #   - name: sample_key
 #     value: "value1"
@@ -93,8 +93,8 @@ extraEnvVarsCrossplane: {}
 # List of extra environment variables to set in the crossplane rbac manager deployment.
 # EXAMPLE
 # extraEnvironmentVars:
-#   sample.key=value1
-#   ANOTHER.KEY=value2
+#   sample.key: value1
+#   ANOTHER.KEY: value2
 # RESULT
 #   - name: sample_key
 #     value: "value1"
@@ -123,6 +123,17 @@ xgql:
   config:
     debugMode: false
     args: []
+    envVars: {}
+    # List of extra environment variables to set in the xgql deployment.
+    # EXAMPLE
+    # envVars:
+    #   sample.key: value1
+    #   ANOTHER.KEY: value2
+    # RESULT
+    #   - name: sample_key
+    #     value: "value1"
+    #   - name: ANOTHER_KEY
+    #     value: "value2"
 
 agent:
   image:
@@ -133,6 +144,17 @@ agent:
   config:
     debugMode: false
     args: []
+    envVars: {}
+    # List of extra environment variables to set in the agent deployment.
+    # EXAMPLE
+    # envVars:
+    #   sample.key: value1
+    #   ANOTHER.KEY: value2
+    # RESULT
+    #   - name: sample_key
+    #     value: "value1"
+    #   - name: ANOTHER_KEY
+    #     value: "value2"
 
 ### Bootstrapper Values
 
@@ -145,6 +167,17 @@ bootstrapper:
   config:
     debugMode: false
     args: []
+    envVars: {}
+    # List of extra environment variables to set in the bootstrapper deployment.
+    # EXAMPLE
+    # envVars:
+    #   sample.key: value1
+    #   ANOTHER.KEY: value2
+    # RESULT
+    #   - name: sample_key
+    #     value: "value1"
+    #   - name: ANOTHER_KEY
+    #     value: "value2"
 
 billing:
   awsMarketplace:

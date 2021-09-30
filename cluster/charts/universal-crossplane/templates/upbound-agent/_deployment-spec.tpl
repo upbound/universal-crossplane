@@ -46,6 +46,10 @@ template:
             secretKeyRef:
               name: {{ .Values.upbound.controlPlane.tokenSecretName }}
               key: token
+        {{- range $key, $value := .Values.agent.config.envVars }}
+        - name: {{ $key | replace "." "_" }}
+          value: {{ $value | quote }}
+        {{- end}}
         imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
         ports:
         - name: agent

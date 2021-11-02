@@ -111,6 +111,26 @@ If you'd like to upgrade to a specific version, run the following:
 
 See [CONTRIBUTING.md](CONTRIBUTING.md)
 
+## Releases
+
+After each minor Crossplane release, a corresponding patched and hardened
+version of Universal Crossplane will be released after 2 weeks at the latest.
+
+After the minor release of UXP, we will update that version with UXP-specific
+patches by incrementing `-up.X` suffix as well as upstream patches by incrementing
+the patch version to the corresponding number.
+
+An example timeframe would be like the following:
+* Crossplane `v1.5.0` is released.
+* 2 weeks bake period.
+* The latest version in `release-1.5` is now `v1.5.2`
+* The first release of UXP for v1.5 would be `v1.5.2-up.1`.
+  * We take the latest patched version at the end of 2 weeks, not `v1.5.0-up.1`
+    for example, if there is a patch release.
+* Crossplane `v1.5.3` is released after the initial 2 weeks bake period.
+* UXP `v1.5.3-up.1` will be released immediately to accommodate the fix coming
+  with the patch version.
+
 ## Additional Resources
 
 - The [UXP Documentation][uxp-documentation] provides additional information

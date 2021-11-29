@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
+    controller-gen.kubebuilder.io/version: v0.6.2
   creationTimestamp: null
   name: compositions.apiextensions.crossplane.io
 spec:
@@ -211,13 +211,32 @@ spec:
                                     that the input does not necessarily need to be
                                     a string.
                                   properties:
+                                    convert:
+                                      description: Convert the type of conversion
+                                        to Upper/Lower case.
+                                      enum:
+                                      - ToUpper
+                                      - ToLower
+                                      type: string
                                     fmt:
                                       description: Format the input using a Go format
                                         string. See https://golang.org/pkg/fmt/ for
                                         details.
                                       type: string
-                                  required:
-                                  - fmt
+                                    trim:
+                                      description: Trim the prefix or suffix from
+                                        the input
+                                      type: string
+                                    type:
+                                      default: Format
+                                      description: Type of the string transform to
+                                        be run.
+                                      enum:
+                                      - Format
+                                      - Convert
+                                      - TrimPrefix
+                                      - TrimSuffix
+                                      type: string
                                   type: object
                                 type:
                                   description: Type of the transform to be run.
@@ -466,13 +485,32 @@ spec:
                                     that the input does not necessarily need to be
                                     a string.
                                   properties:
+                                    convert:
+                                      description: Convert the type of conversion
+                                        to Upper/Lower case.
+                                      enum:
+                                      - ToUpper
+                                      - ToLower
+                                      type: string
                                     fmt:
                                       description: Format the input using a Go format
                                         string. See https://golang.org/pkg/fmt/ for
                                         details.
                                       type: string
-                                  required:
-                                  - fmt
+                                    trim:
+                                      description: Trim the prefix or suffix from
+                                        the input
+                                      type: string
+                                    type:
+                                      default: Format
+                                      description: Type of the string transform to
+                                        be run.
+                                      enum:
+                                      - Format
+                                      - Convert
+                                      - TrimPrefix
+                                      - TrimSuffix
+                                      type: string
                                   type: object
                                 type:
                                   description: Type of the transform to be run.
@@ -749,13 +787,32 @@ spec:
                                     that the input does not necessarily need to be
                                     a string.
                                   properties:
+                                    convert:
+                                      description: Convert the type of conversion
+                                        to Upper/Lower case.
+                                      enum:
+                                      - ToUpper
+                                      - ToLower
+                                      type: string
                                     fmt:
                                       description: Format the input using a Go format
                                         string. See https://golang.org/pkg/fmt/ for
                                         details.
                                       type: string
-                                  required:
-                                  - fmt
+                                    trim:
+                                      description: Trim the prefix or suffix from
+                                        the input
+                                      type: string
+                                    type:
+                                      default: Format
+                                      description: Type of the string transform to
+                                        be run.
+                                      enum:
+                                      - Format
+                                      - Convert
+                                      - TrimPrefix
+                                      - TrimSuffix
+                                      type: string
                                   type: object
                                 type:
                                   description: Type of the transform to be run.
@@ -1003,13 +1060,32 @@ spec:
                                     that the input does not necessarily need to be
                                     a string.
                                   properties:
+                                    convert:
+                                      description: Convert the type of conversion
+                                        to Upper/Lower case.
+                                      enum:
+                                      - ToUpper
+                                      - ToLower
+                                      type: string
                                     fmt:
                                       description: Format the input using a Go format
                                         string. See https://golang.org/pkg/fmt/ for
                                         details.
                                       type: string
-                                  required:
-                                  - fmt
+                                    trim:
+                                      description: Trim the prefix or suffix from
+                                        the input
+                                      type: string
+                                    type:
+                                      default: Format
+                                      description: Type of the string transform to
+                                        be run.
+                                      enum:
+                                      - Format
+                                      - Convert
+                                      - TrimPrefix
+                                      - TrimSuffix
+                                      type: string
                                   type: object
                                 type:
                                   description: Type of the transform to be run.

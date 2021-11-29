@@ -73,10 +73,6 @@ securityContextRBACManager:
   allowPrivilegeEscalation: false
   readOnlyRootFilesystem: true
 
-alpha:
-  oam:
-    enabled: false
-
 metrics:
   enabled: false
 
@@ -103,6 +99,10 @@ extraEnvVarsCrossplane: {}
 #   - name: ANOTHER_KEY
 #     value: "value2"
 extraEnvVarsRBACManager: {}
+
+podSecurityContextCrossplane: {}
+
+podSecurityContextRBACManager: {}
 
 ### Agent Values
 

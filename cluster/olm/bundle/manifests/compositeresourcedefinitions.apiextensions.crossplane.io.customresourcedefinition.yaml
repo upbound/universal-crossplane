@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.3.0
+    controller-gen.kubebuilder.io/version: v0.6.2
   creationTimestamp: null
   name: compositeresourcedefinitions.apiextensions.crossplane.io
 spec:
@@ -33,7 +33,7 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: An CompositeResourceDefinition defines a new kind of composite infrastructure resource. The new resource is composed of other composite or managed infrastructure resources.
+        description: A CompositeResourceDefinition defines a new kind of composite infrastructure resource. The new resource is composed of other composite or managed infrastructure resources.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -76,7 +76,7 @@ spec:
                 - plural
                 type: object
               connectionSecretKeys:
-                description: ConnectionSecretKeys is the list of keys that will be exposed to the end user of the defined kind.
+                description: ConnectionSecretKeys is the list of keys that will be exposed to the end user of the defined kind. If the list is empty, all keys will be published.
                 items:
                   type: string
                 type: array
@@ -273,7 +273,7 @@ spec:
     name: v1beta1
     schema:
       openAPIV3Schema:
-        description: 'An CompositeResourceDefinition defines a new kind of composite infrastructure resource. The new resource is composed of other composite or managed infrastructure resources. [DEPRECATED]: Please use the identical v1 API instead. The v1beta1 API is scheduled to be removed in Crossplane v1.6.'
+        description: 'A CompositeResourceDefinition defines a new kind of composite infrastructure resource. The new resource is composed of other composite or managed infrastructure resources. [DEPRECATED]: Please use the identical v1 API instead. The v1beta1 API is scheduled to be removed in Crossplane v1.6.'
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'

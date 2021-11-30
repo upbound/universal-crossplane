@@ -1,18 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ template "name" . }}
+  name: {{ template "crossplane.name" . }}
   labels:
-    app: {{ template "name" . }}
-    chart: {{ template "chart" . }}
-    release: {{ .Release.Name }}
-    heritage: {{ .Release.Service }}
+    app: {{ template "crossplane.name" . }}
+    {{- include "crossplane.labels" . | indent 4 }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
     matchLabels:
-      app: {{ template "name" . }}
-      release: {{ .Release.Name }}
+      app: {{ template "crossplane.name" . }}
+      {{- include "crossplane.selectorLabels" . | indent 6 }}
   strategy:
     type: {{ .Values.deploymentStrategy }}
   template:
@@ -24,13 +22,15 @@ spec:
         prometheus.io/scrape: "true"
       {{- end }}
       labels:
-        app: {{ template "name" . }}
-        release: {{ .Release.Name }}
+        app: {{ template "crossplane.name" . }}
+        {{- include "crossplane.labels" . | indent 8 }}
     spec:
+      securityContext:
+        {{- toYaml .Values.podSecurityContextCrossplane | nindent 8 }}
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName  | quote }}
       {{- end }}
-      serviceAccountName: {{ template "name" . }}
+      serviceAccountName: {{ template "crossplane.name" . }}
       initContainers:
         - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
           args:
@@ -76,6 +76,10 @@ spec:
                 fieldPath: metadata.namespace
           - name: LEADER_ELECTION
             value: "{{ .Values.leaderElection }}"
+          {{- if .Values.registryCaBundleConfig.key }}
+          - name: CA_BUNDLE_PATH
+            value: "/certs/{{ .Values.registryCaBundleConfig.key }}"
+          {{- end}}
         {{- range $key, $value := .Values.extraEnvVarsCrossplane }}
           - name: {{ $key | replace "." "_" }}
             value: {{ $value | quote }}
@@ -83,6 +87,10 @@ spec:
         volumeMounts:
           - mountPath: /cache
             name: package-cache
+            {{- if .Values.registryCaBundleConfig.name }}
+          - mountPath: /certs
+            name: ca-certs
+            {{- end }}
       volumes:
       - name: package-cache
         {{- if .Values.packageCache.pvc }}
@@ -93,6 +101,14 @@ spec:
           medium: {{ .Values.packageCache.medium }}
           sizeLimit: {{ .Values.packageCache.sizeLimit }}
         {{- end }}
+      {{- if .Values.registryCaBundleConfig.name }}
+      - name: ca-certs
+        configMap:
+          name: {{ .Values.registryCaBundleConfig.name }}
+          items:
+            - key: {{ .Values.registryCaBundleConfig.key }}
+              path: {{ .Values.registryCaBundleConfig.key }}
+      {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}
       {{- end }}

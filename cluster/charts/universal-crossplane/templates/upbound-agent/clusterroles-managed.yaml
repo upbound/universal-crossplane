@@ -5,7 +5,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ template "name" . }}:aggregate-to-view
+  name: {{ template "crossplane.name" . }}:aggregate-to-view
   labels:
     rbac.crossplane.io/aggregate-to-view: "true"
     {{- include "labelsAgent" . | nindent 4 }}
@@ -36,7 +36,7 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ template "name" . }}:aggregate-to-edit
+  name: {{ template "crossplane.name" . }}:aggregate-to-edit
   labels:
     rbac.crossplane.io/aggregate-to-edit: "true"
     {{- include "labelsAgent" . | nindent 4 }}

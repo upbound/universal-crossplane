@@ -63,7 +63,7 @@ fixes and features early, independent of Upstream Crossplane release cadence.
 
 To update Crossplane version in UXP:
 
-1. Prepare corresponding release branch in [Upbound Crossplane](https://github.com/upbound/crossplane)
+1. [Prepare](#prepare-repos-and-forks) corresponding release branch in [Upbound Crossplane](https://github.com/upbound/crossplane)
    1. Make sure to include all changes in Upstream Crossplane version. 
    For example, if we are planning to tag `v1.4.1-up.x`, `release-1.4` branch
    should include everything in upstream Crossplane `v1.4.1`.
@@ -84,6 +84,66 @@ to make the version [sortable as semver](https://github.com/upbound/universal-cr
 This causes [Upbound Crossplane](https://github.com/upbound/crossplane) to
 produce a docker image with tag `v1.5.0-rc.0.up.1` for git tag 
 `v1.5.0-rc.0-up.1`.
+
+#### Prepare repos and forks
+
+```shell
+MY_GITHUB_USER=turkenh
+
+upstream crossplane: https://github.com/crossplane/crossplane
+upstream crossplane fork: https://github.com/$MY_GITHUB_USER/crossplane
+
+upbound crossplane: https://github.com/upbound/crossplane
+upbound crossplane fork: https://github.com/$MY_GITHUB_USER/upbound-crossplane
+```
+
+##### Prepare local repo:
+
+```shell
+MY_GITHUB_USER=turkenh
+mkdir sync-upbound-crossplane
+cd sync-upbound-crossplane
+git clone https://github.com/$MY_GITHUB_USER/crossplane
+cd crossplane
+git remote add upstream https://github.com/crossplane/crossplane
+git remote add upbound-upstream https://github.com/upbound/crossplane
+git remote add upbound-origin https://github.com/$MY_GITHUB_USER/upbound-crossplane
+git fetch --all
+git submodule update --init
+```
+
+##### Sync latest master:
+
+```shell
+git checkout -b sync-upstream-master
+git reset --hard upbound-upstream/master
+git merge upstream/master
+# Resolve conflicts, if any
+git push --set-upstream upbound-origin sync-upstream-master
+```
+
+##### Sync **an existing** release branch:
+
+```shell
+RELEASE_BRANCH=release-1.5
+git checkout -b sync-upstream-$RELEASE_BRANCH
+git reset --hard upbound-upstream/$RELEASE_BRANCH
+git merge upstream/$RELEASE_BRANCH
+# Resolve conflicts, if any
+git push --set-upstream upbound-origin sync-upstream-$RELEASE_BRANCH
+```
+
+##### Sync **a new** release branch:
+
+```shell
+RELEASE_BRANCH=release-1.6
+git checkout -b $RELEASE_BRANCH upstream/$RELEASE_BRANCH
+
+# Cherry-pick upbound/crossplane specific changes - makefile, workflow and readme updates
+git cherry-pick -x 5d53beb3cb423b13960a92d1f8f9284c9a146ccc # https://github.com/upbound/crossplane/commit/5d53beb3cb423b13960a92d1f8f9284c9a146ccc
+
+git push upbound-upstream $RELEASE_BRANCH
+```
 
 ### Cut UXP Release
 

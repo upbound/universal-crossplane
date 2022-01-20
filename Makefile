@@ -20,8 +20,8 @@ PACKAGE_NAME := universal-crossplane
 CROSSPLANE_REPO := https://github.com/upbound/crossplane.git
 # Tag corresponds to Docker image tag while commit is git-compatible signature
 # for pulling. They do not always match.
-CROSSPLANE_TAG := v1.6.0-rc.0.up.1.72.g4f292d31
-CROSSPLANE_COMMIT := v1.6.0-rc.0-up.1-72-g4f292d31
+CROSSPLANE_TAG := v1.7.0-rc.0.up.1.90.g08d71821
+CROSSPLANE_COMMIT := v1.7.0-rc.0-up.1-90-g08d71821
 
 BOOTSTRAPPER_TAG := $(VERSION)
 AGENT_TAG := $(VERSION)

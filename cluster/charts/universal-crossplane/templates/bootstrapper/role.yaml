@@ -9,6 +9,9 @@ rules:
     resources: ["events"]
     verbs: ["create", "update", "patch", "delete"]
   - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
     resources: ["secrets"]
     verbs: ["watch", "list"]
   - apiGroups: [""]
@@ -25,4 +28,4 @@ rules:
     {{- end}}
   - apiGroups: ["apps"]
     resources: ["deployments"]
-    verbs: ["create", "update", "watch", "list"]
+    verbs: ["create", "update", "delete", "watch", "list"]

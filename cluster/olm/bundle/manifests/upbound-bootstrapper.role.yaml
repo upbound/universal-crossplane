@@ -23,6 +23,14 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - secrets
   verbs:
   - watch
@@ -48,5 +56,6 @@ rules:
   verbs:
   - create
   - update
+  - delete
   - watch
   - list

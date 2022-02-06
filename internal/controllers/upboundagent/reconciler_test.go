@@ -52,6 +52,36 @@ func TestReconcile(t *testing.T) {
 		args args
 		want want
 	}{
+		"VersionsConfigMapMissing": {
+			args: args{
+				mgr: &fake.Manager{
+					Client: &test.MockClient{MockGet: func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+						if _, ok := obj.(*corev1.ConfigMap); ok {
+							return errItemNotFound
+						}
+						return nil
+					}},
+				},
+			},
+			want: want{
+				err: nil,
+			},
+		},
+		"ErrGetVersionsConfigMap": {
+			args: args{
+				mgr: &fake.Manager{
+					Client: &test.MockClient{MockGet: func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
+						if _, ok := obj.(*corev1.ConfigMap); ok {
+							return errBoom
+						}
+						return nil
+					}},
+				},
+			},
+			want: want{
+				err: errors.Wrap(errBoom, errGetVersionsConfigMap),
+			},
+		},
 		"ErrGetTokenSecret": {
 			args: args{
 				mgr: &fake.Manager{
@@ -67,19 +97,56 @@ func TestReconcile(t *testing.T) {
 				err: errors.Wrap(errBoom, errGetSecret),
 			},
 		},
-		"TokenSecretNotFound": {
+		"TokenSecretNotFoundDeploymentDeleteSuccessful": {
 			args: args{
 				mgr: &fake.Manager{
-					Client: &test.MockClient{MockGet: func(ctx context.Context, key client.ObjectKey, obj client.Object) error {
-						if key.Name == tokenSecret {
-							return errItemNotFound
-						}
-						return nil
-					}},
+					Client: &test.MockClient{
+						MockGet: test.NewMockGetFn(nil, func(obj client.Object) error {
+							if _, ok := obj.(*corev1.ConfigMap); ok {
+								return nil
+							}
+							if _, ok := obj.(*corev1.Secret); ok {
+								return errItemNotFound
+							}
+							return nil
+						}),
+						MockDelete: test.NewMockDeleteFn(nil, func(obj client.Object) error {
+							if _, ok := obj.(*appsv1.Deployment); ok {
+								return nil
+							}
+							return nil
+						}),
+					},
 				},
 			},
 			want: want{
 				err: nil,
+			},
+		},
+		"TokenSecretNotFoundDeploymentDeleteFailed": {
+			args: args{
+				mgr: &fake.Manager{
+					Client: &test.MockClient{
+						MockGet: test.NewMockGetFn(nil, func(obj client.Object) error {
+							if _, ok := obj.(*corev1.ConfigMap); ok {
+								return nil
+							}
+							if _, ok := obj.(*corev1.Secret); ok {
+								return errItemNotFound
+							}
+							return nil
+						}),
+						MockDelete: test.NewMockDeleteFn(nil, func(obj client.Object) error {
+							if _, ok := obj.(*appsv1.Deployment); ok {
+								return errBoom
+							}
+							return nil
+						}),
+					},
+				},
+			},
+			want: want{
+				err: errors.Wrap(errBoom, errDeleteDeployment),
 			},
 		},
 		"NoTokenInSecret": {
@@ -112,7 +179,7 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			want: want{
-				err: errors.Wrap(errBoom, errFailedToSyncDeployment),
+				err: errors.Wrap(errBoom, errSyncDeployment),
 			},
 		},
 		"SuccessfulCreate": {
@@ -160,7 +227,7 @@ func TestReconcile(t *testing.T) {
 				},
 			},
 			want: want{
-				err: errors.Wrap(errBoom, errFailedToSyncDeployment),
+				err: errors.Wrap(errBoom, errSyncDeployment),
 			},
 		},
 		"SuccessfulUpdate": {

@@ -41,13 +41,16 @@ import (
 const (
 	reconcileTimeout = 1 * time.Minute
 
+	configMapUXPVersions   = "universal-crossplane-config"
 	deploymentUpboundAgent = "upbound-agent"
 	keyToken               = "token"
 )
 
 const (
-	errGetSecret              = "failed to get control plane token secret"
-	errFailedToSyncDeployment = "failed to sync agent deployment"
+	errGetVersionsConfigMap = "failed to get versions config map"
+	errGetSecret            = "failed to get control plane token secret"
+	errDeleteDeployment     = "failed to delete agent deployment"
+	errSyncDeployment       = "failed to sync agent deployment"
 )
 
 var (
@@ -116,13 +119,34 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	ctx, cancel := context.WithTimeout(ctx, reconcileTimeout)
 	defer cancel()
 
-	ts := &corev1.Secret{}
-	err := r.client.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, ts)
+	cm := &corev1.ConfigMap{}
+	err := r.client.Get(ctx, types.NamespacedName{Name: configMapUXPVersions, Namespace: req.Namespace}, cm)
 
-	// We are using owner references to get agent deployment deleted when token secret is deleted.
-	// Nothing to do here if token secret deleted.
+	// We create agent Deployment with an owner reference to the versions
+	// ConfigMap. The agent Deployment will be garbage collected if the
+	// ConfigMap no longer exists.
 	if kerrors.IsNotFound(err) {
 		return reconcile.Result{}, nil
+	}
+	if err != nil {
+		return reconcile.Result{}, errors.Wrap(err, errGetVersionsConfigMap)
+	}
+
+	ts := &corev1.Secret{}
+	err = r.client.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, ts)
+
+	// If the token Secret is deleted, we also want to clean up the agent
+	// Deployment.
+	if kerrors.IsNotFound(err) {
+		err := r.client.Delete(ctx, &appsv1.Deployment{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      deploymentUpboundAgent,
+				Namespace: cm.Namespace,
+			},
+		})
+		// If we fail to delete agent Deployment we should immediately try
+		// again. Otherwise we have nothing left to do.
+		return reconcile.Result{}, errors.Wrap(err, errDeleteDeployment)
 	}
 	if err != nil {
 		return reconcile.Result{}, errors.Wrap(err, errGetSecret)
@@ -132,12 +156,13 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	t := ts.Data[keyToken]
 	if string(t) == "" {
 		log.Info("Secret does not contain a token for key", "secret", r.tokenSecret, "key", keyToken)
-		// We just log this as an error and do not return error since we will get another update
-		// when the secret is updated with token. No need to keep retrying until then.
+		// We just log this as an error and do not return error since we will
+		// get another update when the secret is updated with token. No need to
+		// keep retrying until then.
 		return reconcile.Result{}, nil
 	}
 
-	if err := r.syncAgentDeployment(ctx, ts); err != nil {
+	if err := r.syncAgentDeployment(ctx, cm); err != nil {
 		log.Info(err.Error())
 		return reconcile.Result{}, err
 	}
@@ -146,15 +171,15 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 	return reconcile.Result{}, nil
 }
 
-func (r *Reconciler) syncAgentDeployment(ctx context.Context, ts *corev1.Secret) error {
+func (r *Reconciler) syncAgentDeployment(ctx context.Context, cm *corev1.ConfigMap) error {
 	agentDeployment := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentUpboundAgent,
-			Namespace: ts.Namespace,
+			Namespace: cm.Namespace,
 			Labels: map[string]string{
 				internalmeta.LabelKeyManagedBy: internalmeta.LabelValueManagedBy,
 			},
-			OwnerReferences: []metav1.OwnerReference{meta.AsController(meta.TypedReferenceTo(ts, ts.GroupVersionKind()))},
+			OwnerReferences: []metav1.OwnerReference{meta.AsController(meta.TypedReferenceTo(cm, cm.GroupVersionKind()))},
 		},
 	}
 
@@ -166,7 +191,7 @@ func (r *Reconciler) syncAgentDeployment(ctx context.Context, ts *corev1.Secret)
 		agentDeployment.Spec = r.deploymentSpec
 		return nil
 	})
-	return errors.Wrap(err, errFailedToSyncDeployment)
+	return errors.Wrap(err, errSyncDeployment)
 }
 
 // IsOfKind accepts objects that are of the supplied managed resource kind.

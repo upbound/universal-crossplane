@@ -9,4 +9,4 @@ spec:
     version: ">=v1.2.1-0"
   dependsOn:
     - provider: registry.upbound.io/crossplane/provider-aws
-      version: "v0.18.1"
+      version: ">=v0.22.0-0"

@@ -75,7 +75,7 @@ Please note, for both UXP and Upbound Crossplane, we use the same versioning
 schema.
 3. Run the [CI action](https://github.com/upbound/crossplane/actions/workflows/ci.yml)
 in Upbound Crossplane for the release branch.
-4. Update the `CROSSPLANE_TAG` and `CROSSPLANE_COMMIT` in the UXP[Makefile](Makefile).
+4. Update the `CROSSPLANE_TAG` and `CROSSPLANE_COMMIT` in the UXP [Makefile](Makefile).
 At this point you should be able to pull the following docker image:
 `docker pull upbound/crossplane:[CROSSPLANE_TAG]`.
 

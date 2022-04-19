@@ -6,6 +6,9 @@ metadata:
     app: {{ template "crossplane.name" . }}
     release: {{ .Release.Name }}
     {{- include "crossplane.labels" . | indent 4 }}
+  {{- with .Values.customAnnotations }}
+  annotations: {{ toYaml . | nindent 4 }}
+  {{- end }}
 spec:
   replicas: {{ .Values.replicas }}
   selector:
@@ -16,11 +19,16 @@ spec:
     type: {{ .Values.deploymentStrategy }}
   template:
     metadata:
-      {{- if .Values.metrics.enabled }}
+      {{- if or .Values.metrics.enabled .Values.customAnnotations }}
       annotations:
+      {{- end }}
+      {{- if .Values.metrics.enabled }}
         prometheus.io/path: /metrics
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
+      {{- end }}
+      {{- with .Values.customAnnotations }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         app: {{ template "crossplane.name" . }}
@@ -52,6 +60,23 @@ spec:
             {{- toYaml .Values.resourcesCrossplane | nindent 12 }}
           securityContext:
             {{- toYaml .Values.securityContextCrossplane | nindent 12 }}
+          env:
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          {{- if .Values.webhooks.enabled }}
+          - name: "WEBHOOK_TLS_SECRET_NAME"
+            value: webhook-tls-secret
+          - name: "WEBHOOK_SERVICE_NAME"
+            value: {{ template "crossplane.name" . }}-webhooks
+          - name: "WEBHOOK_SERVICE_NAMESPACE"
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+          - name: "WEBHOOK_SERVICE_PORT"
+            value: "9443"
+          {{- end }}
       containers:
       - image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         args:
@@ -64,10 +89,16 @@ spec:
         name: {{ .Chart.Name }}
         resources:
           {{- toYaml .Values.resourcesCrossplane | nindent 12 }}
-        {{- if .Values.metrics.enabled }}
+        {{- if or .Values.metrics.enabled (.Values.webhooks.enabled) }}
         ports:
+        {{- end }}
+        {{- if .Values.metrics.enabled }}
         - name: metrics
           containerPort: 8080
+        {{- end }}
+        {{- if .Values.webhooks.enabled }}
+        - name: webhooks
+          containerPort: 9443
         {{- end }}
         securityContext:
           {{- toYaml .Values.securityContextCrossplane | nindent 12 }}
@@ -76,12 +107,20 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+          - name: olala
+            value: olala
           - name: LEADER_ELECTION
             value: "{{ .Values.leaderElection }}"
           {{- if .Values.registryCaBundleConfig.key }}
           - name: CA_BUNDLE_PATH
             value: "/certs/{{ .Values.registryCaBundleConfig.key }}"
           {{- end}}
+          {{- if .Values.webhooks.enabled }}
+          - name: "WEBHOOK_TLS_SECRET_NAME"
+            value: webhook-tls-secret
+          - name: "WEBHOOK_TLS_CERT_DIR"
+            value: /webhook/tls
+          {{- end }}
         {{- range $key, $value := .Values.extraEnvVarsCrossplane }}
           - name: {{ $key | replace "." "_" }}
             value: {{ $value | quote }}
@@ -89,10 +128,14 @@ spec:
         volumeMounts:
           - mountPath: /cache
             name: package-cache
-            {{- if .Values.registryCaBundleConfig.name }}
+          {{- if .Values.registryCaBundleConfig.name }}
           - mountPath: /certs
             name: ca-certs
-            {{- end }}
+          {{- end }}
+          {{- if .Values.webhooks.enabled }}
+          - mountPath: /webhook/tls
+            name: webhook-tls-secret
+          {{- end }}
       volumes:
       - name: package-cache
         {{- if .Values.packageCache.pvc }}
@@ -110,6 +153,18 @@ spec:
           items:
             - key: {{ .Values.registryCaBundleConfig.key }}
               path: {{ .Values.registryCaBundleConfig.key }}
+      {{- end }}
+      {{- if .Values.webhooks.enabled }}
+      - name: webhook-tls-secret
+        secret:
+          # NOTE(muvaf): The tls.crt is used both by the server (requires it to
+          # be a single cert) and the caBundle fields of webhook configs and CRDs
+          # which can accept a whole bundle of certificates. In order to meet
+          # the requirements of both, we require a single certificate instead of
+          # a bundle.
+          # It's assumed that initializer generates this anyway, so it should be
+          # fine.
+          secretName: webhook-tls-secret
       {{- end }}
       {{- if .Values.nodeSelector }}
       nodeSelector: {{ toYaml .Values.nodeSelector | nindent 8 }}

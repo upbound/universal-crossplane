@@ -18,7 +18,7 @@ import (
 	"encoding/base64"
 	"io/ioutil"
 
-	natsjwt "github.com/nats-io/jwt"
+	natsjwt "github.com/nats-io/jwt/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/nats-io/nkeys"
 	"github.com/pkg/errors"
@@ -109,8 +109,7 @@ func isJWTValid(token string, log logging.Logger) bool {
 	if token == "" {
 		return false
 	}
-	claims := &natsjwt.UserClaims{}
-	err := natsjwt.Decode(token, claims)
+	claims, err := natsjwt.Decode(token)
 	if err != nil {
 		log.Info("failed to decode token", "error", err)
 		return false

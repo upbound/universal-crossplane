@@ -16,4 +16,3 @@ metadata:
     app.kubernetes.io/version: 0.0.1
     helm.sh/chart: universal-crossplane-0.0.1
   name: crossplane
-rules: []

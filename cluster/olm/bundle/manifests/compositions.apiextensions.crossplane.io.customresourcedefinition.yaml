@@ -167,6 +167,8 @@ spec:
                                       enum:
                                       - ToUpper
                                       - ToLower
+                                      - ToBase64
+                                      - FromBase64
                                       type: string
                                     fmt:
                                       description: Format the input using a Go format string. See https://golang.org/pkg/fmt/ for details.
@@ -372,6 +374,8 @@ spec:
                                       enum:
                                       - ToUpper
                                       - ToLower
+                                      - ToBase64
+                                      - FromBase64
                                       type: string
                                     fmt:
                                       description: Format the input using a Go format string. See https://golang.org/pkg/fmt/ for details.

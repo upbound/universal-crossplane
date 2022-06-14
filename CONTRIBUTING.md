@@ -176,10 +176,10 @@ OLM uses its own packaging format for its marketplaces.
 
 1. **download bundle**: Download the bundle from the following link:
    ```
-   VERSION=<release version>
+   VERSION=<release version> # including v prefix, i.e. v1.3.3-up.1
    curl -sL https://releases.upbound.io/universal-crossplane/stable/$VERSION/olm/$VERSION.tar.gz  | tar xz
    ```
-1. **open pull requests**: Extract the content into a new folder named `$VERSION`
+1. **open pull requests**: Extract the content into a new folder named with version **without v prefix**:
    and open the PRs to the following directories:
     * https://github.com/redhat-openshift-ecosystem/community-operators-prod/tree/main/operators/universal-crossplane
     * https://github.com/k8s-operatorhub/community-operators/tree/main/operators/universal-crossplane
@@ -197,18 +197,19 @@ so you need to push the images there manually.
 
 1. **list images**: In order to see what images are used in a specific release,
    you can examine the Helm chart `values.yaml` file:
-   ```
-   VERSION=<released-version>
+   ```bash
+   VERSION=<released-version> # excluding v prefix, i.e. 1.3.3-up.1
    curl -sL https://charts.upbound.io/stable/universal-crossplane-$VERSION.tgz | tar xz
    ```
 1. **login to ECR**: You need to have an AWS user in production marketplace account
    and use the following command to login your docker client:
-   ```
-   MARKETPLACE_ACCOUNT_ID=123456789
-   aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "${MARKETPLACE_ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com"
+   ```bash
+   # Note that the account ID is the one used by all products in the marketplace, not our
+   # account ID.
+   aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin "709825985650.dkr.ecr.us-east-1.amazonaws.com"
    ```
 1. **tag & push**: Tag and push every image like the following:
-   ```
+   ```bash
    # You can check the full repository URLs from Repositories list of the product
    # in AWS Marketplace Management Portal
    docker tag upbound/crossplane:<tag-in-values.yaml> "709825985650.dkr.ecr.us-east-1.amazonaws.com/upbound/crossplane:<tag-in-values.yaml>"

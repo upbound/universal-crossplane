@@ -179,7 +179,7 @@ OLM uses its own packaging format for its marketplaces.
    VERSION=<release version> # including v prefix, i.e. v1.3.3-up.1
    curl -sL https://releases.upbound.io/universal-crossplane/stable/$VERSION/olm/$VERSION.tar.gz  | tar xz
    ```
-1. **open pull requests**: Extract the content into a new folder named `$VERSION`
+1. **open pull requests**: Extract the content into a new folder named with version **without v prefix**:
    and open the PRs to the following directories:
     * https://github.com/redhat-openshift-ecosystem/community-operators-prod/tree/main/operators/universal-crossplane
     * https://github.com/k8s-operatorhub/community-operators/tree/main/operators/universal-crossplane

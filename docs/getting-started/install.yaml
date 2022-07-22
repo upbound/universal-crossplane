@@ -3,4 +3,4 @@ kind: Configuration
 metadata:
   name: getting-started
 spec:
-  package: registry.upbound.io/upbound/getting-started:latest
+  package: xpkg.upbound.io/upbound/getting-started:latest

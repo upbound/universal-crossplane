@@ -41,6 +41,8 @@ S3_BUCKET ?= public-upbound.releases/$(PACKAGE_NAME)
 # ====================================================================================
 # Setup Go
 
+GO_REQUIRED_VERSION = 1.17
+
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper $(GO_PROJECT)/cmd/upbound-agent
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
 GO_SUBDIRS += cmd internal
@@ -82,9 +84,9 @@ HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
 # Due to the way that the shared build logic works, images should
 # all be in folders at the same level (no additional levels of nesting).
 
-DOCKER_REGISTRY = upbound
+REGISTRY_ORGS ?= docker.io/upbound
 IMAGES = uxp-bootstrapper upbound-agent
--include build/makelib/image.mk
+-include build/makelib/imagelight.mk
 
 # ====================================================================================
 # Setup Local Dev
@@ -146,7 +148,7 @@ olm.build: $(HELM) $(OLMBUNDLE)
 		--set securityContextCrossplane.runAsGroup=null \
 		--set securityContextRBACManager.runAsUser=null \
 		--set securityContextRBACManager.runAsGroup=null > $(WORK_DIR)/olm.yaml
-	@$(SED_CMD) 's|RELEASE-NAME|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
+	@$(SED_CMD) 's|release-name|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
 	@rm -rf $(OLM_DIR)/bundle
 	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --version $(HELM_CHART_VERSION) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
 
@@ -160,7 +162,7 @@ generate.run: helm.prepare olm.build
 
 local-dev: $(UP) local.up local.deploy.$(PACKAGE_NAME)
 
-e2e.run: build local-dev local.deploy.validation
+e2e.run: build local-dev
 e2e.done: local.down
 
 .PHONY: olm.build olm.artifacts crossplane submodules fallthrough

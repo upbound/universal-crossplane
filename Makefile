@@ -148,7 +148,7 @@ olm.build: $(HELM) $(OLMBUNDLE)
 		--set securityContextCrossplane.runAsGroup=null \
 		--set securityContextRBACManager.runAsUser=null \
 		--set securityContextRBACManager.runAsGroup=null > $(WORK_DIR)/olm.yaml
-	@$(SED_CMD) 's|RELEASE-NAME|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
+	@$(SED_CMD) 's|release-name|$(PROJECT_NAME)|g' $(WORK_DIR)/olm.yaml
 	@rm -rf $(OLM_DIR)/bundle
 	@cat $(WORK_DIR)/olm.yaml | $(OLMBUNDLE) --version $(HELM_CHART_VERSION) --chart-file-path $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/Chart.yaml --extra-resources-dir $(CRDS_DIR) --output-dir $(OLM_DIR)
 

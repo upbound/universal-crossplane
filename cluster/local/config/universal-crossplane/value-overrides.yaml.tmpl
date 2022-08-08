@@ -1,18 +1,3 @@
-upbound:
-  apiURL: https://{{ .Env.UPBOUND_API_ENDPOINT }}
-  connectHost: {{ .Env.UPBOUND_CONNECT_ENDPOINT }}
-  connectPort: {{ .Env.UPBOUND_CONNECT_PORT }}
-  controlPlane:
-    permission: {{ .Env.LOCALDEV_UBC_PERMISSION }}
-
-agent:
-  config:
-    debugMode: true
-    args:
-    - "--insecure"
-
 xgql:
   config:
     debugMode: true
-    args:
-      - --enable-playground

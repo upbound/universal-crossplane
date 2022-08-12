@@ -6,6 +6,7 @@ metadata:
 spec:
   parameters:
     storageGB: 20
+    passwordSecretName: getting-started-db-pass
   compositionSelector:
     matchLabels:
       uxp-guide: getting-started

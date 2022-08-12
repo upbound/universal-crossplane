@@ -33,7 +33,10 @@ spec:
                 properties:
                   storageGB:
                     type: integer
+                  passwordSecretName:
+                    type: string
                 required:
                   - storageGB
+                  - passwordSecretName
             required:
               - parameters

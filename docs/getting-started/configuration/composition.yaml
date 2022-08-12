@@ -181,6 +181,9 @@ spec:
             engineVersion: "12.10"
             skipFinalSnapshot: true
             publiclyAccessible: true
+            passwordSecretRef:
+              key: password
+              namespace: upbound-system
           writeConnectionSecretToRef:
             namespace: upbound-system
       patches:
@@ -192,6 +195,8 @@ spec:
                 fmt: "%s-postgresql"
         - fromFieldPath: "spec.parameters.storageGB"
           toFieldPath: "spec.forProvider.allocatedStorage"
+        - fromFieldPath: "spec.parameters.passwordSecretName"
+          toFieldPath: "spec.forProvider.passwordSecretRef.name"
       connectionDetails:
         - fromConnectionSecretKey: username
         - fromConnectionSecretKey: password

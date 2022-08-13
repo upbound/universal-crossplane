@@ -198,7 +198,9 @@ spec:
         - fromFieldPath: "spec.parameters.passwordSecretName"
           toFieldPath: "spec.forProvider.passwordSecretRef.name"
       connectionDetails:
-        - fromConnectionSecretKey: username
-        - fromConnectionSecretKey: password
-        - fromConnectionSecretKey: endpoint
-        - fromConnectionSecretKey: port
+        - name: username
+          fromFieldPath: spec.forProvider.username
+        - name: password
+          fromConnectionSecretKey: attribute.password
+        - name: endpoint
+          fromFieldPath: status.atProvider.endpoint

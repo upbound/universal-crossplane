@@ -16,7 +16,6 @@ spec:
     - username
     - password
     - endpoint
-    - port
   versions:
   - name: v1alpha1
     served: true

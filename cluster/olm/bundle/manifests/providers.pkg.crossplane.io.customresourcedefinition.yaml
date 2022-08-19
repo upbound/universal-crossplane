@@ -51,7 +51,7 @@ spec:
                 description: ControllerConfigRef references a ControllerConfig resource that will be used to configure the packaged controller Deployment.
                 properties:
                   name:
-                    description: Name of the referenced object.
+                    description: Name of the ControllerConfig.
                     type: string
                 required:
                 - name

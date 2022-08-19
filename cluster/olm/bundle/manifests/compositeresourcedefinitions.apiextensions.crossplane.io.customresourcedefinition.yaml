@@ -84,7 +84,7 @@ spec:
                 description: DefaultCompositionRef refers to the Composition resource that will be used in case no composition selector is given.
                 properties:
                   name:
-                    description: Name of the referenced object.
+                    description: Name of the Composition.
                     type: string
                 required:
                 - name
@@ -93,7 +93,7 @@ spec:
                 description: EnforcedCompositionRef refers to the Composition resource that will be used by all composite instances whose schema is defined by this definition.
                 properties:
                   name:
-                    description: Name of the referenced object.
+                    description: Name of the Composition.
                     type: string
                 required:
                 - name

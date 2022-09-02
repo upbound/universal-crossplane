@@ -31,22 +31,6 @@ production control planes.
    up uxp install
    ```
 
-3. [Create an Upbound account][create-account] for a free dashboard for UXP.
-
-4. Connect UXP to Upbound Cloud.
-
-   ```console
-   # The name of your new UXP control plane.
-   UXP_NAME=mycrossplane
-
-   up cloud login
-   up cloud controlplane attach ${UXP_NAME} | up uxp connect -
-   ```
-
-5. Manage your UXP control plane by [signing in][login] to your Upbound account.
-
-![UXP in Upbound Cloud](docs/media/uxp-in-ubc.png)
-
 ### Installation With Helm 3
 
 Helm requires the use of `--devel` flag for versions with suffixes, like

@@ -3,10 +3,19 @@ kind: Configuration
 metadata:
   name: getting-started-with-aws
   annotations:
-    uxp-guide: getting-started
+    meta.crossplane.io/maintainer: Upbound <support@upbound.io>
+    meta.crossplane.io/source: github.com/upbound/universal-crossplane
+    meta.crossplane.io/license: Apache-2.0
+    meta.crossplane.io/description: |
+      An introductory example to UXP and Composition for AWS.
+    meta.crossplane.io/readme: |
+      An introductory example to UXP and Composition for AWS.
+      This will enable provisioning of an RDS database instance.
+
+      [Quickstart](https://docs.upbound.io/quickstart/official-providers/)
 spec:
   crossplane:
     version: ">=v1.2.1-0"
   dependsOn:
-    - provider: registry.upbound.io/crossplane/provider-aws
-      version: ">=v0.22.0-0"
+    - provider: xpkg.upbound.io/upbound/provider-aws
+      version: ">=v0.13.0-0"

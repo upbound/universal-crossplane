@@ -32,10 +32,22 @@ spec:
                 properties:
                   storageGB:
                     type: integer
-                  passwordSecretName:
-                    type: string
+                  passwordSecretRef:
+                    type: object
+                    description: "A reference to the Secret object containing database password"
+                    properties:
+                      namespace:
+                        type: string
+                      name:
+                        type: string
+                      key:
+                        type: string
+                    required:
+                    - namespace
+                    - name
+                    - key
                 required:
                   - storageGB
-                  - passwordSecretName
+                  - passwordSecretRef
             required:
               - parameters

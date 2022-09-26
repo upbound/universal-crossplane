@@ -57,12 +57,10 @@ const (
 	keyTLSCert = "tls.crt"
 	keyTLSKey  = "tls.key"
 
-	nameUpbound        = "upbound"
-	cnAgent            = "upbound-agent"
-	cnXgql             = "xgql"
-	secretNameCA       = "uxp-ca"
-	secretNameAgentTLS = "upbound-agent-tls"
-	secretNameXgqlTLS  = "xgql-tls"
+	nameUpbound       = "upbound"
+	cnXgql            = "xgql"
+	secretNameCA      = "uxp-ca"
+	secretNameXgqlTLS = "xgql-tls"
 )
 
 const (
@@ -87,13 +85,6 @@ var (
 		Organization: []string{nameUpbound},
 	}
 	certConfigs = map[string]*certutil.Config{
-		secretNameAgentTLS: {
-			CommonName: cnAgent,
-			AltNames: certutil.AltNames{
-				DNSNames: []string{cnAgent},
-			},
-			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		},
 		secretNameXgqlTLS: {
 			CommonName: cnXgql,
 			AltNames: certutil.AltNames{
@@ -134,7 +125,6 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		Named(name).
 		For(&corev1.Secret{}).
 		WithEventFilter(resource.NewPredicates(resource.AnyOf(
-			resource.IsNamed(secretNameAgentTLS),
 			resource.IsNamed(secretNameXgqlTLS),
 		))).
 		Complete(r)

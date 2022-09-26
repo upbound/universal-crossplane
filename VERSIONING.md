@@ -98,8 +98,8 @@ illustrates examples of each guarantee in practice.
    in a UXP release must have a components marker of `-up.1`.
 9. The components marker does not indicate the same components across Crossplane
    versions or release branches. It is specific to the Crossplane version it is
-   appended to (e.g. `v1.2.2-up.1` does not indicate the same version of `xgql`
-   / `agent` / `bootstrapper` / etc. as `v1.3.0-up.1`).
+   appended to (e.g. `v1.2.2-up.1` does not indicate the same version of 
+   `xgql` / `bootstrapper` / etc. as `v1.3.0-up.1`).
 
 ### Crossplane Version on Main
 

@@ -15,7 +15,6 @@
 package main
 
 import (
-	"encoding/base64"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -26,22 +25,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-	"sigs.k8s.io/yaml"
 
 	"github.com/upbound/universal-crossplane/internal/controllers/billing"
 	"github.com/upbound/universal-crossplane/internal/controllers/tlssecrets"
-	"github.com/upbound/universal-crossplane/internal/controllers/upboundagent"
 	"github.com/upbound/universal-crossplane/internal/version"
 )
 
 // BootstrapCmd represents the "bootstrap" command
 type BootstrapCmd struct {
-	SyncPeriod         time.Duration `default:"10m"`
-	Namespace          string        `default:"upbound-system"`
-	UpboundAPIUrl      string        `default:"https://api.upbound.io"`
-	UpboundTokenSecret string        `default:"upbound-control-plane-token"`
-	AgentManifest      string        `name:"agent-manifest" help:"Base64 encoded Kubernetes deployment spec for upbound-agent"`
-	Controllers        []string      `default:"tls-secrets" name:"controller" help:"List of controllers you want to run"`
+	SyncPeriod  time.Duration `default:"10m"`
+	Namespace   string        `default:"upbound-system"`
+	Controllers []string      `default:"tls-secrets" name:"controller" help:"List of controllers you want to run"`
 }
 
 var cli struct {
@@ -67,19 +61,11 @@ func main() {
 	})
 	ctx.FatalIfErrorf(errors.Wrap(err, "cannot create manager"))
 
-	m, err := base64.StdEncoding.DecodeString(cli.Bootstrap.AgentManifest)
-	ctx.FatalIfErrorf(errors.Wrap(err, "cannot base64 decode agent manifest"))
-	ds := appsv1.DeploymentSpec{}
-	err = yaml.Unmarshal(m, &ds)
-	ctx.FatalIfErrorf(errors.Wrap(err, "cannot parse agent manifest as deployment spec"))
-
 	logger := logging.NewLogrLogger(zl.WithName("bootstrapper"))
 	for _, c := range cli.Bootstrap.Controllers {
 		switch c {
 		case "tls-secrets":
 			ctx.FatalIfErrorf(errors.Wrapf(tlssecrets.Setup(mgr, logger), "cannot start %s controller", c))
-		case "upbound-agent":
-			ctx.FatalIfErrorf(errors.Wrapf(upboundagent.Setup(mgr, logger, ds, cli.Bootstrap.UpboundTokenSecret), "cannot start %s controller", c))
 		case "aws-marketplace":
 			ctx.FatalIfErrorf(errors.Wrapf(billing.SetupAWSMarketplace(mgr, logger), "cannot setup %s controller", c))
 		default:

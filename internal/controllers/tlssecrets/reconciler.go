@@ -57,12 +57,10 @@ const (
 	keyTLSCert = "tls.crt"
 	keyTLSKey  = "tls.key"
 
-	nameUpbound        = "upbound"
-	cnAgent            = "upbound-agent"
-	cnXgql             = "xgql"
-	secretNameCA       = "uxp-ca"
-	secretNameAgentTLS = "upbound-agent-tls"
-	secretNameXgqlTLS  = "xgql-tls"
+	nameUpbound       = "upbound"
+	cnXgql            = "xgql"
+	secretNameCA      = "uxp-ca"
+	secretNameXgqlTLS = "xgql-tls"
 )
 
 const (
@@ -87,13 +85,6 @@ var (
 		Organization: []string{nameUpbound},
 	}
 	certConfigs = map[string]*certutil.Config{
-		secretNameAgentTLS: {
-			CommonName: cnAgent,
-			AltNames: certutil.AltNames{
-				DNSNames: []string{cnAgent},
-			},
-			Usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		},
 		secretNameXgqlTLS: {
 			CommonName: cnXgql,
 			AltNames: certutil.AltNames{
@@ -134,7 +125,6 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		Named(name).
 		For(&corev1.Secret{}).
 		WithEventFilter(resource.NewPredicates(resource.AnyOf(
-			resource.IsNamed(secretNameAgentTLS),
 			resource.IsNamed(secretNameXgqlTLS),
 		))).
 		Complete(r)
@@ -180,7 +170,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	// Check if secret has data
 	cert := s.Data[keyTLSCert]
-	if string(cert) != "" {
+	if len(cert) != 0 {
 		m := fmt.Sprintf("Secret %s already contains certificate, skipping generation", req.Name)
 		log.Debug(m)
 		r.record.Event(s, event.Normal(reasonSync, m))
@@ -235,7 +225,7 @@ func (r *Reconciler) createOrLoadCA(ctx context.Context, namespace string) error
 	if resource.IgnoreNotFound(err) != nil {
 		return errors.Wrap(err, errGetCASecret)
 	}
-	if err == nil && string(cas.Data[keyTLSKey]) != "" {
+	if err == nil && len(cas.Data[keyTLSKey]) != 0 {
 		// load ca from existing secret
 		c, k, _, err := certFromTLSSecretData(cas.Data)
 		if err != nil {

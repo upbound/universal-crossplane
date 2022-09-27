@@ -34,14 +34,6 @@ spec:
             - start
             - --namespace
             - {{ .Release.Namespace }}
-            - --upbound-api-url
-            - {{ .Values.upbound.apiURL }}
-            - --upbound-token-secret
-            - {{ .Values.upbound.controlPlane.tokenSecretName }}
-            - --agent-manifest
-            - {{ include "agent-spec" . | b64enc }}
-            - --controller
-            - upbound-agent
             - --controller
             - tls-secrets
           {{- if .Values.billing.awsMarketplace.enabled }}

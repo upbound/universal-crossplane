@@ -103,7 +103,7 @@ func TestReconcile(t *testing.T) {
 				mgr: &fake.Manager{
 					Client: &test.MockClient{MockGet: test.NewMockGetFn(errBoom)},
 				},
-				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameAgentTLS}},
+				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameXgqlTLS}},
 			},
 			want: want{
 				err: errors.Wrap(errBoom, errGetSecret),
@@ -120,7 +120,7 @@ func TestReconcile(t *testing.T) {
 						return nil
 					})},
 				},
-				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameAgentTLS}},
+				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameXgqlTLS}},
 			},
 		},
 		"ErrGetCASecret": {
@@ -133,7 +133,7 @@ func TestReconcile(t *testing.T) {
 						return nil
 					}},
 				},
-				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameAgentTLS}},
+				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameXgqlTLS}},
 			},
 			want: want{
 				err: errors.Wrap(errors.Wrap(errBoom, errGetCASecret), errInitCA),
@@ -151,7 +151,7 @@ func TestReconcile(t *testing.T) {
 						},
 					},
 				},
-				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameAgentTLS}},
+				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameXgqlTLS}},
 			},
 			want: want{
 				err: errors.Wrap(errors.Wrap(errBoom, errUpdateCASecret), errInitCA),
@@ -177,7 +177,7 @@ func TestReconcile(t *testing.T) {
 						},
 					},
 				},
-				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameAgentTLS}},
+				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameXgqlTLS}},
 			},
 			want: want{
 				err: errors.Wrap(errBoom, errUpdateCertSecret),
@@ -218,7 +218,7 @@ func TestReconcile(t *testing.T) {
 						},
 					},
 				},
-				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameAgentTLS}},
+				req: reconcile.Request{NamespacedName: types.NamespacedName{Name: secretNameXgqlTLS}},
 			},
 		},
 	}

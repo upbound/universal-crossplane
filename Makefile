@@ -24,11 +24,9 @@ CROSSPLANE_TAG := v1.8.1-up.1
 CROSSPLANE_COMMIT := v1.8.1-up.1
 
 BOOTSTRAPPER_TAG := $(VERSION)
-AGENT_TAG := $(VERSION)
 XGQL_TAG := v0.1.5
 
 export BOOTSTRAPPER_TAG
-export AGENT_TAG
 export XGQL_TAG
 export CROSSPLANE_TAG
 
@@ -43,7 +41,7 @@ S3_BUCKET ?= public-upbound.releases/$(PACKAGE_NAME)
 
 GO_REQUIRED_VERSION = 1.17
 
-GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper $(GO_PROJECT)/cmd/upbound-agent
+GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
 GO_SUBDIRS += cmd internal
 GO111MODULE = on
@@ -85,7 +83,7 @@ HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
 # all be in folders at the same level (no additional levels of nesting).
 
 REGISTRY_ORGS ?= docker.io/upbound
-IMAGES = uxp-bootstrapper upbound-agent
+IMAGES = uxp-bootstrapper
 -include build/makelib/imagelight.mk
 
 # ====================================================================================
@@ -131,7 +129,6 @@ helm.prepare.universal-crossplane: crossplane
 	@cp -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml.tmpl $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
-	@$(SED_CMD) 's|%%AGENT_TAG%%|$(AGENT_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|%%XGQL_TAG%%|$(XGQL_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Generating values.yaml for the chart
 

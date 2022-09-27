@@ -170,7 +170,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req reconcile.Request) (reco
 
 	// Check if secret has data
 	cert := s.Data[keyTLSCert]
-	if string(cert) != "" {
+	if len(cert) != 0 {
 		m := fmt.Sprintf("Secret %s already contains certificate, skipping generation", req.Name)
 		log.Debug(m)
 		r.record.Event(s, event.Normal(reasonSync, m))
@@ -225,7 +225,7 @@ func (r *Reconciler) createOrLoadCA(ctx context.Context, namespace string) error
 	if resource.IgnoreNotFound(err) != nil {
 		return errors.Wrap(err, errGetCASecret)
 	}
-	if err == nil && string(cas.Data[keyTLSKey]) != "" {
+	if err == nil && len(cas.Data[keyTLSKey]) != 0 {
 		// load ca from existing secret
 		c, k, _, err := certFromTLSSecretData(cas.Data)
 		if err != nil {

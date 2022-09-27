@@ -20,14 +20,15 @@ import (
 	"github.com/alecthomas/kong"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/pkg/errors"
-	"github.com/upbound/universal-crossplane/internal/controllers/billing"
-	"github.com/upbound/universal-crossplane/internal/controllers/tlssecrets"
-	"github.com/upbound/universal-crossplane/internal/version"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/upbound/universal-crossplane/internal/controllers/billing"
+	"github.com/upbound/universal-crossplane/internal/controllers/tlssecrets"
+	"github.com/upbound/universal-crossplane/internal/version"
 )
 
 // BootstrapCmd represents the "bootstrap" command

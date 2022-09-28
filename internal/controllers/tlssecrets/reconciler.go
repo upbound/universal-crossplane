@@ -368,7 +368,7 @@ func certFromTLSSecretData(data map[string][]byte) (cert *x509.Certificate, key 
 	}
 	// Not all tls secrets contain private key, i.e. etcd ca cert to trust
 	if len(keyEncoded) > 0 {
-		var k interface{}
+		var k any
 		k, err = keyutil.ParsePrivateKeyPEM(keyEncoded)
 		if err != nil {
 			err = errors.Wrap(err, "failed to parse private key as PEM")

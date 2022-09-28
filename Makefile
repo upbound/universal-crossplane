@@ -39,7 +39,8 @@ S3_BUCKET ?= public-upbound.releases/$(PACKAGE_NAME)
 # ====================================================================================
 # Setup Go
 
-GO_REQUIRED_VERSION = 1.17
+GO_REQUIRED_VERSION = 1.19
+GOLANGCILINT_VERSION = 1.49.0
 
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
@@ -50,23 +51,17 @@ GO111MODULE = on
 # ====================================================================================
 # Setup Kubernetes tools
 
+UP_VERSION = v0.13.0
+UP_CHANNEL = stable
+
 OLMBUNDLE_VERSION = v0.5.2
+OLM_DIR=$(ROOT_DIR)/cluster/olm
+
 USE_HELM3 = true
 HELM_CHART_LINT_STRICT = false
 CRDS_DIR=$(ROOT_DIR)/cluster/crds
-OLM_DIR=$(ROOT_DIR)/cluster/olm
--include build/makelib/k8s_tools.mk
 
-# up download and install
-# TODO(hasheddan): move to build submodule when appropriate
-UP_VERSION ?= v0.1.0
-export UP := $(TOOLS_HOST_DIR)/up-$(UP_VERSION)
-$(UP):
-	@$(INFO) installing up $(UP_VERSION)
-	@mkdir -p $(TOOLS_HOST_DIR)
-	@curl -fsSLo $(UP) https://cli.upbound.io/stable/$(UP_VERSION)/bin/$(SAFEHOST_PLATFORM)/up || $(FAIL)
-	@chmod +x $(UP)
-	@$(OK) installing up $(UP)
+-include build/makelib/k8s_tools.mk
 
 # ====================================================================================
 # Setup Helm

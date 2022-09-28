@@ -126,7 +126,7 @@ crossplane:
 	@cp -a $(WORK_DIR)/crossplane/cluster/crds/* $(CRDS_DIR)
 	@$(OK) Crossplane chart has been fetched
 
-helm.prepare.universal-crossplane: crossplane
+helm.prepare.universal-crossplane:
 	@$(INFO) Generating values.yaml for the chart
 	@cp -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml.tmpl $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml

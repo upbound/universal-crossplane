@@ -19,7 +19,7 @@ spec:
             region: us-east-1
             cidrBlock: 192.168.0.0/16
             enableDnsSupport: true
-            enableDnsHostNames: true
+            enableDnsHostnames: true
     - name: subnet-a
       base:
         apiVersion: ec2.aws.upbound.io/v1beta1

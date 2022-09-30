@@ -94,7 +94,7 @@ func (am *Marketplace) Register(ctx context.Context, s *v1.Secret, uid string) (
 
 // Verify makes sure the signature is signed by AWS Marketplace.
 func (am *Marketplace) Verify(token, uid string) (bool, error) {
-	t, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(_ *jwt.Token) (interface{}, error) {
+	t, err := jwt.ParseWithClaims(token, jwt.MapClaims{}, func(_ *jwt.Token) (any, error) {
 		return jwt.ParseRSAPublicKeyFromPEM([]byte(am.publicKey))
 	})
 	if err != nil {

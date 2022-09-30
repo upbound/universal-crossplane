@@ -11,8 +11,6 @@ metadata:
     meta.crossplane.io/readme: |
       An introductory example to UXP and Composition for AWS.
       This will enable provisioning of an RDS database instance.
-
-      [Quickstart](https://docs.upbound.io/quickstart/official-providers/)
 spec:
   crossplane:
     version: ">=v1.7.0-0"

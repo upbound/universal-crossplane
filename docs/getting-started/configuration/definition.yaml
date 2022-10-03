@@ -16,7 +16,6 @@ spec:
     - username
     - password
     - endpoint
-    - port
   versions:
   - name: v1alpha1
     served: true
@@ -33,7 +32,22 @@ spec:
                 properties:
                   storageGB:
                     type: integer
+                  passwordSecretRef:
+                    type: object
+                    description: "A reference to the Secret object containing database password"
+                    properties:
+                      namespace:
+                        type: string
+                      name:
+                        type: string
+                      key:
+                        type: string
+                    required:
+                    - namespace
+                    - name
+                    - key
                 required:
                   - storageGB
+                  - passwordSecretRef
             required:
               - parameters

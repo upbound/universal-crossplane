@@ -12,17 +12,17 @@ spec:
   resources:
     - name: vpc
       base:
-        apiVersion: ec2.aws.crossplane.io/v1beta1
+        apiVersion: ec2.aws.upbound.io/v1beta1
         kind: VPC
         spec:
           forProvider:
             region: us-east-1
             cidrBlock: 192.168.0.0/16
             enableDnsSupport: true
-            enableDnsHostNames: true
+            enableDnsHostnames: true
     - name: subnet-a
       base:
-        apiVersion: ec2.aws.crossplane.io/v1beta1
+        apiVersion: ec2.aws.upbound.io/v1beta1
         kind: Subnet
         metadata:
           labels:
@@ -36,7 +36,7 @@ spec:
             availabilityZone: us-east-1a
     - name: subnet-b
       base:
-        apiVersion: ec2.aws.crossplane.io/v1beta1
+        apiVersion: ec2.aws.upbound.io/v1beta1
         kind: Subnet
         metadata:
           labels:
@@ -50,7 +50,7 @@ spec:
             availabilityZone: us-east-1b
     - name: subnet-c
       base:
-        apiVersion: ec2.aws.crossplane.io/v1beta1
+        apiVersion: ec2.aws.upbound.io/v1beta1
         kind: Subnet
         metadata:
           labels:
@@ -64,8 +64,8 @@ spec:
             availabilityZone: us-east-1c
     - name: dbsubnetgroup
       base:
-        apiVersion: database.aws.crossplane.io/v1beta1
-        kind: DBSubnetGroup
+        apiVersion: rds.aws.upbound.io/v1beta1
+        kind: SubnetGroup
         spec:
           forProvider:
             region: us-east-1
@@ -74,7 +74,7 @@ spec:
               matchControllerRef: true
     - name: internetgateway
       base:
-        apiVersion: ec2.aws.crossplane.io/v1beta1
+        apiVersion: ec2.aws.upbound.io/v1beta1
         kind: InternetGateway
         spec:
           forProvider:
@@ -83,49 +83,91 @@ spec:
               matchControllerRef: true
     - name: routetable
       base:
-        apiVersion: ec2.aws.crossplane.io/v1beta1
+        apiVersion: ec2.aws.upbound.io/v1beta1
         kind: RouteTable
         spec:
           forProvider:
             region: us-east-1
             vpcIdSelector:
               matchControllerRef: true
-            routes:
-              - destinationCidrBlock: 0.0.0.0/0
-                gatewayIdSelector:
-                  matchControllerRef: true
-            associations:
-              - subnetIdSelector:
-                  matchLabels:
-                    zone: us-east-1a
-              - subnetIdSelector:
-                  matchLabels:
-                    zone: us-east-1b
-              - subnetIdSelector:
-                  matchLabels:
-                    zone: us-east-1c
+    - name: route
+      base:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        kind: Route
+        spec:
+          forProvider:
+            region: us-east-1
+            destinationCidrBlock: 0.0.0.0/0
+            routeTableIdSelector:
+              matchControllerRef: true
+            gatewayIdSelector:
+              matchControllerRef: true
+    - name: routetableassociation-1a
+      base:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        kind: RouteTableAssociation
+        spec:
+          forProvider:
+            region: us-east-1
+            routeTableIdSelector:
+              matchControllerRef: true
+            subnetIdSelector:
+               matchLabels:
+                 zone: us-east-1a
+    - name: routetableassociation-1b
+      base:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        kind: RouteTableAssociation
+        spec:
+          forProvider:
+            region: us-east-1
+            routeTableIdSelector:
+              matchControllerRef: true
+            subnetIdSelector:
+               matchLabels:
+                 zone: us-east-1b
+    - name: routetableassociation-1c
+      base:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        kind: RouteTableAssociation
+        spec:
+          forProvider:
+            region: us-east-1
+            routeTableIdSelector:
+              matchControllerRef: true
+            subnetIdSelector:
+               matchLabels:
+                 zone: us-east-1c
     - name: securitygroup
       base:
-        apiVersion: ec2.aws.crossplane.io/v1beta1
+        apiVersion: ec2.aws.upbound.io/v1beta1
         kind: SecurityGroup
         spec:
           forProvider:
             region: us-east-1
             vpcIdSelector:
               matchControllerRef: true
-            groupName: crossplane-getting-started
+            name: uxp-getting-started
             description: Allow access to PostgreSQL
-            ingress:
-              - fromPort: 5432
-                toPort: 5432
-                ipProtocol: tcp
-                ipRanges:
-                  - cidrIp: 0.0.0.0/0
-                    description: Everywhere
+    - name: securitygrouprule
+      base:
+        apiVersion: ec2.aws.upbound.io/v1beta1
+        kind: SecurityGroupRule
+        spec:
+          forProvider:
+            region: us-east-1
+            type: ingress
+            fromPort: 5432
+            toPort: 5432
+            protocol: tcp
+            cidrBlocks:
+              - 0.0.0.0/0
+            securityGroupIdSelector:
+              matchControllerRef: true
     - name: rdsinstance
       base:
-        apiVersion: database.aws.crossplane.io/v1beta1
-        kind: RDSInstance
+        apiVersion: rds.aws.upbound.io/v1beta1
+        kind: Instance
         spec:
           forProvider:
             region: us-east-1
@@ -133,11 +175,11 @@ spec:
               matchControllerRef: true
             vpcSecurityGroupIDSelector:
               matchControllerRef: true
-            dbInstanceClass: db.t2.small
-            masterUsername: masteruser
+            instanceClass: db.t2.small
+            username: masteruser
             engine: postgres
             engineVersion: "12.10"
-            skipFinalSnapshotBeforeDeletion: true
+            skipFinalSnapshot: true
             publiclyAccessible: true
           writeConnectionSecretToRef:
             namespace: upbound-system
@@ -150,8 +192,16 @@ spec:
                 fmt: "%s-postgresql"
         - fromFieldPath: "spec.parameters.storageGB"
           toFieldPath: "spec.forProvider.allocatedStorage"
+        - fromFieldPath: "spec.parameters.passwordSecretRef.name"
+          toFieldPath: "spec.forProvider.passwordSecretRef.name"
+        - fromFieldPath: "spec.parameters.passwordSecretRef.namespace"
+          toFieldPath: "spec.forProvider.passwordSecretRef.namespace"
+        - fromFieldPath: "spec.parameters.passwordSecretRef.key"
+          toFieldPath: "spec.forProvider.passwordSecretRef.key"
       connectionDetails:
-        - fromConnectionSecretKey: username
-        - fromConnectionSecretKey: password
-        - fromConnectionSecretKey: endpoint
-        - fromConnectionSecretKey: port
+        - name: username
+          fromFieldPath: spec.forProvider.username
+        - name: password
+          fromConnectionSecretKey: attribute.password
+        - name: endpoint
+          fromFieldPath: status.atProvider.endpoint

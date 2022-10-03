@@ -6,8 +6,21 @@ metadata:
 spec:
   parameters:
     storageGB: 20
+    passwordSecretRef:
+      namespace: default
+      name: psqlsecret
+      key: password
   compositionSelector:
     matchLabels:
       uxp-guide: getting-started
   writeConnectionSecretToRef:
     name: db-conn
+---
+apiVersion: v1
+data:
+  password: dXBiMHVuZHIwY2s1ITMxMzM3
+kind: Secret
+metadata:
+  name: psqlsecret
+  namespace: default
+type: Opaque

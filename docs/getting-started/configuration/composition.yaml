@@ -173,7 +173,7 @@ spec:
             region: us-east-1
             dbSubnetGroupNameSelector:
               matchControllerRef: true
-            vpcSecurityGroupIDSelector:
+            vpcSecurityGroupIdSelector:
               matchControllerRef: true
             instanceClass: db.t2.small
             username: masteruser

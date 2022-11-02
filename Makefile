@@ -20,8 +20,8 @@ PACKAGE_NAME := universal-crossplane
 CROSSPLANE_REPO := https://github.com/upbound/crossplane.git
 # Tag corresponds to Docker image tag while commit is git-compatible signature
 # for pulling. They do not always match.
-CROSSPLANE_TAG := v1.9.1-up.2
-CROSSPLANE_COMMIT := v1.9.1-up.2
+CROSSPLANE_TAG := v1.10.1-up.1
+CROSSPLANE_COMMIT := v1.10.1-up.1
 
 BOOTSTRAPPER_TAG := $(VERSION)
 XGQL_TAG := v0.1.5
@@ -40,7 +40,7 @@ S3_BUCKET ?= public-upbound.releases/$(PACKAGE_NAME)
 # Setup Go
 
 GO_REQUIRED_VERSION = 1.19
-GOLANGCILINT_VERSION = 1.49.0
+GOLANGCILINT_VERSION = 1.50.1
 
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
@@ -51,7 +51,7 @@ GO111MODULE = on
 # ====================================================================================
 # Setup Kubernetes tools
 
-UP_VERSION = v0.13.0
+UP_VERSION = v0.14.0
 UP_CHANNEL = stable
 
 OLMBUNDLE_VERSION = v0.5.2

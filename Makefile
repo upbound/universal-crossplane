@@ -8,6 +8,8 @@ PLATFORMS ?= linux_amd64 linux_arm64
 
 PACKAGE_NAME := universal-crossplane
 
+EKS_ADDON_REGISTRY := 709825985650.dkr.ecr.us-east-1.amazonaws.com
+
 # -include will silently skip missing files, which allows us
 # to load those files with a target in the Makefile. If only
 # "include" was used, the make command would fail and refuse
@@ -126,6 +128,14 @@ helm.prepare.universal-crossplane: crossplane
 	@$(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|%%XGQL_TAG%%|$(XGQL_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Generating values.yaml for the chart
+
+eksaddon.chart: helm.prepare.universal-crossplane
+	@$(INFO) Generating values.yaml for the EKS Add-on chart
+	@$(SED_CMD) 's|repository: upbound/crossplane|repository: $(EKS_ADDON_REGISTRY)/upbound/crossplane|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|repository: upbound/xgql|repository: $(EKS_ADDON_REGISTRY)/upbound/xgql|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|repository: upbound/uxp-bootstrapper|repository: $(EKS_ADDON_REGISTRY)/upbound/uxp-bootstrapper|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@perl -i -0pe 's|rbacManager:\n  deploy: true|rbacManager:\n  deploy: false|' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(OK) Generating values.yaml for the EKS Add-on chart
 
 # We have to give a static namespace for OLM bundle because it does not interpret
 # and change the namespace of the subjects of ClusterRoleBindings to the namespace

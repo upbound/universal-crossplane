@@ -148,7 +148,7 @@ spec:
                                   type: object
                                 map:
                                   additionalProperties:
-                                    type: string
+                                    x-kubernetes-preserve-unknown-fields: true
                                   description: Map uses the input as a key in the given map and returns the value.
                                   type: object
                                 math:
@@ -368,7 +368,7 @@ spec:
                                   type: object
                                 map:
                                   additionalProperties:
-                                    type: string
+                                    x-kubernetes-preserve-unknown-fields: true
                                   description: Map uses the input as a key in the given map and returns the value.
                                   type: object
                                 math:

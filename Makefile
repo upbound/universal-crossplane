@@ -8,6 +8,8 @@ PLATFORMS ?= linux_amd64 linux_arm64
 
 PACKAGE_NAME := universal-crossplane
 
+EKS_ADDON_REGISTRY := 709825985650.dkr.ecr.us-east-1.amazonaws.com
+
 # -include will silently skip missing files, which allows us
 # to load those files with a target in the Makefile. If only
 # "include" was used, the make command would fail and refuse
@@ -20,8 +22,8 @@ PACKAGE_NAME := universal-crossplane
 CROSSPLANE_REPO := https://github.com/upbound/crossplane.git
 # Tag corresponds to Docker image tag while commit is git-compatible signature
 # for pulling. They do not always match.
-CROSSPLANE_TAG := v1.9.1-up.2
-CROSSPLANE_COMMIT := v1.9.1-up.2
+CROSSPLANE_TAG := v1.10.1-up.1
+CROSSPLANE_COMMIT := v1.10.1-up.1
 
 BOOTSTRAPPER_TAG := $(VERSION)
 XGQL_TAG := v0.1.5
@@ -40,7 +42,7 @@ S3_BUCKET ?= public-upbound.releases/$(PACKAGE_NAME)
 # Setup Go
 
 GO_REQUIRED_VERSION = 1.19
-GOLANGCILINT_VERSION = 1.49.0
+GOLANGCILINT_VERSION = 1.50.1
 
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
@@ -51,7 +53,7 @@ GO111MODULE = on
 # ====================================================================================
 # Setup Kubernetes tools
 
-UP_VERSION = v0.13.0
+UP_VERSION = v0.14.0
 UP_CHANNEL = stable
 
 OLMBUNDLE_VERSION = v0.5.2
@@ -126,6 +128,14 @@ helm.prepare.universal-crossplane: crossplane
 	@$(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|%%XGQL_TAG%%|$(XGQL_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Generating values.yaml for the chart
+
+eksaddon.chart: helm.prepare.universal-crossplane
+	@$(INFO) Generating values.yaml for the EKS Add-on chart
+	@$(SED_CMD) 's|repository: upbound/crossplane|repository: $(EKS_ADDON_REGISTRY)/upbound/crossplane|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|repository: upbound/xgql|repository: $(EKS_ADDON_REGISTRY)/upbound/xgql|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|repository: upbound/uxp-bootstrapper|repository: $(EKS_ADDON_REGISTRY)/upbound/uxp-bootstrapper|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@perl -i -0pe 's|rbacManager:\n  deploy: true|rbacManager:\n  deploy: false|' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(OK) Generating values.yaml for the EKS Add-on chart
 
 # We have to give a static namespace for OLM bundle because it does not interpret
 # and change the namespace of the subjects of ClusterRoleBindings to the namespace

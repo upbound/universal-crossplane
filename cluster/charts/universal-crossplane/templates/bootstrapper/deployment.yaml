@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "bootstrapper-name" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "labelsBootstrapper" . | nindent 4 }}
 spec:

@@ -139,8 +139,11 @@ git push --set-upstream upbound-origin sync-upstream-$RELEASE_BRANCH
 RELEASE_BRANCH=release-1.6
 git checkout -b $RELEASE_BRANCH upstream/$RELEASE_BRANCH
 
-# Cherry-pick upbound/crossplane specific changes - makefile, workflow and readme updates
+# Cherry-pick upbound/crossplane specific changes.
+# makefile, workflow and readme updates
 git cherry-pick -x 5d53beb3cb423b13960a92d1f8f9284c9a146ccc # https://github.com/upbound/crossplane/commit/5d53beb3cb423b13960a92d1f8f9284c9a146ccc
+# docs publishing and codeowners changes
+git cherry-pick -x 85027abd2449fa69cbd825faa3fc68f4c64bb36d # https://github.com/upbound/crossplane/commit/85027abd2449fa69cbd825faa3fc68f4c64bb36d
 
 git push upbound-upstream $RELEASE_BRANCH
 ```

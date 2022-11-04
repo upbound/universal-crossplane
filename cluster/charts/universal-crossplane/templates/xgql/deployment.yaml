@@ -2,9 +2,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "xgql-name" . }}
+  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "labelsXgql" . | nindent 4 }}
 spec:
+  replicas: 1
   selector:
     matchLabels:
       {{- include "selectorLabelsXgql" . | nindent 6 }}

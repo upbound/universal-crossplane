@@ -41,7 +41,6 @@ S3_BUCKET ?= public-upbound.releases/$(PACKAGE_NAME)
 # ====================================================================================
 # Setup Go
 
-GO_REQUIRED_VERSION = 1.19
 GOLANGCILINT_VERSION = 1.50.1
 
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper

@@ -6,7 +6,7 @@ metadata:
   labels:
     {{- include "labelsXgql" . | nindent 4 }}
 spec:
-  replicas: 1
+  replicas: {{ .Values.xgql.replicas }}
   selector:
     matchLabels:
       {{- include "selectorLabelsXgql" . | nindent 6 }}

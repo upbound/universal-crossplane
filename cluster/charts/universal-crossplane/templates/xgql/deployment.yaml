@@ -36,6 +36,22 @@ spec:
           - name: metrics
             containerPort: 8080
         {{- end }}
+        {{- if .Values.xgql.health.enabled }}
+          - name: health
+            containerPort: 8088
+        livenessProbe:
+          initialDelaySeconds: {{ .Values.xgql.health.liveness.initialDelay }}
+          periodSeconds: {{ .Values.xgql.health.liveness.period }}
+          httpGet:
+            path: /livez
+            port: health
+        readinessProbe:
+          initialDelaySeconds: {{ .Values.xgql.health.readiness.initialDelay }}
+          periodSeconds: {{ .Values.xgql.health.readiness.period }}
+          httpGet:
+            path: /readyz
+            port: health
+        {{- end }}
         args:
           - --tls-key=/etc/certs/xgql/tls.key
           - --tls-cert=/etc/certs/xgql/tls.crt

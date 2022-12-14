@@ -119,6 +119,14 @@ upbound:
     permission: edit
 
 xgql:
+  health:
+    enabled: false
+    liveness:
+      initialDelay: 5
+      period: 5
+    readiness:
+      initialDelay: 5
+      period: 5      
   image:
     repository: upbound/xgql
     tag: %%XGQL_TAG%%

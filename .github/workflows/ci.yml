@@ -10,14 +10,14 @@ on:
 
 env:
   # Common versions
-  GO_VERSION: '1.19'
+  GO_VERSION: '1.19.4'
   GOLANGCI_VERSION: 'v1.49'
   DOCKER_BUILDX_VERSION: 'v0.8.2'
 
   # Common users. We can't run a step 'if secrets.AWS_USR != ""' but we can run
   # a step 'if env.AWS_USR' != ""', so we copy these to succinctly test whether
   # credentials have been provided before trying to run steps that need them.
-  DOCKER_USR: ${{ secrets.DOCKER_USR }}
+  UPBOUND_ROBOT_ID: ${{ secrets.UPBOUND_ROBOT_ID }}
   AWS_USR: ${{ secrets.AWS_USR }}
 
 jobs:
@@ -234,16 +234,17 @@ jobs:
           name: output
           path: _output/**
 
-      - name: Login to Docker
+      - name: Login to Marketplace
         uses: docker/login-action@v1
-        if: env.DOCKER_USR != ''
+        if: env.UPBOUND_ROBOT_ID != ''
         with:
-          username: ${{ secrets.DOCKER_USR }}
-          password: ${{ secrets.DOCKER_PSW }}
+          registry: xpkg.upbound.io
+          username: ${{ secrets.UPBOUND_ROBOT_ID }}
+          password: ${{ secrets.UPBOUND_ROBOT_TOKEN }}
 
-      - name: Publish Artifacts to S3 and Docker Hub
+      - name: Publish Artifacts to S3 and Marketplace
         run: make -j2 publish BRANCH_NAME=${GITHUB_REF##*/}
-        if: env.AWS_USR != '' && env.DOCKER_USR != ''
+        if: env.AWS_USR != '' && env.UPBOUND_ROBOT_ID != ''
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_USR }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PSW }}
@@ -251,8 +252,8 @@ jobs:
           GIT_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
-      - name: Promote Artifacts in S3 and Docker Hub
-        if: github.ref == 'refs/heads/main' && env.AWS_USR != '' && env.DOCKER_USR != ''
+      - name: Promote Artifacts in S3 and Marketplace
+        if: github.ref == 'refs/heads/main' && env.AWS_USR != '' && env.UPBOUND_ROBOT_ID != ''
         run: make -j2 promote
         env:
           BRANCH_NAME: main

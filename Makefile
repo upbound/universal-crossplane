@@ -78,7 +78,7 @@ HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
 # Due to the way that the shared build logic works, images should
 # all be in folders at the same level (no additional levels of nesting).
 
-REGISTRY_ORGS ?= docker.io/upbound
+REGISTRY_ORGS ?= xpkg.upbound.io/upbound
 IMAGES = uxp-bootstrapper
 -include build/makelib/imagelight.mk
 

@@ -132,7 +132,7 @@ eksaddon.chart: helm.prepare.universal-crossplane
 	@$(INFO) Generating values.yaml for the EKS Add-on chart
 	@$(SED_CMD) 's|repository: upbound/crossplane|repository: $(EKS_ADDON_REGISTRY)/upbound/crossplane|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|repository: upbound/xgql|repository: $(EKS_ADDON_REGISTRY)/upbound/xgql|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
-	@$(SED_CMD) 's|repository: upbound/uxp-bootstrapper|repository: $(EKS_ADDON_REGISTRY)/upbound/uxp-bootstrapper|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|repository: xpkg.upbound.io/upbound/uxp-bootstrapper|repository: $(EKS_ADDON_REGISTRY)/upbound/uxp-bootstrapper|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@perl -i -0pe 's|rbacManager:\n  deploy: true|rbacManager:\n  deploy: false|' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Generating values.yaml for the EKS Add-on chart
 

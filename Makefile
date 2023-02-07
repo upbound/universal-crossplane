@@ -26,10 +26,8 @@ CROSSPLANE_TAG := v1.10.1-up.1
 CROSSPLANE_COMMIT := v1.10.1-up.1
 
 BOOTSTRAPPER_TAG := $(VERSION)
-XGQL_TAG := v0.1.5
 
 export BOOTSTRAPPER_TAG
-export XGQL_TAG
 export CROSSPLANE_TAG
 
 # ====================================================================================
@@ -125,13 +123,11 @@ helm.prepare.universal-crossplane: crossplane
 	@cp -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml.tmpl $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
-	@$(SED_CMD) 's|%%XGQL_TAG%%|$(XGQL_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Generating values.yaml for the chart
 
 eksaddon.chart: helm.prepare.universal-crossplane
 	@$(INFO) Generating values.yaml for the EKS Add-on chart
 	@$(SED_CMD) 's|repository: upbound/crossplane|repository: $(EKS_ADDON_REGISTRY)/upbound/crossplane|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
-	@$(SED_CMD) 's|repository: upbound/xgql|repository: $(EKS_ADDON_REGISTRY)/upbound/xgql|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|repository: xpkg.upbound.io/upbound/uxp-bootstrapper|repository: $(EKS_ADDON_REGISTRY)/upbound/uxp-bootstrapper|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@perl -i -0pe 's|rbacManager:\n  deploy: true|rbacManager:\n  deploy: false|' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Generating values.yaml for the EKS Add-on chart

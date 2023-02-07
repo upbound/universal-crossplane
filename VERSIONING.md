@@ -99,7 +99,7 @@ illustrates examples of each guarantee in practice.
 9. The components marker does not indicate the same components across Crossplane
    versions or release branches. It is specific to the Crossplane version it is
    appended to (e.g. `v1.2.2-up.1` does not indicate the same version of 
-   `xgql` / `bootstrapper` / etc. as `v1.3.0-up.1`).
+   `bootstrapper` / etc. as `v1.3.0-up.1`).
 
 ### Crossplane Version on Main
 

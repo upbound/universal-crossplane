@@ -118,38 +118,6 @@ upbound:
   controlPlane:
     permission: edit
 
-xgql:
-  health:
-    enabled: false
-    liveness:
-      initialDelay: 5
-      period: 5
-    readiness:
-      initialDelay: 5
-      period: 5      
-  image:
-    repository: upbound/xgql
-    tag: %%XGQL_TAG%%
-    pullPolicy: IfNotPresent
-  replicas: 1
-  resources: {}
-  metrics:
-    enabled: false
-  config:
-    debugMode: false
-    args: []
-    envVars: {}
-    # List of extra environment variables to set in the xgql deployment.
-    # EXAMPLE
-    # envVars:
-    #   sample.key: value1
-    #   ANOTHER.KEY: value2
-    # RESULT
-    #   - name: sample_key
-    #     value: "value1"
-    #   - name: ANOTHER_KEY
-    #     value: "value2"
-
 ### Bootstrapper Values
 
 bootstrapper:

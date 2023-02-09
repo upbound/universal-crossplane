@@ -7,5 +7,4 @@ metadata:
     {{- include "labelsBootstrapper" . | nindent 4 }}
 data:
   crossplaneVersion: {{ (trimPrefix "v" .Values.image.tag) }}
-  xgqlVersion: {{ (trimPrefix "v" .Values.xgql.image.tag) }}
   uxpVersion: {{ .Chart.Version }}

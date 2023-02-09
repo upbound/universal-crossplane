@@ -27,7 +27,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/upbound/universal-crossplane/internal/controllers/billing"
-	"github.com/upbound/universal-crossplane/internal/controllers/tlssecrets"
 	"github.com/upbound/universal-crossplane/internal/version"
 )
 
@@ -35,7 +34,7 @@ import (
 type BootstrapCmd struct {
 	SyncPeriod  time.Duration `default:"10m"`
 	Namespace   string        `default:"upbound-system"`
-	Controllers []string      `default:"tls-secrets" name:"controller" help:"List of controllers you want to run"`
+	Controllers []string      `default:"aws-marketplace" name:"controller" help:"List of controllers you want to run"`
 }
 
 var cli struct {
@@ -64,8 +63,6 @@ func main() {
 	logger := logging.NewLogrLogger(zl.WithName("bootstrapper"))
 	for _, c := range cli.Bootstrap.Controllers {
 		switch c {
-		case "tls-secrets":
-			ctx.FatalIfErrorf(errors.Wrapf(tlssecrets.Setup(mgr, logger), "cannot start %s controller", c))
 		case "aws-marketplace":
 			ctx.FatalIfErrorf(errors.Wrapf(billing.SetupAWSMarketplace(mgr, logger), "cannot setup %s controller", c))
 		default:

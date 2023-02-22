@@ -10,13 +10,16 @@ image:
   pullPolicy: IfNotPresent
 
 nodeSelector: {}
-tolerations: {}
+tolerations: []
 affinity: {}
 
 # -- Custom labels to add into metadata
 customLabels: {}
 
-# -- Custom Annotations to add to crossplane serviceaccount
+# -- Custom annotations to add to the Crossplane deployment and pod
+customAnnotations: {}
+
+# -- Custom annotations to add to the serviceaccount of Crossplane
 serviceAccount:
   customAnnotations: {}
 
@@ -34,6 +37,9 @@ configuration:
 
 registryCaBundleConfig: {}
 
+webhooks:
+  enabled: false
+
 rbacManager:
   deploy: true
   skipAggregatedClusterRoles: true
@@ -42,7 +48,7 @@ rbacManager:
   leaderElection: true
   args: {}
   nodeSelector: {}
-  tolerations: {}
+  tolerations: []
   affinity: {}
 
 priorityClassName: ""
@@ -65,9 +71,7 @@ packageCache:
   medium: ""
   sizeLimit: 5Mi
   pvc: ""
-
-webhooks:
-  enabled: false
+  configMap: ""
 
 resourcesRBACManager:
   limits:

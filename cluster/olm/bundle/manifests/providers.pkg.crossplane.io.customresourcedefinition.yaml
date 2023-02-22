@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.8.0
+    controller-gen.kubebuilder.io/version: v0.11.1
   creationTimestamp: null
   name: providers.pkg.crossplane.io
 spec:
@@ -47,6 +47,11 @@ spec:
           spec:
             description: ProviderSpec specifies details about a request to install a provider to Crossplane.
             properties:
+              commonLabels:
+                additionalProperties:
+                  type: string
+                description: 'Map of string keys and values that can be used to organize and categorize (scope and select) objects. May match selectors of replication controllers and services. More info: http://kubernetes.io/docs/user-guide/labels'
+                type: object
               controllerConfigRef:
                 description: ControllerConfigRef references a ControllerConfig resource that will be used to configure the packaged controller Deployment.
                 properties:
@@ -76,6 +81,7 @@ spec:
                       description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names TODO: Add other useful fields. apiVersion, kind, uid?'
                       type: string
                   type: object
+                  x-kubernetes-map-type: atomic
                 type: array
               revisionActivationPolicy:
                 default: Automatic
@@ -136,9 +142,3 @@ spec:
     storage: true
     subresources:
       status: {}
-status:
-  acceptedNames:
-    kind: ""
-    plural: ""
-  conditions: []
-  storedVersions: []

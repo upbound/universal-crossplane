@@ -10,13 +10,16 @@ image:
   pullPolicy: IfNotPresent
 
 nodeSelector: {}
-tolerations: {}
+tolerations: []
 affinity: {}
 
 # -- Custom labels to add into metadata
 customLabels: {}
 
-# -- Custom Annotations to add to crossplane serviceaccount
+# -- Custom annotations to add to the Crossplane deployment and pod
+customAnnotations: {}
+
+# -- Custom annotations to add to the serviceaccount of Crossplane
 serviceAccount:
   customAnnotations: {}
 
@@ -34,6 +37,9 @@ configuration:
 
 registryCaBundleConfig: {}
 
+webhooks:
+  enabled: false
+
 rbacManager:
   deploy: true
   skipAggregatedClusterRoles: true
@@ -42,7 +48,7 @@ rbacManager:
   leaderElection: true
   args: {}
   nodeSelector: {}
-  tolerations: {}
+  tolerations: []
   affinity: {}
 
 priorityClassName: ""
@@ -65,9 +71,7 @@ packageCache:
   medium: ""
   sizeLimit: 5Mi
   pvc: ""
-
-webhooks:
-  enabled: false
+  configMap: ""
 
 resourcesRBACManager:
   limits:
@@ -145,3 +149,39 @@ billing:
   awsMarketplace:
     enabled: false
     iamRoleARN: arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>
+
+# The alpha xfn sidecar container that runs Composition Functions. Note you also
+# need to run Crossplane with --enable-composition-functions for it to call xfn.
+xfn:
+  enabled: false
+  image:
+    repository: crossplane/xfn
+    tag: %%CROSSPLANE_TAG%%
+    pullPolicy: IfNotPresent
+  args: {}
+  extraEnvVars: {}
+  securityContext:
+    runAsUser: 65532
+    runAsGroup: 65532
+    allowPrivilegeEscalation: false
+    readOnlyRootFilesystem: true
+    # These capabilities allow xfn to create better user namespaces. It drops
+    # them after creating a namespace.
+    capabilities:
+      add: ["SETUID", "SETGID"]
+    # xfn needs the unshare syscall, which most RuntimeDefault seccomp profiles
+    # do not allow.
+    seccompProfile:
+      type: Unconfined
+  cache:
+    medium: ""
+    sizeLimit: 1Gi
+    pvc: ""
+    configMap: ""
+  resources:
+    limits:
+      cpu: 2000m
+      memory: 2Gi
+    requests:
+      cpu: 1000m
+      memory: 1Gi

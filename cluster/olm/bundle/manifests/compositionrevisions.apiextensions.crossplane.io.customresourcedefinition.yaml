@@ -21,6 +21,12 @@ spec:
     - jsonPath: .spec.revision
       name: REVISION
       type: string
+    - jsonPath: .spec.compositeTypeRef.kind
+      name: XR-KIND
+      type: string
+    - jsonPath: .spec.compositeTypeRef.apiVersion
+      name: XR-APIVERSION
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
@@ -969,6 +975,12 @@ spec:
   - additionalPrinterColumns:
     - jsonPath: .spec.revision
       name: REVISION
+      type: string
+    - jsonPath: .spec.compositeTypeRef.kind
+      name: XR-KIND
+      type: string
+    - jsonPath: .spec.compositeTypeRef.apiVersion
+      name: XR-APIVERSION
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE

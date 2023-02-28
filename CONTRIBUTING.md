@@ -50,57 +50,25 @@ make e2e.run
 
 ## Release Process
 
-### Update Crossplane Version (skip if not necessary)
+### Crossplane fork sync:
 
-UXP bundles [Upbound maintained version of Crossplane](https://github.com/upbound/crossplane) 
-which might contain **additional** features and bug fixes on top of 
-corresponding upstream Crossplane version. For example, **Upbound Crossplane**
-`v1.4.0-up.1` should include everything in **Crossplane** `v1.4.0` but _might_
-include additional changes. All additional changes that could be included should
-have been merged into master of Upstream Crossplane. This is to prevent 
-diverging from Upstream Crossplane project, but we would still be able to ship 
-fixes and features early, independent of Upstream Crossplane release cadence.
-
-To update Crossplane version in UXP:
-
-1. [Prepare](#prepare-repos-and-forks) corresponding release branch in [Upbound Crossplane](https://github.com/upbound/crossplane)
-   1. Make sure to include all changes in Upstream Crossplane version. 
-   For example, if we are planning to tag `v1.4.1-up.x`, `release-1.4` branch
-   should include everything in upstream Crossplane `v1.4.1`.
-   2. If additional features and/or fixes to be included, cherry-pick them into
-   the release branch.
-2. Run the [Tag action](https://github.com/upbound/crossplane/actions/workflows/tag.yml)
-in Upbound Crossplane by following the [versioning schema](VERSIONING.md). 
-Please note, for both UXP and Upbound Crossplane, we use the same versioning 
-schema.
-3. Run the [CI action](https://github.com/upbound/crossplane/actions/workflows/ci.yml)
-in Upbound Crossplane for the release branch.
-4. Update the `CROSSPLANE_TAG` and `CROSSPLANE_COMMIT` in the UXP [Makefile](Makefile).
-At this point you should be able to pull the following docker image:
-`docker pull upbound/crossplane:[CROSSPLANE_TAG]`.
-
-Please note our build module [converts the latter dash to dot](https://github.com/upbound/build/pull/155)
-to make the version [sortable as semver](https://github.com/upbound/universal-crossplane/issues/109).
-This causes [Upbound Crossplane](https://github.com/upbound/crossplane) to
-produce a docker image with tag `v1.5.0-rc.0.up.1` for git tag 
-`v1.5.0-rc.0-up.1`.
+To update Crossplane version in UXP follow the steps below:
 
 #### Prepare repos and forks
 
-```shell
-MY_GITHUB_USER=turkenh
+All the steps below will assume you have forked the following repos with the following names:
 
-upstream crossplane: https://github.com/crossplane/crossplane
-upstream crossplane fork: https://github.com/$MY_GITHUB_USER/crossplane
+- upstream Crossplane: `crossplane/crossplane` -> `$MY_GITHUB_USER/crossplane`
+- Upbound Crossplane's fork `upbound/crossplane` -> `$MY_GITHUB_USER/upbound-crossplane`
 
-upbound crossplane: https://github.com/upbound/crossplane
-upbound crossplane fork: https://github.com/$MY_GITHUB_USER/upbound-crossplane
-```
-
-##### Prepare local repo:
+Once you have created them, you'll need to setup your local environment, if you
+already did it in the past just skip to the next part, otherwise run the
+following commands, taking care to set your GitHub user instead of
+`<MY_GITHUB_USER>`:
 
 ```shell
-MY_GITHUB_USER=turkenh
+export MY_GITHUB_USER=<MY_GITHUB_USER>
+
 mkdir sync-upbound-crossplane
 cd sync-upbound-crossplane
 git clone https://github.com/$MY_GITHUB_USER/crossplane
@@ -112,31 +80,18 @@ git fetch --all
 git submodule update --init
 ```
 
-##### Sync latest master:
-
-```shell
-git checkout -b sync-upstream-master
-git reset --hard upbound-upstream/master
-git merge upstream/master
-# Resolve conflicts, if any
-git push --set-upstream upbound-origin sync-upstream-master
-```
-
-##### Sync **an existing** release branch:
-
-```shell
-RELEASE_BRANCH=release-1.5
-git checkout -b sync-upstream-$RELEASE_BRANCH
-git reset --hard upbound-upstream/$RELEASE_BRANCH
-git merge upstream/$RELEASE_BRANCH
-# Resolve conflicts, if any
-git push --set-upstream upbound-origin sync-upstream-$RELEASE_BRANCH
-```
+Now based on the task at hand, pick and go through one of the task below:
 
 ##### Sync **a new** release branch:
 
+If you are releasing a new minor of UXP, e.g. `vX.Y.0-up.1`, and you want to
+create a new release branch `release-X.Y` on `upbound/crossplane` based on the
+upstream `crossplane/crossplane` release branch.
+
 ```shell
-RELEASE_BRANCH=release-1.6
+RELEASE_BRANCH=release-X.Y
+
+git fetch --all
 git checkout -b $RELEASE_BRANCH upstream/$RELEASE_BRANCH
 
 # Cherry-pick upbound/crossplane specific changes.
@@ -144,34 +99,57 @@ git checkout -b $RELEASE_BRANCH upstream/$RELEASE_BRANCH
 git cherry-pick -x 5d53beb3cb423b13960a92d1f8f9284c9a146ccc # https://github.com/upbound/crossplane/commit/5d53beb3cb423b13960a92d1f8f9284c9a146ccc
 # docs publishing and codeowners changes
 git cherry-pick -x 85027abd2449fa69cbd825faa3fc68f4c64bb36d # https://github.com/upbound/crossplane/commit/85027abd2449fa69cbd825faa3fc68f4c64bb36d
+# proidc support
+git cherry-pick -x e9d31c76752e86b8cbf99b9651b1a38e8c9d7b7f # https://github.com/upbound/crossplane/commit/e9d31c76752e86b8cbf99b9651b1a38e8c9d7b7f
 
 git push upbound-upstream $RELEASE_BRANCH
 ```
 
-### Cut UXP Release
+Once the branch has been created, the branch protection rules will require you to go through PRs to update it, so see the following section to do so.
 
-A UXP release is cut by following the steps below:
+##### Sync **an existing** release branch:
 
-1. **branch repo**: Create a new release branch using the GitHub UI for the
-   repo.
-1. **release branch prep**: Make any release-specific updates on the release
-   branch. The branch name should be `release-<major version>.<minor version>`,
-   like `release-1.3`
-1. **tag release**: Run the `Tag` action on the _release branch_ with the
-   desired version (e.g. `v0.14.0`).
-1. **build/publish**: Run the `CI` action on the release branch with the version
-   that was just tagged.
-1. **tag next pre-release**: Run the `tag` action on the main development branch
-   with the `rc.0` for the next release (e.g. `v1.3.0-up.1-rc.1`).
-1. **verify**: Verify all artifacts have been published successfully, perform
-   sanity testing.
-1. **promote**: Run the `Promote` action to promote release to desired
-   channel(s).
-1. **release notes**: Publish well authored and complete release notes on
-   GitHub.
-1. **announce**: Announce the release on Twitter, Slack, etc.
+If you are releasing a new patch of UXP, e.g. `vX.Y.Z-up.1`, and you want to
+open a PR to update `release-X.Y` on `upbound/crossplane` with the latest
+changes up to `vX.Y.Z` of upstream `crossplane/crossplane`.
 
-After a release is cut, we need to publish it to the following distribution channels.
+```shell
+RELEASE_BRANCH=release-X.Y
+UPSTREAM_RELEASE_TAG=vX.Y.Z
+
+git checkout -b sync-upstream-$RELEASE_BRANCH
+git reset --hard upbound-upstream/$RELEASE_BRANCH
+git fetch --tags upstream
+git merge $UPSTREAM_RELEASE_TAG
+
+# Resolve conflicts, if any, and then push to your own fork
+git push --set-upstream upbound-origin sync-upstream-$RELEASE_BRANCH
+```
+
+You can then create a PR from your fork's `sync-upstream-X.Y` branch to
+`upbound/crossplane`'s `release-X.Y` branch and get it reviewed and merged.
+
+##### Sync latest master:
+
+This step is not required at the moment, but if you want to sync
+`upbound/crossplane`'s master branch to the latest `crossplane/crossplane`
+branch, run the following commands and open a PR from your fork's `sync-upstream-master` branch to
+`upbound/crossplane`'s `master` branch and get it reviewed and merged.
+
+```shell
+git fetch --all
+git checkout -b sync-upstream-master
+git reset --hard upbound-upstream/master
+git merge upstream/master
+# Resolve conflicts, if any
+git push --set-upstream upbound-origin sync-upstream-master
+```
+
+## Deprecated or on-demand release channels
+
+New UXP releases can be also published to the following release channels, but
+for the time being we are not proactively doing so. Below sections should only
+be followed if explicitly requested:
 
 ### Operator Lifecycle Manager
 

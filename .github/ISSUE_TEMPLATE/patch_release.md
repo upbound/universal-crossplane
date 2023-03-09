@@ -1,5 +1,5 @@
 ---
-name: Release
+name: Patch Release
 about: Cut a UXP patch release
 labels: release
 ---

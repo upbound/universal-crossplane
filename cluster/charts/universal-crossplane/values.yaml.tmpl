@@ -16,6 +16,9 @@ affinity: {}
 # -- Custom labels to add into metadata
 customLabels: {}
 
+# -- Custom annotations to add to the Crossplane deployment and pod
+customAnnotations: {}
+
 # -- Custom Annotations to add to crossplane serviceaccount
 serviceAccount:
   customAnnotations: {}
@@ -33,6 +36,9 @@ configuration:
   packages: []
 
 registryCaBundleConfig: {}
+
+webhooks:
+  enabled: false
 
 rbacManager:
   deploy: true
@@ -65,9 +71,6 @@ packageCache:
   medium: ""
   sizeLimit: 5Mi
   pvc: ""
-
-webhooks:
-  enabled: false
 
 resourcesRBACManager:
   limits:

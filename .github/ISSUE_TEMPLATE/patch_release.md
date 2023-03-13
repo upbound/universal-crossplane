@@ -23,11 +23,11 @@ this issue for posterity. Assuming `vX.Y.Z-up.K` is being cut, after upstream
 according to the declared schedule, you should have:
 
 - [ ] Synced the `release-vX.Y` release branch in [upbound/crossplane][upbound-xp-fork], with upstream [crossplane/crossplane][upstream-xp] release branch, up to the `vX.Y.Z` tag, adding any required change specific to the fork, see [here][sync-xp-fork] for more details.
-- [ ] Cut [upbound/crossplane][upbound-xp-fork] `vX.Y.Z-up.K` release from the `release-X.Y` branch by:
+- [ ] Tagged [upbound/crossplane][upbound-xp-fork] `vX.Y.Z-up.K` from the `release-X.Y` branch by:
   - [ ] Running the [Tag workflow][tag-xp-fork] on the `release-vX.Y` branch with the proper release version, `vX.Y.Z-up.K`. Message suggested but not required: `Release vX.Y.Z-up.K`.
   - [ ] Running the [CI workflow][ci-xp-fork] on the `release-vX.Y` branch to build and publish the latest tagged artifacts.
   - [ ] You should now be able to run: `docker pull upbound/crossplane:vX.Y.Z-up.K`
-- [ ] Created and merged a PR to the `main` branch of [upbound/universal-crossplane][uxp] with the following changes, **taking care to label it as `backport release-X.Y`**:
+- [ ] Created and merged a PR for [upbound/universal-crossplane][uxp] to either the `main` branch, if cutting a patch for the latest supported release, **taking care to label it `backport release-X.Y`**, or directly to the `release-X.Y` branch, if cutting a patch for an older supported release. With the following changes:
   - [ ] Update any reference to the old latest release to `vX.Y.Z-up.K`, such as `CROSSPLANE_TAG` and `CROSSPLANE_COMMIT` in the `Makefile`.
   - [ ] Run `make helm.prepare` to import any change to the templates in the [upstream Helm chart][upstream-helm-chart].
   - [ ] Manually diff and sync [upstream][upstream-xp-values]'s and [uxp][uxp-values]'s `values.yaml.tmpl` as needed, taking care to change any required templating reference, e.g. `%%CROSSPLANE_TAG%%` instead of `%%VERSION%%`.

@@ -39,7 +39,7 @@ S3_BUCKET ?= public-upbound.releases/$(PACKAGE_NAME)
 # ====================================================================================
 # Setup Go
 
-GOLANGCILINT_VERSION = 1.50.1
+GOLANGCILINT_VERSION = 1.51.2
 
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/bootstrapper
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)

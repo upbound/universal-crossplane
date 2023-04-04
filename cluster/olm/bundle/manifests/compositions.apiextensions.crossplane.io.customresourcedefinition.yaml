@@ -307,7 +307,7 @@ spec:
                           type: array
                         type:
                           default: FromCompositeFieldPath
-                          description: Type sets the patching behaviour to be used. Each patch type may require its' own fields to be set on the Patch object.
+                          description: Type sets the patching behaviour to be used. Each patch type may require its own fields to be set on the Patch object.
                           enum:
                           - FromCompositeFieldPath
                           - ToCompositeFieldPath
@@ -611,7 +611,7 @@ spec:
                             type: array
                           type:
                             default: FromCompositeFieldPath
-                            description: Type sets the patching behaviour to be used. Each patch type may require its' own fields to be set on the Patch object.
+                            description: Type sets the patching behaviour to be used. Each patch type may require its own fields to be set on the Patch object.
                             enum:
                             - FromCompositeFieldPath
                             - FromEnvironmentFieldPath
@@ -879,7 +879,7 @@ spec:
                             type: array
                           type:
                             default: FromCompositeFieldPath
-                            description: Type sets the patching behaviour to be used. Each patch type may require its' own fields to be set on the Patch object.
+                            description: Type sets the patching behaviour to be used. Each patch type may require its own fields to be set on the Patch object.
                             enum:
                             - FromCompositeFieldPath
                             - FromEnvironmentFieldPath

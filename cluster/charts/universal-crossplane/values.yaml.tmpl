@@ -35,6 +35,8 @@ provider:
 configuration:
   packages: []
 
+imagePullSecrets: {}
+
 registryCaBundleConfig: {}
 
 webhooks:
@@ -117,6 +119,10 @@ extraEnvVarsRBACManager: {}
 podSecurityContextCrossplane: {}
 
 podSecurityContextRBACManager: {}
+
+extraVolumesCrossplane: {}
+
+extraVolumeMountsCrossplane: {}
 
 upbound:
   controlPlane:

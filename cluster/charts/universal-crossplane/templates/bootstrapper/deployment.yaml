@@ -50,4 +50,8 @@ spec:
           imagePullPolicy: {{ .Values.bootstrapper.image.pullPolicy }}
           resources:
             {{- toYaml .Values.bootstrapper.resources | nindent 12 }}
+          ports:
+            - name: metrics
+              containerPort: 8085
+              protocol: TCP
 {{- end }}

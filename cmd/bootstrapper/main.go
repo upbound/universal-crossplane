@@ -15,6 +15,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/alecthomas/kong"
@@ -35,6 +36,7 @@ type BootstrapCmd struct {
 	SyncPeriod  time.Duration `default:"10m"`
 	Namespace   string        `default:"upbound-system"`
 	Controllers []string      `default:"aws-marketplace" name:"controller" help:"List of controllers you want to run"`
+	MetricsPort int           `default:"8085" help:"Port for metrics server."`
 }
 
 var cli struct {
@@ -54,9 +56,10 @@ func main() {
 	cfg, err := ctrl.GetConfig()
 	ctx.FatalIfErrorf(errors.Wrap(err, "cannot get config"))
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
-		Scheme:     s,
-		SyncPeriod: &cli.Bootstrap.SyncPeriod,
-		Namespace:  cli.Bootstrap.Namespace,
+		Scheme:             s,
+		SyncPeriod:         &cli.Bootstrap.SyncPeriod,
+		Namespace:          cli.Bootstrap.Namespace,
+		MetricsBindAddress: fmt.Sprintf(":%d", cli.Bootstrap.MetricsPort),
 	})
 	ctx.FatalIfErrorf(errors.Wrap(err, "cannot create manager"))
 

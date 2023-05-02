@@ -13,6 +13,9 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 
+# -- Enable hostNetwork for Crossplane. Caution: setting it to true means Crossplane's Pod will have high privileges.
+hostNetwork: false
+
 # -- Custom labels to add into metadata
 customLabels: {}
 
@@ -24,7 +27,7 @@ serviceAccount:
   customAnnotations: {}
 
 leaderElection: true
-args: {}
+args: []
 
 # How frequently Crossplane may reconcile its resources (seconds). Default: 10
 maxReconcileRate: ""
@@ -40,7 +43,7 @@ imagePullSecrets: {}
 registryCaBundleConfig: {}
 
 webhooks:
-  enabled: false
+  enabled: true
 
 rbacManager:
   deploy: true
@@ -48,7 +51,7 @@ rbacManager:
   replicas: 1
   managementPolicy: Basic
   leaderElection: true
-  args: {}
+  args: []
   nodeSelector: {}
   tolerations: []
   affinity: {}
@@ -71,7 +74,7 @@ securityContextCrossplane:
 
 packageCache:
   medium: ""
-  sizeLimit: 5Mi
+  sizeLimit: 20Mi
   pvc: ""
   configMap: ""
 
@@ -164,7 +167,7 @@ xfn:
     repository: upbound/xfn
     tag: %%CROSSPLANE_TAG%%
     pullPolicy: IfNotPresent
-  args: {}
+  args: []
   extraEnvVars: {}
   securityContext:
     runAsUser: 65532

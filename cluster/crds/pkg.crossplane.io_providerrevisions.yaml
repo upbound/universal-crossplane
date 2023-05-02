@@ -2,7 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: providerrevisions.pkg.crossplane.io
 spec:
@@ -79,6 +79,10 @@ spec:
               desiredState:
                 description: DesiredState of the PackageRevision. Can be either Active
                   or Inactive.
+                type: string
+              essTLSSecretName:
+                description: ESSTLSSecretName is the secret name of the TLS certificates
+                  that will be used by the provider for External Secret Stores.
                 type: string
               ignoreCrossplaneConstraints:
                 default: false

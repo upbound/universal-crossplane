@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.1
+    controller-gen.kubebuilder.io/version: v0.11.3
   creationTimestamp: null
   name: compositions.apiextensions.crossplane.io
 spec:
@@ -210,6 +210,13 @@ spec:
                               match:
                                 description: Match is a more complex version of Map that matches a list of patterns.
                                 properties:
+                                  fallbackTo:
+                                    default: Value
+                                    description: Determines to what value the transform should fallback if no pattern matches.
+                                    enum:
+                                    - Value
+                                    - Input
+                                    type: string
                                   fallbackValue:
                                     description: The fallback value that should be returned by the transform if now pattern matches.
                                     x-kubernetes-preserve-unknown-fields: true
@@ -243,10 +250,26 @@ spec:
                               math:
                                 description: Math is used to transform the input via mathematical operations such as multiplication.
                                 properties:
+                                  clampMax:
+                                    description: ClampMax makes sure that the value is not bigger than the given value.
+                                    format: int64
+                                    type: integer
+                                  clampMin:
+                                    description: ClampMin makes sure that the value is not smaller than the given value.
+                                    format: int64
+                                    type: integer
                                   multiply:
                                     description: Multiply the value.
                                     format: int64
                                     type: integer
+                                  type:
+                                    default: Multiply
+                                    description: Type of the math transform to be run.
+                                    enum:
+                                    - Multiply
+                                    - ClampMin
+                                    - ClampMax
+                                    type: string
                                 type: object
                               string:
                                 description: String is used to transform the input into a string or a different kind of string. Note that the input does not necessarily need to be a string.
@@ -310,6 +333,7 @@ spec:
                           description: Type sets the patching behaviour to be used. Each patch type may require its own fields to be set on the Patch object.
                           enum:
                           - FromCompositeFieldPath
+                          - FromEnvironmentFieldPath
                           - ToCompositeFieldPath
                           - CombineFromComposite
                           - CombineToComposite
@@ -514,6 +538,13 @@ spec:
                                 match:
                                   description: Match is a more complex version of Map that matches a list of patterns.
                                   properties:
+                                    fallbackTo:
+                                      default: Value
+                                      description: Determines to what value the transform should fallback if no pattern matches.
+                                      enum:
+                                      - Value
+                                      - Input
+                                      type: string
                                     fallbackValue:
                                       description: The fallback value that should be returned by the transform if now pattern matches.
                                       x-kubernetes-preserve-unknown-fields: true
@@ -547,10 +578,26 @@ spec:
                                 math:
                                   description: Math is used to transform the input via mathematical operations such as multiplication.
                                   properties:
+                                    clampMax:
+                                      description: ClampMax makes sure that the value is not bigger than the given value.
+                                      format: int64
+                                      type: integer
+                                    clampMin:
+                                      description: ClampMin makes sure that the value is not smaller than the given value.
+                                      format: int64
+                                      type: integer
                                     multiply:
                                       description: Multiply the value.
                                       format: int64
                                       type: integer
+                                    type:
+                                      default: Multiply
+                                      description: Type of the math transform to be run.
+                                      enum:
+                                      - Multiply
+                                      - ClampMin
+                                      - ClampMax
+                                      type: string
                                   type: object
                                 string:
                                   description: String is used to transform the input into a string or a different kind of string. Note that the input does not necessarily need to be a string.
@@ -782,6 +829,13 @@ spec:
                                 match:
                                   description: Match is a more complex version of Map that matches a list of patterns.
                                   properties:
+                                    fallbackTo:
+                                      default: Value
+                                      description: Determines to what value the transform should fallback if no pattern matches.
+                                      enum:
+                                      - Value
+                                      - Input
+                                      type: string
                                     fallbackValue:
                                       description: The fallback value that should be returned by the transform if now pattern matches.
                                       x-kubernetes-preserve-unknown-fields: true
@@ -815,10 +869,26 @@ spec:
                                 math:
                                   description: Math is used to transform the input via mathematical operations such as multiplication.
                                   properties:
+                                    clampMax:
+                                      description: ClampMax makes sure that the value is not bigger than the given value.
+                                      format: int64
+                                      type: integer
+                                    clampMin:
+                                      description: ClampMin makes sure that the value is not smaller than the given value.
+                                      format: int64
+                                      type: integer
                                     multiply:
                                       description: Multiply the value.
                                       format: int64
                                       type: integer
+                                    type:
+                                      default: Multiply
+                                      description: Type of the math transform to be run.
+                                      enum:
+                                      - Multiply
+                                      - ClampMin
+                                      - ClampMax
+                                      type: string
                                   type: object
                                 string:
                                   description: String is used to transform the input into a string or a different kind of string. Note that the input does not necessarily need to be a string.

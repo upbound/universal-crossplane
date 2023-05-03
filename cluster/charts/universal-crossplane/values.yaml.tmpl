@@ -29,9 +29,6 @@ serviceAccount:
 leaderElection: true
 args: []
 
-# How frequently Crossplane may reconcile its resources (seconds). Default: 10
-maxReconcileRate: ""
-
 provider:
   packages: []
 
@@ -40,16 +37,18 @@ configuration:
 
 imagePullSecrets: {}
 
-registryCaBundleConfig: {}
+registryCaBundleConfig:
+  key: {}
+  name: {}
 
 webhooks:
   enabled: true
 
 rbacManager:
   deploy: true
-  skipAggregatedClusterRoles: true
+  skipAggregatedClusterRoles: false
   replicas: 1
-  managementPolicy: Basic
+  managementPolicy: All
   leaderElection: true
   args: []
   nodeSelector: {}
@@ -60,11 +59,11 @@ priorityClassName: ""
 
 resourcesCrossplane:
   limits:
-    cpu: 500m
-    memory: 1Gi
+    cpu: 100m
+    memory: 512Mi
   requests:
-    cpu: 250m
-    memory: 768Mi
+    cpu: 100m
+    memory: 256Mi
 
 securityContextCrossplane:
   runAsUser: 65532
@@ -81,10 +80,10 @@ packageCache:
 resourcesRBACManager:
   limits:
     cpu: 100m
-    memory: 768Mi
+    memory: 512Mi
   requests:
     cpu: 100m
-    memory: 512Mi
+    memory: 256Mi
 
 securityContextRBACManager:
   runAsUser: 65532

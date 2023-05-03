@@ -1,0 +1,16 @@
+diff --git a/cluster/charts/universal-crossplane/values.yaml b/cluster/charts/universal-crossplane/values.yaml
+index 22d824a..525ce61 100755
+--- a/cluster/charts/universal-crossplane/values.yaml
++++ b/cluster/charts/universal-crossplane/values.yaml
+@@ -6,9 +6,9 @@ deploymentStrategy: RollingUpdate
+ 
+ image:
+   # -- Crossplane image.
+-  repository: crossplane/crossplane
++  repository: upbound/crossplane
+   # -- Crossplane image tag: if not set, appVersion field from Chart.yaml is used.
+-  tag: ""
++  tag: "v1.12.1-up.1"
+   # -- Crossplane image pull policy used in all containers.
+   pullPolicy: IfNotPresent
+ 

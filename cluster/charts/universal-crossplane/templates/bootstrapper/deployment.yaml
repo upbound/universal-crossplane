@@ -29,7 +29,7 @@ spec:
       {{ end }}
       containers:
         - name: bootstrapper
-          image: "{{ .Values.bootstrapper.image.repository }}:{{ .Values.bootstrapper.image.tag }}"
+          image: "{{ .Values.bootstrapper.image.repository }}:{{ .Values.bootstrapper.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
           args:
             - start
             - --namespace

@@ -1,0 +1,34 @@
+
+### Bootstrapper Values
+
+bootstrapper:
+  image:
+    repository: xpkg.upbound.io/upbound/uxp-bootstrapper
+    tag: ""
+    pullPolicy: IfNotPresent
+  resources: {}
+  config:
+    debugMode: false
+    args: []
+    envVars: {}
+    # List of extra environment variables to set in the bootstrapper deployment.
+    # EXAMPLE
+    # envVars:
+    #   sample.key: value1
+    #   ANOTHER.KEY: value2
+    # RESULT
+    #   - name: sample_key
+    #     value: "value1"
+    #   - name: ANOTHER_KEY
+    #     value: "value2"
+
+billing:
+  awsMarketplace:
+    enabled: false
+    iamRoleARN: arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>
+
+nameOverride: "crossplane"
+
+upbound:
+  controlPlane:
+    permission: edit

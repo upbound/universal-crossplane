@@ -69,6 +69,8 @@ HELM_BASE_URL = https://charts.upbound.io
 HELM_S3_BUCKET = public-upbound.charts
 HELM_CHARTS = $(PACKAGE_NAME)
 HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
+HELM_DOCS_ENABLED = true
+HELM_VALUES_TEMPLATE_SKIPPED = true
 -include build/makelib/helm.mk
 
 # ====================================================================================
@@ -116,16 +118,19 @@ crossplane:
 	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/templates/* $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/templates/crossplane
 	@rm -f $(CRDS_DIR)/*
 	@cp -a $(WORK_DIR)/crossplane/cluster/crds/* $(CRDS_DIR)
+	@rm -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@cp -a $(WORK_DIR)/crossplane/cluster/charts/crossplane/values.yaml $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@# Note(turkenh): Using sed to replace the repository and tag values in the values.yaml of the upstream chart
+	@# with the ones we want to use for the UXP chart. We also append the uxp-values.yaml to the values.yaml for UXP
+	@# specific values.
+	@# This is more like an interim solution until we need more differences between the upstream and UXP charts.
+	@$(SED_CMD) 's|repository: crossplane/crossplane|repository: upbound/crossplane|g' '$(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml'
+	@$(SED_CMD) 's|repository: crossplane/xfn|repository: upbound/xfn|g' '$(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml'
+	@$(SED_CMD) 's|tag: ""|tag: "$(CROSSPLANE_TAG)"|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@cat $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/uxp-values.yaml >> $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Crossplane chart has been fetched
 
-helm.prepare.universal-crossplane: crossplane
-	@$(INFO) Generating values.yaml for the chart
-	@cp -f $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml.tmpl $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
-	@$(SED_CMD) 's|%%BOOTSTRAPPER_TAG%%|$(BOOTSTRAPPER_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
-	@$(SED_CMD) 's|%%CROSSPLANE_TAG%%|$(CROSSPLANE_TAG)|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
-	@$(OK) Generating values.yaml for the chart
-
-eksaddon.chart: helm.prepare.universal-crossplane
+eksaddon.chart: crossplane
 	@$(INFO) Generating values.yaml for the EKS Add-on chart
 	@$(SED_CMD) 's|repository: upbound/crossplane|repository: $(EKS_ADDON_REGISTRY)/upbound/crossplane|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(SED_CMD) 's|repository: xpkg.upbound.io/upbound/uxp-bootstrapper|repository: $(EKS_ADDON_REGISTRY)/upbound/uxp-bootstrapper|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
@@ -155,7 +160,7 @@ olm.artifacts: olm.build
 
 build.artifacts: olm.artifacts
 
-generate.run: helm.prepare olm.build
+generate.init: crossplane olm.build
 
 local-dev: $(UP) local.up local.deploy.$(PACKAGE_NAME)
 

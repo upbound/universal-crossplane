@@ -48,102 +48,89 @@ export LOCALDEV_CONNECT_API_TOKEN=<YOUR_ACCESS_TOKEN>
 make e2e.run
 ```
 
-## Release Process
+### Crossplane Fork Synchronization
 
-### Crossplane fork sync:
+This document describes how to synchronize a Crossplane fork with the upstream
+repository. The synchronization process is automated using a GitHub action,
+which is automatically triggered daily or can be triggered manually. In case of
+conflicts, you will need to manually resolve them and force-push the changes to
+the fork. Ensure you have the required permissions to perform these tasks.
 
-To update Crossplane version in UXP follow the steps below:
+Follow the steps below to set up your environment and handle different synchronization scenarios:
 
-#### Prepare repos and forks
+#### Initial Setup
 
-All the steps below will assume you have forked the following repos with the following names:
-
-- upstream Crossplane: `crossplane/crossplane` -> `$MY_GITHUB_USER/crossplane`
-- Upbound Crossplane's fork `upbound/crossplane` -> `$MY_GITHUB_USER/upbound-crossplane`
-
-Once you have created them, you'll need to setup your local environment, if you
-already did it in the past just skip to the next part, otherwise run the
-following commands, taking care to set your GitHub user instead of
-`<MY_GITHUB_USER>`:
+If starting from scratch, clone the repository and set up the required remotes and submodules:
 
 ```shell
-export MY_GITHUB_USER=<MY_GITHUB_USER>
-
-mkdir sync-upbound-crossplane
-cd sync-upbound-crossplane
-git clone https://github.com/$MY_GITHUB_USER/crossplane
+git clone https://github.com/upbound/crossplane
 cd crossplane
 git remote add upstream https://github.com/crossplane/crossplane
-git remote add upbound-upstream https://github.com/upbound/crossplane
-git remote add upbound-origin https://github.com/$MY_GITHUB_USER/upbound-crossplane
 git fetch --all
 git submodule update --init
 ```
 
-Now based on the task at hand, pick and go through one of the task below:
-
-##### Sync **a new** release branch:
-
-If you are releasing a new minor of UXP, e.g. `vX.Y.0-up.1`, and you want to
-create a new release branch `release-X.Y` on `upbound/crossplane` based on the
-upstream `crossplane/crossplane` release branch.
+If the repository was already cloned, update the remotes and submodules as follows:
 
 ```shell
-RELEASE_BRANCH=release-X.Y
-
+git checkout master
 git fetch --all
-git checkout -b $RELEASE_BRANCH upstream/$RELEASE_BRANCH
-
-# Cherry-pick upbound/crossplane specific changes.
-# makefile, workflow and readme updates
-git cherry-pick -x 5d53beb3cb423b13960a92d1f8f9284c9a146ccc # https://github.com/upbound/crossplane/commit/5d53beb3cb423b13960a92d1f8f9284c9a146ccc
-# docs publishing and codeowners changes
-git cherry-pick -x 85027abd2449fa69cbd825faa3fc68f4c64bb36d # https://github.com/upbound/crossplane/commit/85027abd2449fa69cbd825faa3fc68f4c64bb36d
-# proidc support
-git cherry-pick -x e9d31c76752e86b8cbf99b9651b1a38e8c9d7b7f # https://github.com/upbound/crossplane/commit/e9d31c76752e86b8cbf99b9651b1a38e8c9d7b7f
-
-git push upbound-upstream $RELEASE_BRANCH
+git submodule update --init
+# To ensure you are on the latest master, note that any local changes on master will be lost
+git reset --hard origin/master 
 ```
 
-Once the branch has been created, the branch protection rules will require you to go through PRs to update it, so see the following section to do so.
+Depending on the task, choose one of the scenarios below:
 
-##### Sync **an existing** release branch:
+##### Handling Branch Sync Failure
 
-If you are releasing a new patch of UXP, e.g. `vX.Y.Z-up.1`, and you want to
-open a PR to update `release-X.Y` on `upbound/crossplane` with the latest
-changes up to `vX.Y.Z` of upstream `crossplane/crossplane`.
+**Ensure you have pulled the latest changes from the origin remote.**
+
+For each branch that failed to sync (starting with `master`, if it failed as well), perform the following steps:
+
+1. Manually sync the branch `$BRANCH` using the `./hack/uxp/fork.sh` script from the `upbound/crossplane` repository:
+
+   ```shell
+   git checkout master # ALWAYS USE THE SCRIPT FROM MASTER
+   # CHANGES WILL BE LOST ON <branch> IF NOT PREVIOUSLY PUSHED
+   ./hack/uxp/fork.sh sync_branch <branch> # e.g. release-1.12
+   ```
+
+   This function will fail if there are conflicts.
+
+2. Resolve conflicts using your preferred tool, e.g., `git mergetool`.
+
+3. Add the resolved files to the index: `git add <files>`.
+
+4. Continue the rebase: `git rebase --continue`.
+
+5. Repeat steps 2-4 until the rebase is complete.
+
+6. Force-push with lease to avoid overriding changes you did not pull to the fork: `git push --force-with-lease origin <branch>`.
+
+##### Synchronizing Up to a Specific Tag or Commit
+
+To sync up to a specific commit or tag (even if the branch was already synced), use the following command:
 
 ```shell
-RELEASE_BRANCH=release-X.Y
-UPSTREAM_RELEASE_TAG=vX.Y.Z
+git checkout master # Always use the script from master
 
-git checkout -b sync-upstream-$RELEASE_BRANCH
-git reset --hard upbound-upstream/$RELEASE_BRANCH
-git fetch --tags upstream
-git merge $UPSTREAM_RELEASE_TAG
-
-# Resolve conflicts, if any, and then push to your own fork
-git push --set-upstream upbound-origin sync-upstream-$RELEASE_BRANCH
+./hack/uxp/fork.sh sync_branch <branch> <commit_or_tag> # e.g. release-1.12 v1.12.0
 ```
 
-You can then create a PR from your fork's `sync-upstream-X.Y` branch to
-`upbound/crossplane`'s `release-X.Y` branch and get it reviewed and merged.
+For more information on the synchronization GitHub action, refer to [xp-fork-sync-gha][xp-fork-sync-gha].
 
-##### Sync latest master:
+##### Break Glass Procedure
 
-This step is not required at the moment, but if you want to sync
-`upbound/crossplane`'s master branch to the latest `crossplane/crossplane`
-branch, run the following commands and open a PR from your fork's `sync-upstream-master` branch to
-`upbound/crossplane`'s `master` branch and get it reviewed and merged.
+If you think you force pushed the wrong thing, DO NOT PANIC, you can almost surely recover it.
 
 ```shell
-git fetch --all
-git checkout -b sync-upstream-master
-git reset --hard upbound-upstream/master
-git merge upstream/master
-# Resolve conflicts, if any
-git push --set-upstream upbound-origin sync-upstream-master
+git reflog # Find the commit you want to recover
+# or filter it down with: git reflog <branch>
+git reset --hard <commit> # e.g. HEAD@{1}
 ```
+
+See [git-reflog][git-reflog] and [undo-force-push][undo-force-push] for more information.
 
 ## Deprecated or on-demand release channels
 
@@ -216,3 +203,6 @@ To prepare the PR, we need to follow the workflow steps listed [here](https://gi
 Due to the reasons outlined in [this issue](https://github.com/upbound/universal-crossplane/issues/119), we need an
 additional change in `Chart.yaml` where we convert UXP version from `x.y.z-up.t` to `x.y.z00t` in the [make changes step](https://github.com/rancher/partner-charts/tree/main-source#4-make-changes).
 See [this](https://github.com/rancher/partner-charts/pull/89#discussion_r640533267) as an example.
+
+[git-reflog]: https://git-scm.com/docs/git-reflog
+[undo-force-push]: https://www.jvt.me/posts/2021/10/23/undo-force-push/

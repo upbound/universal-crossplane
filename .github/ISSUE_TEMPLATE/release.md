@@ -22,7 +22,7 @@ this issue for posterity. Assuming `vX.Y.0-up.1` is being cut, after upstream
 [crossplane/crossplane][upstream-xp] `vX.Y.0` has been released
 according to the declared [schedule][uxp-schedule], you should have:
 
-- [ ] Created, or synced if already present, the `release-vX.Y` release branch in [upbound/crossplane][upbound-xp-fork], with upstream [crossplane/crossplane][upstream-xp] release branch, up to the `vX.Y.0` tag, adding any required change specific to the fork, see [here][sync-xp-fork] for more details.
+- [ ] Check the `release-vX.Y` release branch in [upbound/crossplane][upbound-xp-fork] has been automatically created and is up-to-date, with the upstream [crossplane/crossplane][upstream-xp] release branch, at least up to the `vX.Y.0` tag, adding any required change specific to the fork, see [here][sync-xp-fork] for more details.
 - [ ] Cut [upbound/crossplane][upbound-xp-fork] `vX.Y.0-up.1` release from the `release-X.Y` branch by:
   - [ ] Running the [Tag workflow][tag-xp-fork] on the `release-vX.Y` branch with the proper release version, `vX.Y.0-up.1`. Message suggested but not required: `Release vX.Y.0-up.1`.
   - [ ] Running the [CI workflow][ci-xp-fork] on the `release-vX.Y` branch to build and publish the latest tagged artifacts.

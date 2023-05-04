@@ -3,15 +3,20 @@
 
 bootstrapper:
   image:
+    # -- Bootstrapper image repository.
     repository: xpkg.upbound.io/upbound/uxp-bootstrapper
+    # -- Bootstrapper image tag: if not set, appVersion field from Chart.yaml is used.
     tag: ""
+    # -- Bootstrapper image pull policy.
     pullPolicy: IfNotPresent
+  # -- Resources configuration for bootstrapper.
   resources: {}
   config:
+    # -- Enable debug mode for bootstrapper.
     debugMode: false
+    # -- List of additional args for the bootstrapper deployment.
     args: []
-    envVars: {}
-    # List of extra environment variables to set in the bootstrapper deployment.
+    # -- List of additional environment variables for the bootstrapper deployment.
     # EXAMPLE
     # envVars:
     #   sample.key: value1
@@ -21,14 +26,13 @@ bootstrapper:
     #     value: "value1"
     #   - name: ANOTHER_KEY
     #     value: "value2"
+    envVars: {}
 
 billing:
   awsMarketplace:
+    # -- Enable AWS Marketplace billing.
     enabled: false
+    # -- AWS Marketplace billing IAM role ARN.
     iamRoleARN: arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>
 
 nameOverride: "crossplane"
-
-upbound:
-  controlPlane:
-    permission: edit

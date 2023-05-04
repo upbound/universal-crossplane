@@ -29,9 +29,7 @@ according to the declared [schedule][uxp-schedule], you should have:
   - [ ] You should now be able to run: `docker pull upbound/crossplane:vX.Y.0-up.1`
 - [ ] Created and merged a PR to the `main` branch of [upbound/universal-crossplane][uxp] with the following changes, **taking care to label it as `backport release-X.Y`**:
   - [ ] Update any reference to the old latest release to `vX.Y.0-up.1`, such as `CROSSPLANE_TAG` and `CROSSPLANE_COMMIT` in the `Makefile`.
-  - [ ] Run `make helm.prepare` to import any change to the templates in the [upstream Helm chart][upstream-helm-chart].
-  - [ ] Manually diff and sync [upstream][upstream-xp-values]'s and [uxp][uxp-values]'s `values.yaml.tmpl` as needed, taking care to change any required templating reference, e.g. `%%CROSSPLANE_TAG%%` instead of `%%VERSION%%`. E.g. `export RELEASE_BRANCH=release-X.Y; vimdiff https://raw.githubusercontent.com/upbound/crossplane/$RELEASE_BRANCH/cluster/charts/crossplane/values.yaml.tmpl cluster/charts/universal-crossplane/values.yaml.tmpl`.
-  - [ ] Run `make olm.build` to generate the [OLM] bundle.
+  - [ ] Run `make generate` to import any changes in the [upstream Helm chart][upstream-helm-chart].
 - [ ] Created the `release-X.Y` branch from `main` branch in [UXP][uxp].
 - [ ] Cut [UXP][uxp] `vX.Y.0-up.1` release from the `release-X.Y` branch by:
   - [ ] Running the [Tag workflow][tag-uxp] on the `release-vX.Y` branch with the proper release version, `vX.Y.0-up.1`. Message suggested but not required: `Release vX.Y.0-up.1`.

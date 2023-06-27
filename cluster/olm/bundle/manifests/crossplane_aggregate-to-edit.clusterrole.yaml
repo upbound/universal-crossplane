@@ -45,6 +45,7 @@ rules:
 - apiGroups:
   - pkg.crossplane.io
   resources:
+  - locks
   - providers
   - configurations
   - providerrevisions

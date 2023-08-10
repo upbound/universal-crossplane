@@ -21,8 +21,8 @@ planes.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| affinity | object | `{}` | Enable affinity for Crossplane pod. |
-| args | list | `[]` | A list of additional args to be passed to Crossplane's container. |
+| affinity | object | `{}` | Add `affinities` to the Crossplane pod deployment. |
+| args | list | `[]` | Add custom arguments to the Crossplane pod. |
 | billing.awsMarketplace.enabled | bool | `false` | Enable AWS Marketplace billing. |
 | billing.awsMarketplace.iamRoleARN | string | `"arn:aws:iam::<ACCOUNT_ID>:role/<ROLE_NAME>"` | AWS Marketplace billing IAM role ARN. |
 | bootstrapper.config.args | list | `[]` | List of additional args for the bootstrapper deployment. |
@@ -32,76 +32,80 @@ planes.
 | bootstrapper.image.repository | string | `"xpkg.upbound.io/upbound/uxp-bootstrapper"` | Bootstrapper image repository. |
 | bootstrapper.image.tag | string | `""` | Bootstrapper image tag: if not set, appVersion field from Chart.yaml is used. |
 | bootstrapper.resources | object | `{}` | Resources configuration for bootstrapper. |
-| configuration.packages | list | `[]` | The list of Configuration packages to install together with Crossplane. |
-| customAnnotations | object | `{}` | Custom annotations to add to the Crossplane deployment and pod. |
-| customLabels | object | `{}` | Custom labels to add into metadata. |
-| deploymentStrategy | string | `"RollingUpdate"` | The deployment strategy for the Crossplane and RBAC Manager (if enabled) pods. |
-| extraEnvVarsCrossplane | object | `{}` | List of extra environment variables to set in the Crossplane deployment. Any `.` in variable names will be replaced with `_` (example: `SAMPLE.KEY=value1` becomes `SAMPLE_KEY=value1`). |
-| extraEnvVarsRBACManager | object | `{}` | List of extra environment variables to set in the Crossplane rbac manager deployment. Any `.` in variable names will be replaced with `_` (example: `SAMPLE.KEY=value1` becomes `SAMPLE_KEY=value1`). |
-| extraVolumeMountsCrossplane | object | `{}` | List of extra volumesMounts to add to Crossplane. |
-| extraVolumesCrossplane | object | `{}` | List of extra Volumes to add to Crossplane. |
-| hostNetwork | bool | `false` | Enable hostNetwork for Crossplane. Caution: setting it to true means Crossplane's Pod will have high privileges. |
-| image.pullPolicy | string | `"IfNotPresent"` | Crossplane image pull policy used in all containers. |
-| image.repository | string | `"upbound/crossplane"` | Crossplane image. |
-| image.tag | string | `"v1.12.2-up.2"` | Crossplane image tag: if not set, appVersion field from Chart.yaml is used. |
-| imagePullSecrets | object | `{}` | Names of image pull secrets to use. |
-| leaderElection | bool | `true` | Enable leader election for Crossplane Managers pod. |
-| metrics.enabled | bool | `false` | Expose Crossplane and RBAC Manager metrics endpoint. |
+| configuration.packages | list | `[]` | A list of Configuration packages to install. |
+| customAnnotations | object | `{}` | Add custom `annotations` to the Crossplane pod deployment. |
+| customLabels | object | `{}` | Add custom `labels` to the Crossplane pod deployment. |
+| deploymentStrategy | string | `"RollingUpdate"` | The deployment strategy for the Crossplane and RBAC Manager pods. |
+| extraEnvVarsCrossplane | object | `{}` | Add custom environmental variables to the Crossplane pod deployment. Replaces any `.` in a variable name with `_`. For example, `SAMPLE.KEY=value1` becomes `SAMPLE_KEY=value1`. |
+| extraEnvVarsRBACManager | object | `{}` | Add custom environmental variables to the RBAC Manager pod deployment. Replaces any `.` in a variable name with `_`. For example, `SAMPLE.KEY=value1` becomes `SAMPLE_KEY=value1`. |
+| extraVolumeMountsCrossplane | object | `{}` | Add custom `volumeMounts` to the Crossplane pod. |
+| extraVolumesCrossplane | object | `{}` | Add custom `volumes` to the Crossplane pod. |
+| hostNetwork | bool | `false` | Enable `hostNetwork` for the Crossplane deployment. Caution: enabling `hostNetwork`` grants the Crossplane Pod access to the host network namespace. |
+| image.pullPolicy | string | `"IfNotPresent"` | The image pull policy used for Crossplane and RBAC Manager pods. |
+| image.repository | string | `"upbound/crossplane"` | Repository for the Crossplane pod image. |
+| image.tag | string | `"v1.13.2-up.1"` | The Crossplane image tag. Defaults to the value of `appVersion` in Chart.yaml. |
+| imagePullSecrets | object | `{}` | The imagePullSecret names to add to the Crossplane ServiceAccount. |
+| leaderElection | bool | `true` | Enable [leader election](https://docs.crossplane.io/latest/concepts/pods/#leader-election) for the Crossplane pod. |
+| metrics.enabled | bool | `false` | Enable Prometheus path, port and scrape annotations and expose port 8080 for both the Crossplane and RBAC Manager pods. |
 | nameOverride | string | `"crossplane"` |  |
-| nodeSelector | object | `{}` | Enable nodeSelector for Crossplane pod. |
-| packageCache.configMap | string | `""` | Name of the ConfigMap to be used as package cache. Providing a value will cause the default emptyDir volume not to be mounted. |
-| packageCache.medium | string | `""` | Storage medium for package cache. `Memory` means volume will be backed by tmpfs, which can be useful for development. |
-| packageCache.pvc | string | `""` | Name of the PersistentVolumeClaim to be used as the package cache. Providing a value will cause the default emptyDir volume to not be mounted. |
-| packageCache.sizeLimit | string | `"20Mi"` | Size limit for package cache. If medium is `Memory` then maximum usage would be the minimum of this value the sum of all memory limits on containers in the Crossplane pod. |
-| podSecurityContextCrossplane | object | `{}` | PodSecurityContext for Crossplane. |
-| podSecurityContextRBACManager | object | `{}` | PodSecurityContext for RBAC Manager. |
-| priorityClassName | string | `""` | Priority class name for Crossplane and RBAC Manager (if enabled) pods. |
-| provider.packages | list | `[]` | The list of Provider packages to install together with Crossplane. |
-| rbacManager.affinity | object | `{}` | Enable affinity for RBAC Managers pod. |
-| rbacManager.args | list | `[]` | A list of additional args to be pased to the RBAC manager's container. |
-| rbacManager.deploy | bool | `true` | Deploy RBAC Manager and its required roles. |
-| rbacManager.leaderElection | bool | `true` | Enable leader election for RBAC Managers pod. |
-| rbacManager.managementPolicy | string | `"All"` | The extent to which the RBAC manager will manage permissions:. - `All` indicates to manage all Crossplane controller and user roles. - `Basic` indicates to only manage Crossplane controller roles and the `crossplane-admin`, `crossplane-edit`, and `crossplane-view` user roles. |
-| rbacManager.nodeSelector | object | `{}` | Enable nodeSelector for RBAC Managers pod. |
-| rbacManager.replicas | int | `1` | The number of replicas to run for the RBAC Manager pods. |
-| rbacManager.skipAggregatedClusterRoles | bool | `false` | Opt out of deploying aggregated ClusterRoles. |
-| rbacManager.tolerations | list | `[]` | Enable tolerations for RBAC Managers pod. |
-| registryCaBundleConfig.key | object | `{}` | Key to use from ConfigMap containing additional CA bundle for fetching from package registries. |
-| registryCaBundleConfig.name | object | `{}` | Name of ConfigMap containing additional CA bundle for fetching from package registries. |
-| replicas | int | `1` | The number of replicas to run for the Crossplane pods. |
-| resourcesCrossplane.limits.cpu | string | `"100m"` | CPU resource limits for Crossplane. |
-| resourcesCrossplane.limits.memory | string | `"512Mi"` | Memory resource limits for Crossplane. |
-| resourcesCrossplane.requests.cpu | string | `"100m"` | CPU resource requests for Crossplane. |
-| resourcesCrossplane.requests.memory | string | `"256Mi"` | Memory resource requests for Crossplane. |
-| resourcesRBACManager.limits.cpu | string | `"100m"` | CPU resource limits for RBAC Manager. |
-| resourcesRBACManager.limits.memory | string | `"512Mi"` | Memory resource limits for RBAC Manager. |
-| resourcesRBACManager.requests.cpu | string | `"100m"` | CPU resource requests for RBAC Manager. |
-| resourcesRBACManager.requests.memory | string | `"256Mi"` | Memory resource requests for RBAC Manager. |
-| securityContextCrossplane.allowPrivilegeEscalation | bool | `false` | Allow privilege escalation for Crossplane. |
-| securityContextCrossplane.readOnlyRootFilesystem | bool | `true` | ReadOnly root filesystem for Crossplane. |
-| securityContextCrossplane.runAsGroup | int | `65532` | Run as group for Crossplane. |
-| securityContextCrossplane.runAsUser | int | `65532` | Run as user for Crossplane. |
-| securityContextRBACManager.allowPrivilegeEscalation | bool | `false` | Allow privilege escalation for RBAC Manager. |
-| securityContextRBACManager.readOnlyRootFilesystem | bool | `true` | ReadOnly root filesystem for RBAC Manager. |
-| securityContextRBACManager.runAsGroup | int | `65532` | Run as group for RBAC Manager. |
-| securityContextRBACManager.runAsUser | int | `65532` | Run as user for RBAC Manager. |
-| serviceAccount.customAnnotations | object | `{}` | Custom annotations to add to the serviceaccount of Crossplane. |
-| tolerations | list | `[]` | Enable tolerations for Crossplane pod. |
-| webhooks.enabled | bool | `true` | Enable webhook functionality for Crossplane as well as packages installed by Crossplane. |
-| xfn.args | list | `[]` | List of additional args for the xfn container. |
-| xfn.cache | object | `{"configMap":"","medium":"","pvc":"","sizeLimit":"1Gi"}` | Cache configuration for xfn. |
-| xfn.enabled | bool | `false` | Enable alpha xfn sidecar container that runs Composition Functions. Note you also need to run Crossplane with --enable-composition-functions for it to call xfn. |
-| xfn.extraEnvVars | object | `{}` | List of additional environment variables for the xfn container. |
-| xfn.image | object | `{"pullPolicy":"IfNotPresent","repository":"upbound/xfn","tag":"v1.12.2-up.2"}` | Image for xfn: if tag is not set appVersion field from Chart.yaml is used. |
-| xfn.resources | object | `{"limits":{"cpu":"2000m","memory":"2Gi"},"requests":{"cpu":"1000m","memory":"1Gi"}}` | Resources definition for xfn. |
-| xfn.resources.limits.cpu | string | `"2000m"` | CPU resource limits for RBAC Manager. |
-| xfn.resources.limits.memory | string | `"2Gi"` | Memory resource limits for RBAC Manager. |
-| xfn.resources.requests.cpu | string | `"1000m"` | CPU resource requests for RBAC Manager. |
-| xfn.resources.requests.memory | string | `"1Gi"` | Memory resource requests for RBAC Manager. |
-| xfn.securityContext.allowPrivilegeEscalation | bool | `false` | Allow privilege escalation for xfn sidecar. |
-| xfn.securityContext.capabilities | object | `{"add":["SETUID","SETGID"]}` | Capabilities configuration for xfn sidecar. These capabilities allow xfn sidecar to create better user namespaces. It drops them after creating a namespace. |
-| xfn.securityContext.readOnlyRootFilesystem | bool | `true` | ReadOnly root filesystem for xfn sidecar. |
-| xfn.securityContext.runAsGroup | int | `65532` | Run as group for xfn sidecar. |
-| xfn.securityContext.runAsUser | int | `65532` | Run as user for xfn sidecar. |
-| xfn.securityContext.seccompProfile | object | `{"type":"Unconfined"}` | Seccomp Profile for xfn. xfn needs the unshare syscall, which most RuntimeDefault seccomp profiles do not allow. |
+| nodeSelector | object | `{}` | Add `nodeSelectors` to the Crossplane pod deployment. |
+| packageCache.configMap | string | `""` | The name of a ConfigMap to use as the package cache. Disables the default package cache `emptyDir` Volume. |
+| packageCache.medium | string | `""` | Set to `Memory` to hold the package cache in a RAM-backed file system. Useful for Crossplane development. |
+| packageCache.pvc | string | `""` | The name of a PersistentVolumeClaim to use as the package cache. Disables the default package cache `emptyDir` Volume. |
+| packageCache.sizeLimit | string | `"20Mi"` | The size limit for the package cache. If medium is `Memory` the `sizeLimit` can't exceed Node memory. |
+| podSecurityContextCrossplane | object | `{}` | Add a custom `securityContext` to the Crossplane pod. |
+| podSecurityContextRBACManager | object | `{}` | Add a custom `securityContext` to the RBAC Manager pod. |
+| priorityClassName | string | `""` | The PriorityClass name to apply to the Crossplane and RBAC Manager pods. |
+| provider.packages | list | `[]` | A list of Provider packages to install. |
+| rbacManager.affinity | object | `{}` | Add `affinities` to the RBAC Manager pod deployment. |
+| rbacManager.args | list | `[]` | Add custom arguments to the RBAC Manager pod. |
+| rbacManager.deploy | bool | `true` | Deploy the RBAC Manager pod and its required roles. |
+| rbacManager.leaderElection | bool | `true` | Enable [leader election](https://docs.crossplane.io/latest/concepts/pods/#leader-election) for the RBAC Manager pod. |
+| rbacManager.managementPolicy | string | `"Basic"` | Defines the Roles and ClusterRoles the RBAC Manager creates and manages. - A policy of `Basic` creates and binds Roles only for the Crossplane ServiceAccount, Provider ServiceAccounts and creates Crossplane ClusterRoles. - A policy of `All` includes all the `Basic` settings and also creates Crossplane Roles in all namespaces. - Read the Crossplane docs for more information on the [RBAC Roles and ClusterRoles](https://docs.crossplane.io/latest/concepts/pods/#crossplane-clusterroles) |
+| rbacManager.nodeSelector | object | `{}` | Add `nodeSelectors` to the RBAC Manager pod deployment. |
+| rbacManager.replicas | int | `1` | The number of RBAC Manager pod `replicas` to deploy. |
+| rbacManager.skipAggregatedClusterRoles | bool | `false` | Don't install aggregated Crossplane ClusterRoles. |
+| rbacManager.tolerations | list | `[]` | Add `tolerations` to the RBAC Manager pod deployment. |
+| registryCaBundleConfig.key | string | `""` | The ConfigMap key containing a custom CA bundle to enable fetching packages from registries with unknown or untrusted certificates. |
+| registryCaBundleConfig.name | string | `""` | The ConfigMap name containing a custom CA bundle to enable fetching packages from registries with unknown or untrusted certificates. |
+| replicas | int | `1` | The number of Crossplane pod `replicas` to deploy. |
+| resourcesCrossplane.limits.cpu | string | `"100m"` | CPU resource limits for the Crossplane pod. |
+| resourcesCrossplane.limits.memory | string | `"512Mi"` | Memory resource limits for the Crossplane pod. |
+| resourcesCrossplane.requests.cpu | string | `"100m"` | CPU resource requests for the Crossplane pod. |
+| resourcesCrossplane.requests.memory | string | `"256Mi"` | Memory resource requests for the Crossplane pod. |
+| resourcesRBACManager.limits.cpu | string | `"100m"` | CPU resource limits for the RBAC Manager pod. |
+| resourcesRBACManager.limits.memory | string | `"512Mi"` | Memory resource limits for the RBAC Manager pod. |
+| resourcesRBACManager.requests.cpu | string | `"100m"` | CPU resource requests for the RBAC Manager pod. |
+| resourcesRBACManager.requests.memory | string | `"256Mi"` | Memory resource requests for the RBAC Manager pod. |
+| securityContextCrossplane.allowPrivilegeEscalation | bool | `false` | Enable `allowPrivilegeEscalation` for the Crossplane pod. |
+| securityContextCrossplane.readOnlyRootFilesystem | bool | `true` | Set the Crossplane pod root file system as read-only. |
+| securityContextCrossplane.runAsGroup | int | `65532` | The group ID used by the Crossplane pod. |
+| securityContextCrossplane.runAsUser | int | `65532` | The user ID used by the Crossplane pod. |
+| securityContextRBACManager.allowPrivilegeEscalation | bool | `false` | Enable `allowPrivilegeEscalation` for the RBAC Manager pod. |
+| securityContextRBACManager.readOnlyRootFilesystem | bool | `true` | Set the RBAC Manager pod root file system as read-only. |
+| securityContextRBACManager.runAsGroup | int | `65532` | The group ID used by the RBAC Manager pod. |
+| securityContextRBACManager.runAsUser | int | `65532` | The user ID used by the RBAC Manager pod. |
+| serviceAccount.customAnnotations | object | `{}` | Add custom `annotations` to the Crossplane ServiceAccount. |
+| tolerations | list | `[]` | Add `tolerations` to the Crossplane pod deployment. |
+| webhooks.enabled | bool | `true` | Enable webhooks for Crossplane and installed Provider packages. |
+| xfn.args | list | `[]` | Add custom arguments to the Composite functions runner container. |
+| xfn.cache.configMap | string | `""` | The name of a ConfigMap to use as the Composite function runner package cache. Disables the default Composite function runner package cache `emptyDir` Volume. |
+| xfn.cache.medium | string | `""` | Set to `Memory` to hold the Composite function runner package cache in a RAM-backed file system. Useful for Crossplane development. |
+| xfn.cache.pvc | string | `""` | The name of a PersistentVolumeClaim to use as the Composite function runner package cache. Disables the default Composite function runner package cache `emptyDir` Volume. |
+| xfn.cache.sizeLimit | string | `"1Gi"` | The size limit for the Composite function runner package cache. If medium is `Memory` the `sizeLimit` can't exceed Node memory. |
+| xfn.enabled | bool | `false` | Enable the alpha Composition functions (`xfn`) sidecar container. Also requires Crossplane `args` value `--enable-composition-functions` set. |
+| xfn.extraEnvVars | object | `{}` | Add custom environmental variables to the Composite function runner container. Replaces any `.` in a variable name with `_`. For example, `SAMPLE.KEY=value1` becomes `SAMPLE_KEY=value1`. |
+| xfn.image.pullPolicy | string | `"IfNotPresent"` | Composite function runner container image pull policy. |
+| xfn.image.repository | string | `"upbound/xfn"` | Composite function runner container image. |
+| xfn.image.tag | string | `"v1.13.2-up.1"` | Composite function runner container image tag. Defaults to the value of `appVersion` in Chart.yaml. |
+| xfn.resources.limits.cpu | string | `"2000m"` | CPU resource limits for the Composite function runner container. |
+| xfn.resources.limits.memory | string | `"2Gi"` | Memory resource limits for the Composite function runner container. |
+| xfn.resources.requests.cpu | string | `"1000m"` | CPU resource requests for the Composite function runner container. |
+| xfn.resources.requests.memory | string | `"1Gi"` | Memory resource requests for the Composite function runner container. |
+| xfn.securityContext.allowPrivilegeEscalation | bool | `false` | Enable `allowPrivilegeEscalation` for the Composite function runner container. |
+| xfn.securityContext.capabilities.add | list | `["SETUID","SETGID"]` | Set Linux capabilities for the Composite function runner container. The default values allow the container to create an unprivileged user namespace for running Composite function containers. |
+| xfn.securityContext.readOnlyRootFilesystem | bool | `true` | Set the Composite function runner container root file system as read-only. |
+| xfn.securityContext.runAsGroup | int | `65532` | The group ID used by the Composite function runner container. |
+| xfn.securityContext.runAsUser | int | `65532` | The user ID used by the Composite function runner container. |
+| xfn.securityContext.seccompProfile.type | string | `"Unconfined"` | Apply a `seccompProfile` to the Composite function runner container. The default value allows the Composite function runner container permissions to use the `unshare` syscall. |
 

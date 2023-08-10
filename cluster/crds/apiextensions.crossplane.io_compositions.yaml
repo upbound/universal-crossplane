@@ -2,8 +2,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.11.3
-  creationTimestamp: null
+    controller-gen.kubebuilder.io/version: v0.12.1
   name: compositions.apiextensions.crossplane.io
 spec:
   group: apiextensions.crossplane.io
@@ -13,6 +12,8 @@ spec:
     kind: Composition
     listKind: CompositionList
     plural: compositions
+    shortNames:
+    - comp
     singular: composition
   scope: Cluster
   versions:
@@ -91,8 +92,7 @@ spec:
                           - name
                           type: object
                         selector:
-                          description: Selector selects one EnvironmentConfig via
-                            labels.
+                          description: Selector selects EnvironmentConfig(s) via labels.
                           properties:
                             matchLabels:
                               description: MatchLabels ensures an object with matching
@@ -124,6 +124,26 @@ spec:
                                 - key
                                 type: object
                               type: array
+                            maxMatch:
+                              description: MaxMatch specifies the number of extracted
+                                EnvironmentConfigs in Multiple mode, extracts all
+                                if nil.
+                              format: int64
+                              type: integer
+                            mode:
+                              default: Single
+                              description: 'Mode specifies retrieval strategy: "Single"
+                                or "Multiple".'
+                              enum:
+                              - Single
+                              - Multiple
+                              type: string
+                            sortByFieldPath:
+                              default: metadata.name
+                              description: SortByFieldPath is the path to the field
+                                based on which list of EnvironmentConfigs is alphabetically
+                                sorted.
+                              type: string
                           type: object
                         type:
                           default: Reference
@@ -437,13 +457,39 @@ spec:
                             the Patch object.
                           enum:
                           - FromCompositeFieldPath
-                          - FromEnvironmentFieldPath
                           - ToCompositeFieldPath
                           - CombineFromComposite
                           - CombineToComposite
                           type: string
                       type: object
                     type: array
+                  policy:
+                    description: Policy represents the Resolve and Resolution policies
+                      which apply to all EnvironmentSourceReferences in EnvironmentConfigs
+                      list.
+                    properties:
+                      resolution:
+                        default: Required
+                        description: Resolution specifies whether resolution of this
+                          reference is required. The default is 'Required', which
+                          means the reconcile will fail if the reference cannot be
+                          resolved. 'Optional' means this reference will be a no-op
+                          if it cannot be resolved.
+                        enum:
+                        - Required
+                        - Optional
+                        type: string
+                      resolve:
+                        description: Resolve specifies when this reference should
+                          be resolved. The default is 'IfNotPresent', which will attempt
+                          to resolve the reference only when the corresponding field
+                          is not present. Use 'Always' to resolve the reference on
+                          every reconcile.
+                        enum:
+                        - Always
+                        - IfNotPresent
+                        type: string
+                    type: object
                 type: object
               functions:
                 description: "Functions is list of Composition Functions that will
@@ -483,6 +529,22 @@ spec:
                           - Always
                           - Never
                           type: string
+                        imagePullSecrets:
+                          description: ImagePullSecrets are used to pull images from
+                            private OCI registries.
+                          items:
+                            description: LocalObjectReference contains enough information
+                              to let you locate the referenced object inside the same
+                              namespace.
+                            properties:
+                              name:
+                                description: 'Name of the referent. More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
+                                  TODO: Add other useful fields. apiVersion, kind,
+                                  uid?'
+                                type: string
+                            type: object
+                            x-kubernetes-map-type: atomic
+                          type: array
                         network:
                           description: Network configuration for the Composition Function.
                           properties:
@@ -1315,6 +1377,11 @@ spec:
                         type: object
                       type: array
                     readinessChecks:
+                      default:
+                      - matchCondition:
+                          status: "True"
+                          type: Ready
+                        type: MatchCondition
                       description: ReadinessChecks allows users to define custom readiness
                         checks. All checks have to return true in order for resource
                         to be considered ready. The default readiness check is to
@@ -1327,6 +1394,24 @@ spec:
                             description: FieldPath shows the path of the field whose
                               value will be used.
                             type: string
+                          matchCondition:
+                            description: MatchCondition specifies the condition you'd
+                              like to match if you're using "MatchCondition" type.
+                            properties:
+                              status:
+                                default: "True"
+                                description: Status is the status of the condition
+                                  you'd like to match.
+                                type: string
+                              type:
+                                default: Ready
+                                description: Type indicates the type of condition
+                                  you'd like to use.
+                                type: string
+                            required:
+                            - status
+                            - type
+                            type: object
                           matchInteger:
                             description: MatchInt is the value you'd like to match
                               if you're using "MatchInt" type.
@@ -1343,6 +1428,7 @@ spec:
                             - MatchString
                             - MatchInteger
                             - NonEmpty
+                            - MatchCondition
                             - None
                             type: string
                         required:

@@ -45,6 +45,7 @@ according to the declared [schedule][uxp-schedule], you should have:
     - [ ] https://marketplace.upbound.io/configurations/upbound/platform-ref-azure
     - [ ] https://marketplace.upbound.io/configurations/upbound/platform-ref-gcp
     - [ ] Verify at least one of the above reference platforms works end to end by configuring and creating a claim, e.g. using https://github.com/upbound/platform-ref-gcp/blob/main/examples/cluster-claim.yaml
+- [ ] Upgrading from current supported versions to the latest version works
 - [ ] Run the [Promote workflow][promote-uxp] to promote `vX.Y.0-up.1` to [stable][uxp-stable-channel], it should contain `universal-crossplane-X.Y.0-up.1.tgz`. Verify everything is correctly working by running `up uxp install` against an empty Kubernetes cluster, e.g. `kind create cluster`, which should result in an healthy UXP installation with expected image versions.
 - [ ] Created and published well authored release notes for [UXP][uxp-releases] `vX.Y.0-up.1`. See the previous release for an example, these should at least:
   - [ ] enumerate relevant updates that were merged in [u/xp][upbound-xp-fork] and [u/uxp][uxp].

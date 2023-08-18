@@ -82,30 +82,62 @@ git submodule update --init
 
 Now based on the task at hand, pick and go through one of the task below:
 
-##### Sync **a new** release branch:
+##### Create **a new** release branch:
 
 If you are releasing a new minor of UXP, e.g. `vX.Y.0-up.1`, and you want to
 create a new release branch `release-X.Y` on `upbound/crossplane` based on the
 upstream `crossplane/crossplane` release branch.
 
+First, make sure to have updated the master branch first, see the section below.
+
 ```shell
 RELEASE_BRANCH=release-X.Y
 
 git fetch --all
+
+# Create the new release branch from the one on crossplane/crossplane.
 git checkout -b $RELEASE_BRANCH upstream/$RELEASE_BRANCH
 
-# Cherry-pick upbound/crossplane specific changes.
-# makefile, workflow and readme updates
-git cherry-pick -x 5d53beb3cb423b13960a92d1f8f9284c9a146ccc # https://github.com/upbound/crossplane/commit/5d53beb3cb423b13960a92d1f8f9284c9a146ccc
-# docs publishing and codeowners changes
-git cherry-pick -x 85027abd2449fa69cbd825faa3fc68f4c64bb36d # https://github.com/upbound/crossplane/commit/85027abd2449fa69cbd825faa3fc68f4c64bb36d
-# proidc support
-git cherry-pick -x e9d31c76752e86b8cbf99b9651b1a38e8c9d7b7f # https://github.com/upbound/crossplane/commit/e9d31c76752e86b8cbf99b9651b1a38e8c9d7b7f
-
+# Push it to upbound/crossplane, creating the new release branch.
 git push upbound-upstream $RELEASE_BRANCH
-```
 
-Once the branch has been created, the branch protection rules will require you to go through PRs to update it, so see the following section to do so.
+# Checkout the existing branch containing all uxp specific patches on top, up
+# to the last time it was synced, if it doesn't exist create it first, see below.
+git checkout uxp-patches-on-top upbound-upstream/uxp-patches-on-top
+
+# To create the branch above if it doesn't exist yet, run the following commands.
+# git checkout -b uxp-patches-on-top upbound-upstream/master
+# git rebase -i upstream/master
+
+# Merge any new change from u/xp master branch 
+git merge upbound-upstream/master
+
+# Rebase it again on top of the upstream master branch, resolve any conflict
+git rebase -i upstream/master
+
+# Soft reset to the u/xp master branch and check we didn't miss anything
+git reset --soft upbound-upstream/master
+
+# If we missed something add it and commit it as appropriate
+
+# Push the resulting branch to upbound-upstream
+git push --force upbound-upstream uxp-patches-on-top
+
+# Write all the UXP specific patches down to a single patch file
+git format-patch -k --stdout $(git merge-base HEAD upstream/master)..HEAD > uxp_specific_patches.patch
+
+# Checkout a branch from the u/xp release branch
+git checkout -b uxp-patches-$RELEASE_BRANCH upbound-upstream/$RELEASE_BRANCH
+
+# Apply all the UXP specific patches on top of the u/xp release branch, resolve any conflict
+git am -3 -k --whitespace=fix uxp_specific_patches.patch
+
+# Push the resulting release branch with all the UXP specific patches to your fork.
+git push upbound-origin uxp-patches-$RELEASE_BRANCH
+
+# Open a PR from your fork to the release-X.Y of upbound/crossplane, get it
+# reviewed and merged.
+```
 
 ##### Sync **an existing** release branch:
 

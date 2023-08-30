@@ -69,14 +69,14 @@ planes.
 | registryCaBundleConfig.key | string | `""` | The ConfigMap key containing a custom CA bundle to enable fetching packages from registries with unknown or untrusted certificates. |
 | registryCaBundleConfig.name | string | `""` | The ConfigMap name containing a custom CA bundle to enable fetching packages from registries with unknown or untrusted certificates. |
 | replicas | int | `1` | The number of Crossplane pod `replicas` to deploy. |
-| resourcesCrossplane.limits.cpu | string | `"100m"` | CPU resource limits for the Crossplane pod. |
-| resourcesCrossplane.limits.memory | string | `"512Mi"` | Memory resource limits for the Crossplane pod. |
-| resourcesCrossplane.requests.cpu | string | `"100m"` | CPU resource requests for the Crossplane pod. |
-| resourcesCrossplane.requests.memory | string | `"256Mi"` | Memory resource requests for the Crossplane pod. |
-| resourcesRBACManager.limits.cpu | string | `"100m"` | CPU resource limits for the RBAC Manager pod. |
-| resourcesRBACManager.limits.memory | string | `"512Mi"` | Memory resource limits for the RBAC Manager pod. |
-| resourcesRBACManager.requests.cpu | string | `"100m"` | CPU resource requests for the RBAC Manager pod. |
-| resourcesRBACManager.requests.memory | string | `"256Mi"` | Memory resource requests for the RBAC Manager pod. |
+| resourcesCrossplane.limits.cpu | string | `"3000m"` | CPU resource limits for the Crossplane pod. |
+| resourcesCrossplane.limits.memory | string | `"3Gi"` | Memory resource limits for the Crossplane pod. |
+| resourcesCrossplane.requests.cpu | string | `"3000m"` | CPU resource requests for the Crossplane pod. |
+| resourcesCrossplane.requests.memory | string | `"2Gi"` | Memory resource requests for the Crossplane pod. |
+| resourcesRBACManager.limits.cpu | string | `"3000m"` | CPU resource limits for the RBAC Manager pod. |
+| resourcesRBACManager.limits.memory | string | `"3Gi"` | Memory resource limits for the RBAC Manager pod. |
+| resourcesRBACManager.requests.cpu | string | `"3000m"` | CPU resource requests for the RBAC Manager pod. |
+| resourcesRBACManager.requests.memory | string | `"2Gi"` | Memory resource requests for the RBAC Manager pod. |
 | securityContextCrossplane.allowPrivilegeEscalation | bool | `false` | Enable `allowPrivilegeEscalation` for the Crossplane pod. |
 | securityContextCrossplane.readOnlyRootFilesystem | bool | `true` | Set the Crossplane pod root file system as read-only. |
 | securityContextCrossplane.runAsGroup | int | `65532` | The group ID used by the Crossplane pod. |

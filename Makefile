@@ -127,6 +127,9 @@ crossplane:
 	@$(SED_CMD) 's|repository: crossplane/crossplane|repository: upbound/crossplane|g' '$(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml'
 	@$(SED_CMD) 's|repository: crossplane/xfn|repository: upbound/xfn|g' '$(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml'
 	@$(SED_CMD) 's|tag: ""|tag: "$(CROSSPLANE_TAG)"|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|cpu: 100m|cpu: 3000m|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|memory: 512Mi|memory: 3Gi|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
+	@$(SED_CMD) 's|memory: 256Mi|memory: 2Gi|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@cat $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/uxp-values.yaml >> $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Crossplane chart has been fetched
 

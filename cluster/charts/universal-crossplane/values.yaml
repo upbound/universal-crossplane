@@ -92,12 +92,12 @@ resourcesCrossplane:
     # -- CPU resource limits for the Crossplane pod.
     cpu: 3000m
     # -- Memory resource limits for the Crossplane pod.
-    memory: 3072Mi
+    memory: 3Gi
   requests:
     # -- CPU resource requests for the Crossplane pod.
-    cpu: 2000m
+    cpu: 3000m
     # -- Memory resource requests for the Crossplane pod.
-    memory: 2048Mi
+    memory: 2Gi
 
 securityContextCrossplane:
   # -- The user ID used by the Crossplane pod.
@@ -122,14 +122,14 @@ packageCache:
 resourcesRBACManager:
   limits:
     # -- CPU resource limits for the RBAC Manager pod.
-    cpu: 300m
+    cpu: 3000m
     # -- Memory resource limits for the RBAC Manager pod.
-    memory: 768Mi
+    memory: 3Gi
   requests:
     # -- CPU resource requests for the RBAC Manager pod.
-    cpu: 200m
+    cpu: 3000m
     # -- Memory resource requests for the RBAC Manager pod.
-    memory: 512Mi
+    memory: 2Gi
 
 securityContextRBACManager:
   # -- The user ID used by the RBAC Manager pod.

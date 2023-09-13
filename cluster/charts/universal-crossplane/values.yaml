@@ -11,7 +11,7 @@ image:
   # -- Repository for the Crossplane pod image.
   repository: upbound/crossplane
   # -- The Crossplane image tag. Defaults to the value of `appVersion` in Chart.yaml.
-  tag: "v1.13.2-up.1"
+  tag: "v1.13.2-up.2"
   # -- The image pull policy used for Crossplane and RBAC Manager pods.
   pullPolicy: IfNotPresent
 
@@ -173,7 +173,7 @@ xfn:
     # -- Composite function runner container image.
     repository: upbound/xfn
     # -- Composite function runner container image tag. Defaults to the value of `appVersion` in Chart.yaml.
-    tag: "v1.13.2-up.1"
+    tag: "v1.13.2-up.2"
     # -- Composite function runner container image pull policy.
     pullPolicy: IfNotPresent
   # -- Add custom arguments to the Composite functions runner container.

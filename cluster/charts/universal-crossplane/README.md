@@ -43,7 +43,7 @@ planes.
 | hostNetwork | bool | `false` | Enable `hostNetwork` for the Crossplane deployment. Caution: enabling `hostNetwork`` grants the Crossplane Pod access to the host network namespace. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy used for Crossplane and RBAC Manager pods. |
 | image.repository | string | `"upbound/crossplane"` | Repository for the Crossplane pod image. |
-| image.tag | string | `"v1.13.2-up.2"` | The Crossplane image tag. Defaults to the value of `appVersion` in Chart.yaml. |
+| image.tag | string | `"v1.13.2-up.3"` | The Crossplane image tag. Defaults to the value of `appVersion` in Chart.yaml. |
 | imagePullSecrets | object | `{}` | The imagePullSecret names to add to the Crossplane ServiceAccount. |
 | leaderElection | bool | `true` | Enable [leader election](https://docs.crossplane.io/latest/concepts/pods/#leader-election) for the Crossplane pod. |
 | metrics.enabled | bool | `false` | Enable Prometheus path, port and scrape annotations and expose port 8080 for both the Crossplane and RBAC Manager pods. |
@@ -97,7 +97,7 @@ planes.
 | xfn.extraEnvVars | object | `{}` | Add custom environmental variables to the Composite function runner container. Replaces any `.` in a variable name with `_`. For example, `SAMPLE.KEY=value1` becomes `SAMPLE_KEY=value1`. |
 | xfn.image.pullPolicy | string | `"IfNotPresent"` | Composite function runner container image pull policy. |
 | xfn.image.repository | string | `"upbound/xfn"` | Composite function runner container image. |
-| xfn.image.tag | string | `"v1.13.2-up.2"` | Composite function runner container image tag. Defaults to the value of `appVersion` in Chart.yaml. |
+| xfn.image.tag | string | `"v1.13.2-up.3"` | Composite function runner container image tag. Defaults to the value of `appVersion` in Chart.yaml. |
 | xfn.resources.limits.cpu | string | `"2000m"` | CPU resource limits for the Composite function runner container. |
 | xfn.resources.limits.memory | string | `"2Gi"` | Memory resource limits for the Composite function runner container. |
 | xfn.resources.requests.cpu | string | `"1000m"` | CPU resource requests for the Composite function runner container. |

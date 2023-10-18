@@ -219,7 +219,7 @@ spec:
                                     - bool
                                     - float64
                                     - object
-                                    - list
+                                    - array
                                     type: string
                                 required:
                                 - toType
@@ -577,7 +577,7 @@ spec:
                                       - bool
                                       - float64
                                       - object
-                                      - list
+                                      - array
                                       type: string
                                   required:
                                   - toType
@@ -871,7 +871,7 @@ spec:
                                       - bool
                                       - float64
                                       - object
-                                      - list
+                                      - array
                                       type: string
                                   required:
                                   - toType
@@ -1319,7 +1319,7 @@ spec:
                                     - bool
                                     - float64
                                     - object
-                                    - list
+                                    - array
                                     type: string
                                 required:
                                 - toType
@@ -1677,7 +1677,7 @@ spec:
                                       - bool
                                       - float64
                                       - object
-                                      - list
+                                      - array
                                       type: string
                                   required:
                                   - toType
@@ -1971,7 +1971,7 @@ spec:
                                       - bool
                                       - float64
                                       - object
-                                      - list
+                                      - array
                                       type: string
                                   required:
                                   - toType

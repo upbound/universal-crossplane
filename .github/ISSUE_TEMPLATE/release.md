@@ -26,7 +26,7 @@ according to the declared [schedule][uxp-schedule], you should have:
 - [ ] Cut [upbound/crossplane][upbound-xp-fork] `vX.Y.0-up.1` release from the `release-X.Y` branch by:
   - [ ] Running the [Tag workflow][tag-xp-fork] on the `release-vX.Y` branch with the proper release version, `vX.Y.0-up.1`. Message suggested but not required: `Release vX.Y.0-up.1`.
   - [ ] Running the [CI workflow][ci-xp-fork] on the `release-vX.Y` branch to build and publish the latest tagged artifacts.
-  - [ ] You should now be able to run: `docker pull upbound/crossplane:vX.Y.0-up.1`
+  - [ ] You should now be able to run: `docker pull xpkg.upbound.io/upbound/crossplane:vX.Y.0-up.1`
 - [ ] Created and merged a PR to the `main` branch of [upbound/universal-crossplane][uxp] with the following changes:
   - [ ] Update any reference to the old latest release to `vX.Y.0-up.1`, such as `CROSSPLANE_TAG` and `CROSSPLANE_COMMIT` in the `Makefile`.
   - [ ] Run `make generate` to import any changes in the [upstream Helm chart][upstream-helm-chart].

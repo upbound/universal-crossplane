@@ -38,19 +38,20 @@ planes.
 | deploymentStrategy | string | `"RollingUpdate"` | The deployment strategy for the Crossplane and RBAC Manager pods. |
 | extraEnvVarsCrossplane | object | `{}` | Add custom environmental variables to the Crossplane pod deployment. Replaces any `.` in a variable name with `_`. For example, `SAMPLE.KEY=value1` becomes `SAMPLE_KEY=value1`. |
 | extraEnvVarsRBACManager | object | `{}` | Add custom environmental variables to the RBAC Manager pod deployment. Replaces any `.` in a variable name with `_`. For example, `SAMPLE.KEY=value1` becomes `SAMPLE_KEY=value1`. |
+| extraObjects | list | `[]` | To add arbitrary Kubernetes Objects during a Helm Install |
 | extraVolumeMountsCrossplane | object | `{}` | Add custom `volumeMounts` to the Crossplane pod. |
 | extraVolumesCrossplane | object | `{}` | Add custom `volumes` to the Crossplane pod. |
-| hostNetwork | bool | `false` | Enable `hostNetwork` for the Crossplane deployment. Caution: enabling `hostNetwork`` grants the Crossplane Pod access to the host network namespace. |
+| hostNetwork | bool | `false` | Enable `hostNetwork` for the Crossplane deployment. Caution: enabling `hostNetwork` grants the Crossplane Pod access to the host network namespace. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy used for Crossplane and RBAC Manager pods. |
-| image.repository | string | `"upbound/crossplane"` | Repository for the Crossplane pod image. |
-| image.tag | string | `"v1.13.2-up.3"` | The Crossplane image tag. Defaults to the value of `appVersion` in Chart.yaml. |
+| image.repository | string | `"xpkg.upbound.io/upbound/crossplane"` | Repository for the Crossplane pod image. |
+| image.tag | string | `"v1.14.0-up.1"` | The Crossplane image tag. Defaults to the value of `appVersion` in `Chart.yaml`. |
 | imagePullSecrets | object | `{}` | The imagePullSecret names to add to the Crossplane ServiceAccount. |
 | leaderElection | bool | `true` | Enable [leader election](https://docs.crossplane.io/latest/concepts/pods/#leader-election) for the Crossplane pod. |
 | metrics.enabled | bool | `false` | Enable Prometheus path, port and scrape annotations and expose port 8080 for both the Crossplane and RBAC Manager pods. |
 | nameOverride | string | `"crossplane"` |  |
 | nodeSelector | object | `{}` | Add `nodeSelectors` to the Crossplane pod deployment. |
 | packageCache.configMap | string | `""` | The name of a ConfigMap to use as the package cache. Disables the default package cache `emptyDir` Volume. |
-| packageCache.medium | string | `""` | Set to `Memory` to hold the package cache in a RAM-backed file system. Useful for Crossplane development. |
+| packageCache.medium | string | `""` | Set to `Memory` to hold the package cache in a RAM backed file system. Useful for Crossplane development. |
 | packageCache.pvc | string | `""` | The name of a PersistentVolumeClaim to use as the package cache. Disables the default package cache `emptyDir` Volume. |
 | packageCache.sizeLimit | string | `"20Mi"` | The size limit for the package cache. If medium is `Memory` the `sizeLimit` can't exceed Node memory. |
 | podSecurityContextCrossplane | object | `{}` | Add a custom `securityContext` to the Crossplane pod. |
@@ -88,24 +89,4 @@ planes.
 | serviceAccount.customAnnotations | object | `{}` | Add custom `annotations` to the Crossplane ServiceAccount. |
 | tolerations | list | `[]` | Add `tolerations` to the Crossplane pod deployment. |
 | webhooks.enabled | bool | `true` | Enable webhooks for Crossplane and installed Provider packages. |
-| xfn.args | list | `[]` | Add custom arguments to the Composite functions runner container. |
-| xfn.cache.configMap | string | `""` | The name of a ConfigMap to use as the Composite function runner package cache. Disables the default Composite function runner package cache `emptyDir` Volume. |
-| xfn.cache.medium | string | `""` | Set to `Memory` to hold the Composite function runner package cache in a RAM-backed file system. Useful for Crossplane development. |
-| xfn.cache.pvc | string | `""` | The name of a PersistentVolumeClaim to use as the Composite function runner package cache. Disables the default Composite function runner package cache `emptyDir` Volume. |
-| xfn.cache.sizeLimit | string | `"1Gi"` | The size limit for the Composite function runner package cache. If medium is `Memory` the `sizeLimit` can't exceed Node memory. |
-| xfn.enabled | bool | `false` | Enable the alpha Composition functions (`xfn`) sidecar container. Also requires Crossplane `args` value `--enable-composition-functions` set. |
-| xfn.extraEnvVars | object | `{}` | Add custom environmental variables to the Composite function runner container. Replaces any `.` in a variable name with `_`. For example, `SAMPLE.KEY=value1` becomes `SAMPLE_KEY=value1`. |
-| xfn.image.pullPolicy | string | `"IfNotPresent"` | Composite function runner container image pull policy. |
-| xfn.image.repository | string | `"upbound/xfn"` | Composite function runner container image. |
-| xfn.image.tag | string | `"v1.13.2-up.3"` | Composite function runner container image tag. Defaults to the value of `appVersion` in Chart.yaml. |
-| xfn.resources.limits.cpu | string | `"2000m"` | CPU resource limits for the Composite function runner container. |
-| xfn.resources.limits.memory | string | `"2Gi"` | Memory resource limits for the Composite function runner container. |
-| xfn.resources.requests.cpu | string | `"1000m"` | CPU resource requests for the Composite function runner container. |
-| xfn.resources.requests.memory | string | `"1Gi"` | Memory resource requests for the Composite function runner container. |
-| xfn.securityContext.allowPrivilegeEscalation | bool | `false` | Enable `allowPrivilegeEscalation` for the Composite function runner container. |
-| xfn.securityContext.capabilities.add | list | `["SETUID","SETGID"]` | Set Linux capabilities for the Composite function runner container. The default values allow the container to create an unprivileged user namespace for running Composite function containers. |
-| xfn.securityContext.readOnlyRootFilesystem | bool | `true` | Set the Composite function runner container root file system as read-only. |
-| xfn.securityContext.runAsGroup | int | `65532` | The group ID used by the Composite function runner container. |
-| xfn.securityContext.runAsUser | int | `65532` | The user ID used by the Composite function runner container. |
-| xfn.securityContext.seccompProfile.type | string | `"Unconfined"` | Apply a `seccompProfile` to the Composite function runner container. The default value allows the Composite function runner container permissions to use the `unshare` syscall. |
 

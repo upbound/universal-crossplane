@@ -4,45 +4,36 @@ kind: CustomResourceDefinition
 metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.13.0
-  name: providerrevisions.pkg.crossplane.io
+  name: functions.pkg.crossplane.io
 spec:
   group: pkg.crossplane.io
   names:
     categories:
     - crossplane
-    - pkgrev
-    kind: ProviderRevision
-    listKind: ProviderRevisionList
-    plural: providerrevisions
-    singular: providerrevision
+    - pkg
+    kind: Function
+    listKind: FunctionList
+    plural: functions
+    singular: function
   scope: Cluster
   versions:
   - additionalPrinterColumns:
+    - jsonPath: .status.conditions[?(@.type=='Installed')].status
+      name: INSTALLED
+      type: string
     - jsonPath: .status.conditions[?(@.type=='Healthy')].status
       name: HEALTHY
       type: string
-    - jsonPath: .spec.revision
-      name: REVISION
-      type: string
-    - jsonPath: .spec.image
-      name: IMAGE
-      type: string
-    - jsonPath: .spec.desiredState
-      name: STATE
-      type: string
-    - jsonPath: .status.foundDependencies
-      name: DEP-FOUND
-      type: string
-    - jsonPath: .status.installedDependencies
-      name: DEP-INSTALLED
+    - jsonPath: .spec.package
+      name: PACKAGE
       type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
-    name: v1
+    name: v1beta1
     schema:
       openAPIV3Schema:
-        description: A ProviderRevision that has been added to Crossplane.
+        description: Function is the CRD type for a request to deploy a long-running Function.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -53,7 +44,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: ProviderRevisionSpec specifies configuration for a ProviderRevision.
+            description: FunctionSpec specifies the configuration of a Function.
             properties:
               commonLabels:
                 additionalProperties:
@@ -69,22 +60,19 @@ spec:
                 required:
                 - name
                 type: object
-              desiredState:
-                description: DesiredState of the PackageRevision. Can be either Active or Inactive.
-                type: string
               ignoreCrossplaneConstraints:
                 default: false
                 description: IgnoreCrossplaneConstraints indicates to the package manager whether to honor Crossplane version constrains specified by the package. Default is false.
                 type: boolean
-              image:
-                description: Package image used by install Pod to extract package contents.
+              package:
+                description: Package is the name of the package that is being requested.
                 type: string
               packagePullPolicy:
                 default: IfNotPresent
-                description: PackagePullPolicy defines the pull policy for the package. It is also applied to any images pulled for the package, such as a provider's controller image. Default is IfNotPresent.
+                description: PackagePullPolicy defines the pull policy for the package. Default is IfNotPresent.
                 type: string
               packagePullSecrets:
-                description: PackagePullSecrets are named secrets in the same namespace that can be used to fetch packages from private registries. They are also applied to any images pulled for the package, such as a provider's controller image.
+                description: PackagePullSecrets are named secrets in the same namespace that can be used to fetch packages from private registries.
                 items:
                   description: LocalObjectReference contains enough information to let you locate the referenced object inside the same namespace.
                   properties:
@@ -94,8 +82,13 @@ spec:
                   type: object
                   x-kubernetes-map-type: atomic
                 type: array
-              revision:
-                description: Revision number. Indicates when the revision will be garbage collected based on the parent's RevisionHistoryLimit.
+              revisionActivationPolicy:
+                default: Automatic
+                description: RevisionActivationPolicy specifies how the package controller should update from one revision to the next. Options are Automatic or Manual. Default is Automatic.
+                type: string
+              revisionHistoryLimit:
+                default: 1
+                description: RevisionHistoryLimit dictates how the package controller cleans up old inactive package revisions. Defaults to 1. Can be disabled by explicitly setting to 0.
                 format: int64
                 type: integer
               runtimeConfigRef:
@@ -121,19 +114,11 @@ spec:
                 default: false
                 description: SkipDependencyResolution indicates to the package manager whether to skip resolving dependencies for a package. Setting this value to true may have unintended consequences. Default is false.
                 type: boolean
-              tlsClientSecretName:
-                description: TLSClientSecretName is the name of the TLS Secret that stores client certificates of the Provider.
-                type: string
-              tlsServerSecretName:
-                description: TLSServerSecretName is the name of the TLS Secret that stores server certificates of the Provider.
-                type: string
             required:
-            - desiredState
-            - image
-            - revision
+            - package
             type: object
           status:
-            description: PackageRevisionStatus represents the observed state of a PackageRevision.
+            description: FunctionStatus represents the observed state of a Function.
             properties:
               conditions:
                 description: Conditions of the resource.
@@ -166,73 +151,12 @@ spec:
                 x-kubernetes-list-map-keys:
                 - type
                 x-kubernetes-list-type: map
-              foundDependencies:
-                description: Dependency information.
-                format: int64
-                type: integer
-              installedDependencies:
-                format: int64
-                type: integer
-              invalidDependencies:
-                format: int64
-                type: integer
-              objectRefs:
-                description: References to objects owned by PackageRevision.
-                items:
-                  description: A TypedReference refers to an object by Name, Kind, and APIVersion. It is commonly used to reference cluster-scoped objects or objects where the namespace is already known.
-                  properties:
-                    apiVersion:
-                      description: APIVersion of the referenced object.
-                      type: string
-                    kind:
-                      description: Kind of the referenced object.
-                      type: string
-                    name:
-                      description: Name of the referenced object.
-                      type: string
-                    uid:
-                      description: UID of the referenced object.
-                      type: string
-                  required:
-                  - apiVersion
-                  - kind
-                  - name
-                  type: object
-                type: array
-              permissionRequests:
-                description: PermissionRequests made by this package. The package declares that its controller needs these permissions to run. The RBAC manager is responsible for granting them.
-                items:
-                  description: PolicyRule holds information that describes a policy rule, but does not contain information about who the rule applies to or which namespace the rule applies to.
-                  properties:
-                    apiGroups:
-                      description: APIGroups is the name of the APIGroup that contains the resources.  If multiple API groups are specified, any action requested against one of the enumerated resources in any API group will be allowed. "" represents the core API group and "*" represents all API groups.
-                      items:
-                        type: string
-                      type: array
-                    nonResourceURLs:
-                      description: NonResourceURLs is a set of partial urls that a user should have access to.  *s are allowed, but only as the full, final step in the path Since non-resource URLs are not namespaced, this field is only applicable for ClusterRoles referenced from a ClusterRoleBinding. Rules can either apply to API resources (such as "pods" or "secrets") or non-resource URL paths (such as "/api"),  but not both.
-                      items:
-                        type: string
-                      type: array
-                    resourceNames:
-                      description: ResourceNames is an optional white list of names that the rule applies to.  An empty set means that everything is allowed.
-                      items:
-                        type: string
-                      type: array
-                    resources:
-                      description: Resources is a list of resources this rule applies to. '*' represents all resources.
-                      items:
-                        type: string
-                      type: array
-                    verbs:
-                      description: Verbs is a list of Verbs that apply to ALL the ResourceKinds contained in this rule. '*' represents all verbs.
-                      items:
-                        type: string
-                      type: array
-                  required:
-                  - verbs
-                  type: object
-                type: array
+              currentIdentifier:
+                description: CurrentIdentifier is the most recent package source that was used to produce a revision. The package manager uses this field to determine whether to check for package updates for a given source when packagePullPolicy is set to IfNotPresent. Manually removing this field will cause the package manager to check that the current revision is correct for the given package source.
+                type: string
+              currentRevision:
+                description: CurrentRevision is the name of the current package revision. It will reflect the most up to date revision, whether it has been activated or not.
+                type: string
             type: object
         type: object
     served: true

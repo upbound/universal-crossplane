@@ -18,19 +18,26 @@ spec:
     type: {{ .Values.deploymentStrategy }}
   template:
     metadata:
-      {{- if .Values.metrics.enabled }}
+      {{- if or .Values.metrics.enabled .Values.customAnnotations }}
       annotations:
+      {{- end }}
+      {{- if .Values.metrics.enabled }}
         prometheus.io/path: /metrics
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
+      {{- end }}
+      {{- with .Values.customAnnotations }}
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       labels:
         app: {{ template "crossplane.name" . }}-rbac-manager
         release: {{ .Release.Name }}
         {{- include "crossplane.labels" . | indent 8 }}
     spec:
+      {{- with .Values.podSecurityContextRBACManager }}
       securityContext:
-        {{- toYaml .Values.podSecurityContextRBACManager | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName | quote }}
       {{- end }}
@@ -44,8 +51,10 @@ spec:
         name: {{ .Chart.Name }}-init
         resources:
           {{- toYaml .Values.resourcesRBACManager | nindent 12 }}
+        {{- with .Values.securityContextRBACManager }}
         securityContext:
-          {{- toYaml .Values.securityContextRBACManager | nindent 12 }}
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
         env:
           - name: GOMAXPROCS
             valueFrom:
@@ -78,8 +87,10 @@ spec:
         - name: metrics
           containerPort: 8080
         {{- end }}
+        {{- with .Values.securityContextRBACManager }}
         securityContext:
-          {{- toYaml .Values.securityContextRBACManager | nindent 12 }}
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
         env:
           - name: GOMAXPROCS
             valueFrom:

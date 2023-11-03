@@ -9,9 +9,9 @@ deploymentStrategy: RollingUpdate
 
 image:
   # -- Repository for the Crossplane pod image.
-  repository: upbound/crossplane
-  # -- The Crossplane image tag. Defaults to the value of `appVersion` in Chart.yaml.
-  tag: "v1.13.2-up.3"
+  repository: xpkg.upbound.io/upbound/crossplane
+  # -- The Crossplane image tag. Defaults to the value of `appVersion` in `Chart.yaml`.
+  tag: "v1.14.0-up.1"
   # -- The image pull policy used for Crossplane and RBAC Manager pods.
   pullPolicy: IfNotPresent
 
@@ -22,7 +22,7 @@ tolerations: []
 # -- Add `affinities` to the Crossplane pod deployment.
 affinity: {}
 
-# -- Enable `hostNetwork` for the Crossplane deployment. Caution: enabling `hostNetwork`` grants the Crossplane Pod access to the host network namespace.
+# -- Enable `hostNetwork` for the Crossplane deployment. Caution: enabling `hostNetwork` grants the Crossplane Pod access to the host network namespace.
 hostNetwork: false
 
 # -- Add custom `labels` to the Crossplane pod deployment.
@@ -110,7 +110,7 @@ securityContextCrossplane:
   readOnlyRootFilesystem: true
 
 packageCache:
-  # -- Set to `Memory` to hold the package cache in a RAM-backed file system. Useful for Crossplane development.
+  # -- Set to `Memory` to hold the package cache in a RAM backed file system. Useful for Crossplane development.
   medium: ""
   # -- The size limit for the package cache. If medium is `Memory` the `sizeLimit` can't exceed Node memory.
   sizeLimit: 20Mi
@@ -165,61 +165,18 @@ extraVolumesCrossplane: {}
 # -- Add custom `volumeMounts` to the Crossplane pod.
 extraVolumeMountsCrossplane: {}
 
-xfn:
-  # -- Enable the alpha Composition functions (`xfn`) sidecar container. Also requires
-  # Crossplane `args` value `--enable-composition-functions` set.
-  enabled: false
-  image:
-    # -- Composite function runner container image.
-    repository: upbound/xfn
-    # -- Composite function runner container image tag. Defaults to the value of `appVersion` in Chart.yaml.
-    tag: "v1.13.2-up.3"
-    # -- Composite function runner container image pull policy.
-    pullPolicy: IfNotPresent
-  # -- Add custom arguments to the Composite functions runner container.
-  args: []
-  # -- Add custom environmental variables to the Composite function runner container.
-  # Replaces any `.` in a variable name with `_`. For example, `SAMPLE.KEY=value1` becomes `SAMPLE_KEY=value1`.
-  extraEnvVars: {}
-  securityContext:
-    # -- The user ID used by the Composite function runner container.
-    runAsUser: 65532
-    # -- The group ID used by the Composite function runner container.
-    runAsGroup: 65532
-    # -- Enable `allowPrivilegeEscalation` for the Composite function runner container.
-    allowPrivilegeEscalation: false
-    # -- Set the Composite function runner container root file system as read-only.
-    readOnlyRootFilesystem: true
-    capabilities:
-      # -- Set Linux capabilities for the Composite function runner container.
-      # The default values allow the container to create an unprivileged
-      # user namespace for running Composite function containers.
-      add: ["SETUID", "SETGID"]
-    seccompProfile:
-      # -- Apply a `seccompProfile` to the Composite function runner container.
-      # The default value allows the Composite function runner container
-      # permissions to use the `unshare` syscall.
-      type: Unconfined
-  cache:
-    # -- Set to `Memory` to hold the Composite function runner package cache in a RAM-backed file system. Useful for Crossplane development.
-    medium: ""
-    # -- The size limit for the Composite function runner package cache. If medium is `Memory` the `sizeLimit` can't exceed Node memory.
-    sizeLimit: 1Gi
-    # -- The name of a PersistentVolumeClaim to use as the Composite function runner package cache. Disables the default Composite function runner package cache `emptyDir` Volume.
-    pvc: ""
-    # -- The name of a ConfigMap to use as the Composite function runner package cache. Disables the default Composite function runner package cache `emptyDir` Volume.
-    configMap: ""
-  resources:
-    limits:
-      # -- CPU resource limits for the Composite function runner container.
-      cpu: 2000m
-      # -- Memory resource limits for the Composite function runner container.
-      memory: 2Gi
-    requests:
-      # -- CPU resource requests for the Composite function runner container.
-      cpu: 1000m
-      # -- Memory resource requests for the Composite function runner container.
-      memory: 1Gi
+# -- To add arbitrary Kubernetes Objects during a Helm Install
+extraObjects: []
+  # - apiVersion: pkg.crossplane.io/v1alpha1
+  #   kind: ControllerConfig
+  #   metadata:
+  #     name: aws-config
+  #     annotations:
+  #       eks.amazonaws.com/role-arn: arn:aws:iam::123456789101:role/example
+  #       helm.sh/hook: post-install
+  #   spec:
+  #     podSecurityContext:
+  #       fsGroup: 2000
 
 ### Bootstrapper Values
 

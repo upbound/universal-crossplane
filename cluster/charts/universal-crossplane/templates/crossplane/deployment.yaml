@@ -21,16 +21,13 @@ spec:
     type: {{ .Values.deploymentStrategy }}
   template:
     metadata:
-      {{- if or .Values.metrics.enabled .Values.xfn.enabled .Values.customAnnotations }}
+      {{- if or .Values.metrics.enabled .Values.customAnnotations }}
       annotations:
       {{- end }}
       {{- if .Values.metrics.enabled }}
         prometheus.io/path: /metrics
         prometheus.io/port: "8080"
         prometheus.io/scrape: "true"
-      {{- end }}
-      {{- if .Values.xfn.enabled }}
-        container.apparmor.security.beta.kubernetes.io/{{ .Chart.Name }}-xfn: unconfined
       {{- end }}
       {{- with .Values.customAnnotations }}
         {{- toYaml . | nindent 8 }}
@@ -40,8 +37,10 @@ spec:
         release: {{ .Release.Name }}
         {{- include "crossplane.labels" . | indent 8 }}
     spec:
+      {{- with .Values.podSecurityContextCrossplane }}
       securityContext:
-        {{- toYaml .Values.podSecurityContextCrossplane | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       {{- if .Values.priorityClassName }}
       priorityClassName: {{ .Values.priorityClassName  | quote }}
       {{- end }}
@@ -64,19 +63,23 @@ spec:
           name: {{ .Chart.Name }}-init
           resources:
             {{- toYaml .Values.resourcesCrossplane | nindent 12 }}
+          {{- with .Values.securityContextCrossplane }}
           securityContext:
-            {{- toYaml .Values.securityContextCrossplane | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
           - name: GOMAXPROCS
             valueFrom:
               resourceFieldRef:
                 containerName: {{ .Chart.Name }}-init
                 resource: limits.cpu
+                divisor: "1"
           - name: GOMEMLIMIT
             valueFrom:
               resourceFieldRef:
                 containerName: {{ .Chart.Name }}-init
                 resource: limits.memory
+                divisor: "1"
           - name: POD_NAMESPACE
             valueFrom:
               fieldRef:
@@ -86,8 +89,6 @@ spec:
               fieldRef:
                 fieldPath: spec.serviceAccountName
           {{- if .Values.webhooks.enabled }}
-          - name: "WEBHOOK_TLS_SECRET_NAME"
-            value: webhook-tls-secret
           - name: "WEBHOOK_SERVICE_NAME"
             value: {{ template "crossplane.name" . }}-webhooks
           - name: "WEBHOOK_SERVICE_NAMESPACE"
@@ -96,13 +97,20 @@ spec:
                 fieldPath: metadata.namespace
           - name: "WEBHOOK_SERVICE_PORT"
             value: "9443"
+          {{- else }}
+          - name: "WEBHOOK_ENABLED"
+            value: "false"
           {{- end }}
           {{- if $externalSecretStoresEnabled }}
-          - name: "ESS_TLS_CLIENT_SECRET_NAME"
-            value: ess-client-certs
           - name: "ESS_TLS_SERVER_SECRET_NAME"
             value: ess-server-certs
           {{- end }}
+          - name: "TLS_CA_SECRET_NAME"
+            value: crossplane-root-ca
+          - name: "TLS_SERVER_SECRET_NAME"
+            value: crossplane-tls-server
+          - name: "TLS_CLIENT_SECRET_NAME"
+            value: crossplane-tls-client
       containers:
       - image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
         args:
@@ -115,9 +123,14 @@ spec:
         name: {{ .Chart.Name }}
         resources:
           {{- toYaml .Values.resourcesCrossplane | nindent 12 }}
-        {{- if or .Values.metrics.enabled (.Values.webhooks.enabled) }}
+        startupProbe:
+          failureThreshold: 30
+          periodSeconds: 2
+          tcpSocket:
+            port: readyz
         ports:
-        {{- end }}
+        - name: readyz
+          containerPort: 8081
         {{- if .Values.metrics.enabled }}
         - name: metrics
           containerPort: 8080
@@ -126,8 +139,10 @@ spec:
         - name: webhooks
           containerPort: 9443
         {{- end }}
+        {{- with .Values.securityContextCrossplane }}
         securityContext:
-          {{- toYaml .Values.securityContextCrossplane | nindent 12 }}
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
         env:
           - name: GOMAXPROCS
             valueFrom:
@@ -153,18 +168,18 @@ spec:
           - name: CA_BUNDLE_PATH
             value: "/certs/{{ .Values.registryCaBundleConfig.key }}"
           {{- end}}
-          {{- if .Values.webhooks.enabled }}
-          - name: "WEBHOOK_TLS_SECRET_NAME"
-            value: webhook-tls-secret
-          - name: "WEBHOOK_TLS_CERT_DIR"
-            value: /webhook/tls
+          {{- if not .Values.webhooks.enabled }}
+          - name: "WEBHOOK_ENABLED"
+            value: "false"
           {{- end }}
-          {{- if $externalSecretStoresEnabled }}
-          - name: "ESS_TLS_SECRET_NAME"
-            value: ess-client-certs
-          - name: "ESS_TLS_CERTS_DIR"
-            value: /ess/tls
-          {{- end }}
+          - name: "TLS_SERVER_SECRET_NAME"
+            value: crossplane-tls-server
+          - name: "TLS_SERVER_CERTS_DIR"
+            value: /tls/server
+          - name: "TLS_CLIENT_SECRET_NAME"
+            value: crossplane-tls-client
+          - name: "TLS_CLIENT_CERTS_DIR"
+            value: /tls/client
         {{- range $key, $value := .Values.extraEnvVarsCrossplane }}
           - name: {{ $key | replace "." "_" }}
             value: {{ $value | quote }}
@@ -176,61 +191,13 @@ spec:
           - mountPath: /certs
             name: ca-certs
           {{- end }}
-          {{- if .Values.webhooks.enabled }}
-          - mountPath: /webhook/tls
-            name: webhook-tls-secret
-          {{- end }}
-          {{- if $externalSecretStoresEnabled }}
-          - mountPath: /ess/tls
-            name: ess-client-certs
-          {{- end }}
           {{- if .Values.extraVolumeMountsCrossplane }}
           {{- toYaml .Values.extraVolumeMountsCrossplane | nindent 10 }}
           {{- end }}
-      {{- if .Values.xfn.enabled }}
-      - image: "{{ .Values.xfn.image.repository }}:{{ .Values.xfn.image.tag | default (printf "v%s" .Chart.AppVersion) }}"
-        args:
-        - start
-        {{- range $arg := .Values.xfn.args }}
-        - {{ $arg }}
-        {{- end }}
-        imagePullPolicy: {{ .Values.xfn.image.pullPolicy }}
-        name: {{ .Chart.Name }}-xfn
-        resources:
-          {{- toYaml .Values.xfn.resources | nindent 12 }}
-        securityContext:
-          {{- toYaml .Values.xfn.securityContext | nindent 12 }}
-        env:
-          - name: GOMAXPROCS
-            valueFrom:
-              resourceFieldRef:
-                containerName: {{ .Chart.Name }}
-                resource: limits.cpu
-          - name: GOMEMLIMIT
-            valueFrom:
-              resourceFieldRef:
-                containerName: {{ .Chart.Name }}
-                resource: limits.memory
-          - name: POD_NAMESPACE
-            valueFrom:
-              fieldRef:
-                fieldPath: metadata.namespace
-          {{- if .Values.registryCaBundleConfig.key }}
-          - name: CA_BUNDLE_PATH
-            value: "/certs/{{ .Values.registryCaBundleConfig.key }}"
-          {{- end}}
-        {{- range $key, $value := .Values.xfn.extraEnvVars }}
-          - name: {{ $key | replace "." "_" }}
-            value: {{ $value | quote }}
-        {{- end }}
-        volumeMounts:
-          - mountPath: /xfn
-            name: xfn-cache
-        {{- if .Values.registryCaBundleConfig.name }}
-          - mountPath: /certs
-            name: ca-certs
-        {{- end }}
-      {{- end }}
+          - mountPath: /tls/server
+            name: tls-server-certs
+          - mountPath: /tls/client
+            name: tls-client-certs
       volumes:
       - name: package-cache
         {{- if .Values.packageCache.pvc }}
@@ -244,17 +211,6 @@ spec:
           medium: {{ .Values.packageCache.medium }}
           sizeLimit: {{ .Values.packageCache.sizeLimit }}
         {{- end }}
-      {{- if .Values.xfn.enabled }}
-      - name: xfn-cache
-        {{- if .Values.xfn.cache.pvc }}
-        persistentVolumeClaim:
-          claimName: {{ .Values.xfn.cache.pvc }}
-        {{- else }}
-        emptyDir:
-          medium: {{ .Values.xfn.cache.medium }}
-          sizeLimit: {{ .Values.xfn.cache.sizeLimit }}
-        {{- end }}
-      {{- end }}
       {{- if .Values.registryCaBundleConfig.name }}
       - name: ca-certs
         configMap:
@@ -263,23 +219,12 @@ spec:
             - key: {{ .Values.registryCaBundleConfig.key }}
               path: {{ .Values.registryCaBundleConfig.key }}
       {{- end }}
-      {{- if .Values.webhooks.enabled }}
-      - name: webhook-tls-secret
+      - name: tls-server-certs
         secret:
-          # NOTE(muvaf): The tls.crt is used both by the server (requires it to
-          # be a single cert) and the caBundle fields of webhook configs and CRDs
-          # which can accept a whole bundle of certificates. In order to meet
-          # the requirements of both, we require a single certificate instead of
-          # a bundle.
-          # It's assumed that initializer generates this anyway, so it should be
-          # fine.
-          secretName: webhook-tls-secret
-      {{- end }}
-      {{- if $externalSecretStoresEnabled }}
-      - name: ess-client-certs
+          secretName: crossplane-tls-server
+      - name: tls-client-certs
         secret:
-          secretName: ess-client-certs
-      {{- end }}
+          secretName: crossplane-tls-client
       {{- if .Values.extraVolumesCrossplane }}
       {{- toYaml .Values.extraVolumesCrossplane | nindent 6 }}
       {{- end }}

@@ -26,7 +26,14 @@ rules:
   - ""
   resources:
   - namespaces
-  - serviceaccounts
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - apps
+  resources:
+  - deployments
   verbs:
   - get
   - list

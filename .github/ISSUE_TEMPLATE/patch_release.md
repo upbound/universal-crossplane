@@ -46,7 +46,7 @@ according to the declared schedule, you should have:
     - install the current stable version: `up uxp install`
     - install one of the above reference platforms
     - upgrade to this new version as above: `helm -n upbound-system upgrade --install universal-crossplane <path-to-chart.tgz> --create-namespace`
-- [ ] Run the [Promote workflow][promote-uxp] on the `release-X.Y` branch to promote `vX.Y.Z-up.K` to [stable][uxp-stable-channel], it should contain `universal-crossplane-X.Y.Z-up.K.tgz`. Verify everything is correctly working by running `up uxp install` against an empty Kubernetes cluster, e.g. `kind create cluster`, which should result in an healthy UXP installation with expected image versions.
+- [ ] Run the [Promote workflow][promote-uxp] from the `release-X.Y` branch, to promote `vX.Y.Z-up.K` to `stable`, [here][uxp-stable-channel] you should find `universal-crossplane-X.Y.Z-up.K.tgz`. Verify everything is correctly working by running `up uxp install` against an empty Kubernetes cluster, e.g. `kind create cluster`, which should result in an healthy UXP installation with expected image versions.
 - [ ] Created and published well authored release notes for [UXP][uxp-releases] `vX.Y.Z-up.K`. See the previous release for an example, these should at least:
   - [ ] enumerate relevant updates that were merged in [u/xp][upbound-xp-fork] and [u/uxp][uxp].
   - [ ] mention the [xp/xp][upstream-xp] version it refers to.

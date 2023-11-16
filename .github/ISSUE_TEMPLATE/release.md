@@ -38,14 +38,17 @@ according to the declared [schedule][uxp-schedule], you should have:
 - [ ] Cut the next prerelease of [UXP][uxp] from the `main` branch, `vX.<Y+1>.0-up.1-rc.1` by:
   - [ ] Running the [Tag workflow][tag-uxp] on the `main` branch with the proper release version, `vX.<Y+1>.0-up.1-rc.1`. Message suggested but not required: `Release vX.<Y+1>.0-up.1-rc.1`.
 - [ ] Verify the produced helm chart available in the `build` channnel at `build/release-X.Y/vX.Y.Z-up.K/charts` by doing some sanity checks:
-  - [ ] Installs on a cluster properly with `helm -n upbound-system install universal-crossplane <path-to-chart.tgz> --create-namespace`.
+  - [ ] Installs on a cluster properly with `helm -n upbound-system upgrade --install universal-crossplane <path-to-chart.tgz> --create-namespace`.
   - [ ] Uses the correct image versions of `upbound/crossplane`, e.g. `kubectl -n upbound-system get pods  -o yaml | grep image:`
-  - [ ] Installation of the following reference platforms works:
+  - [ ] Verify at least one of the above reference platforms works end to end by configuring and creating a claim, e.g. using https://github.com/upbound/platform-ref-gcp/blob/main/examples/cluster-claim.yaml:
     - [ ] https://marketplace.upbound.io/configurations/upbound/platform-ref-aws
     - [ ] https://marketplace.upbound.io/configurations/upbound/platform-ref-azure
     - [ ] https://marketplace.upbound.io/configurations/upbound/platform-ref-gcp
-    - [ ] Verify at least one of the above reference platforms works end to end by configuring and creating a claim, e.g. using https://github.com/upbound/platform-ref-gcp/blob/main/examples/cluster-claim.yaml
-- [ ] Upgrading from current supported versions to the latest version works
+  - [ ] Upgrading from the latest supported version works, for example run:
+    - create a kind cluster: `kind create cluster`
+    - install the current stable version: `up uxp install`
+    - install one of the above reference platforms
+    - upgrade to this new version as above: `helm -n upbound-system upgrade --install universal-crossplane <path-to-chart.tgz> --create-namespace`
 - [ ] Run the [Promote workflow][promote-uxp] to promote `vX.Y.0-up.1` to [stable][uxp-stable-channel], it should contain `universal-crossplane-X.Y.0-up.1.tgz`. Verify everything is correctly working by running `up uxp install` against an empty Kubernetes cluster, e.g. `kind create cluster`, which should result in an healthy UXP installation with expected image versions.
 - [ ] Created and published well authored release notes for [UXP][uxp-releases] `vX.Y.0-up.1`. See the previous release for an example, these should at least:
   - [ ] enumerate relevant updates that were merged in [u/xp][upbound-xp-fork] and [u/uxp][uxp].

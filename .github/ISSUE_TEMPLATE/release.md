@@ -22,18 +22,18 @@ this issue for posterity. Assuming `vX.Y.0-up.1` is being cut, after upstream
 [crossplane/crossplane][upstream-xp] `vX.Y.0` has been released
 according to the declared [schedule][uxp-schedule], you should have:
 
-- [ ] Created, or synced if already present, the `release-vX.Y` release branch in [upbound/crossplane][upbound-xp-fork], with upstream [crossplane/crossplane][upstream-xp] release branch, up to the `vX.Y.0` tag, adding any required change specific to the fork, see [here][sync-xp-fork] for more details.
+- [ ] Created, or synced if already present, the `release-X.Y` release branch in [upbound/crossplane][upbound-xp-fork], with upstream [crossplane/crossplane][upstream-xp] release branch, up to the `vX.Y.0` tag, adding any required change specific to the fork, see [here][sync-xp-fork] for more details.
 - [ ] Cut [upbound/crossplane][upbound-xp-fork] `vX.Y.0-up.1` release from the `release-X.Y` branch by:
-  - [ ] Running the [Tag workflow][tag-xp-fork] on the `release-vX.Y` branch with the proper release version, `vX.Y.0-up.1`. Message suggested but not required: `Release vX.Y.0-up.1`.
-  - [ ] Running the [CI workflow][ci-xp-fork] on the `release-vX.Y` branch to build and publish the latest tagged artifacts.
+  - [ ] Running the [Tag workflow][tag-xp-fork] on the `release-X.Y` branch with the proper release version, `vX.Y.0-up.1`. Message suggested but not required: `Release vX.Y.0-up.1`.
+  - [ ] Running the [CI workflow][ci-xp-fork] on the `release-X.Y` branch to build and publish the latest tagged artifacts.
   - [ ] You should now be able to run: `docker pull xpkg.upbound.io/upbound/crossplane:vX.Y.0-up.1`
 - [ ] Created and merged a PR to the `main` branch of [upbound/universal-crossplane][uxp] with the following changes:
   - [ ] Update any reference to the old latest release to `vX.Y.0-up.1`, such as `CROSSPLANE_TAG` and `CROSSPLANE_COMMIT` in the `Makefile`.
   - [ ] Run `make generate` to import any changes in the [upstream Helm chart][upstream-helm-chart].
 - [ ] Created the `release-X.Y` branch from `main` branch in [UXP][uxp].
 - [ ] Cut [UXP][uxp] `vX.Y.0-up.1` release from the `release-X.Y` branch by:
-  - [ ] Running the [Tag workflow][tag-uxp] on the `release-vX.Y` branch with the proper release version, `vX.Y.0-up.1`. Message suggested but not required: `Release vX.Y.0-up.1`.
-  - [ ] Running the [CI workflow][ci-uxp] on the `release-vX.Y` branch to build and publish the latest tagged artifacts.
+  - [ ] Running the [Tag workflow][tag-uxp] on the `release-X.Y` branch with the proper release version, `vX.Y.0-up.1`. Message suggested but not required: `Release vX.Y.0-up.1`.
+  - [ ] Running the [CI workflow][ci-uxp] on the `release-X.Y` branch to build and publish the latest tagged artifacts.
   - [ ] Verify that the tagged build version exists on the [releases.upbound.io](https://releases.upbound.io/universal-crossplane/) `build` channel, e.g. `build/release-X.Y/vX.Y.Z-up.K/...`
 - [ ] Cut the next prerelease of [UXP][uxp] from the `main` branch, `vX.<Y+1>.0-up.1-rc.1` by:
   - [ ] Running the [Tag workflow][tag-uxp] on the `main` branch with the proper release version, `vX.<Y+1>.0-up.1-rc.1`. Message suggested but not required: `Release vX.<Y+1>.0-up.1-rc.1`.

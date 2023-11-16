@@ -22,17 +22,17 @@ this issue for posterity. Assuming `vX.Y.Z-up.K` is being cut, after upstream
 [crossplane/crossplane][upstream-xp] `vX.Y.Z` has been released
 according to the declared schedule, you should have:
 
-- [ ] Synced the `release-vX.Y` release branch in [upbound/crossplane][upbound-xp-fork], with upstream [crossplane/crossplane][upstream-xp] release branch, up to the `vX.Y.Z` tag, adding any required change specific to the fork, see [here][sync-xp-fork] for more details.
+- [ ] Synced the `release-X.Y` release branch in [upbound/crossplane][upbound-xp-fork], with upstream [crossplane/crossplane][upstream-xp] release branch, up to the `vX.Y.Z` tag, adding any required change specific to the fork, see [here][sync-xp-fork] for more details.
 - [ ] Tagged [upbound/crossplane][upbound-xp-fork] `vX.Y.Z-up.K` from the `release-X.Y` branch by:
-  - [ ] Running the [Tag workflow][tag-xp-fork] on the `release-vX.Y` branch with the proper release version, `vX.Y.Z-up.K`. Use `Release vX.Y.Z-up.K` as message (FYI: the format suggested is only for consistency, there is no actual dependency on it).
-  - [ ] Running the [CI workflow][ci-xp-fork] on the `release-vX.Y` branch to build and publish the latest tagged artifacts.
+  - [ ] Running the [Tag workflow][tag-xp-fork] on the `release-X.Y` branch with the proper release version, `vX.Y.Z-up.K`. Use `Release vX.Y.Z-up.K` as message (FYI: the format suggested is only for consistency, there is no actual dependency on it).
+  - [ ] Running the [CI workflow][ci-xp-fork] on the `release-X.Y` branch to build and publish the latest tagged artifacts.
   - [ ] Confirm the image has been successfully published using: `docker buildx imagetools inspect docker.io/upbound/crossplane:vX.Y.Z-up.K`
 - [ ] Created and merged a PR for [upbound/universal-crossplane][uxp] to either the `main` branch, if cutting a patch for the latest supported release, **taking care to label it `backport release-X.Y`**, or directly to the `release-X.Y` branch, if cutting a patch for an older supported release. With the following changes:
   - [ ] Update any reference to the old latest release to `vX.Y.Z-up.K`, such as `CROSSPLANE_TAG` and `CROSSPLANE_COMMIT` in the `Makefile`.
   - [ ] Run `make generate` to import any changes in the [upstream Helm chart][upstream-helm-chart].
 - [ ] Cut [UXP][uxp] `vX.Y.Z-up.K` release from the `release-X.Y` branch by:
-  - [ ] Running the [Tag workflow][tag-uxp] on the `release-vX.Y` branch with the proper release version, `vX.Y.Z-up.K`. Use `Release vX.Y.Z-up.K` as message (FYI: the format suggested is only for consistency, there is no actual dependency on it).
-  - [ ] Running the [CI workflow][ci-uxp] on the `release-vX.Y` branch to build and publish the latest tagged artifacts.
+  - [ ] Running the [Tag workflow][tag-uxp] on the `release-X.Y` branch with the proper release version, `vX.Y.Z-up.K`. Use `Release vX.Y.Z-up.K` as message (FYI: the format suggested is only for consistency, there is no actual dependency on it).
+  - [ ] Running the [CI workflow][ci-uxp] on the `release-X.Y` branch to build and publish the latest tagged artifacts.
   - [ ] Verify that the tagged build version exists on the [releases.upbound.io](https://releases.upbound.io/universal-crossplane/) `build` channel, e.g. `build/release-X.Y/vX.Y.Z-up.K/...`
 - [ ] Verify the produced helm chart available in the `build` channnel at `build/release-X.Y/vX.Y.Z-up.K/charts` by doing some sanity checks:
   - [ ] Installs on a cluster properly with `helm -n upbound-system install universal-crossplane <path-to-chart.tgz> --create-namespace`.
@@ -42,7 +42,7 @@ according to the declared schedule, you should have:
     - [ ] https://marketplace.upbound.io/configurations/upbound/platform-ref-azure
     - [ ] https://marketplace.upbound.io/configurations/upbound/platform-ref-gcp
     - [ ] Verify at least one of the above reference platforms works end to end by configuring and creating a claim, e.g. using https://github.com/upbound/platform-ref-gcp/blob/main/examples/cluster-claim.yaml
-- [ ] Run the [Promote workflow][promote-uxp] on the `release-vX.Y` branch to promote `vX.Y.Z-up.K` to [stable][uxp-stable-channel], it should contain `universal-crossplane-X.Y.Z-up.K.tgz`. Verify everything is correctly working by running `up uxp install` against an empty Kubernetes cluster, e.g. `kind create cluster`, which should result in an healthy UXP installation with expected image versions.
+- [ ] Run the [Promote workflow][promote-uxp] on the `release-X.Y` branch to promote `vX.Y.Z-up.K` to [stable][uxp-stable-channel], it should contain `universal-crossplane-X.Y.Z-up.K.tgz`. Verify everything is correctly working by running `up uxp install` against an empty Kubernetes cluster, e.g. `kind create cluster`, which should result in an healthy UXP installation with expected image versions.
 - [ ] Created and published well authored release notes for [UXP][uxp-releases] `vX.Y.Z-up.K`. See the previous release for an example, these should at least:
   - [ ] enumerate relevant updates that were merged in [u/xp][upbound-xp-fork] and [u/uxp][uxp].
   - [ ] mention the [xp/xp][upstream-xp] version it refers to.

@@ -97,6 +97,7 @@ git fetch --all
 
 # Create the new release branch from the one on crossplane/crossplane.
 git checkout -b $RELEASE_BRANCH upstream/$RELEASE_BRANCH
+git submodule update --init
 
 # Push it to upbound/crossplane, creating the new release branch.
 git push upbound-upstream $RELEASE_BRANCH
@@ -150,6 +151,7 @@ RELEASE_BRANCH=release-X.Y
 UPSTREAM_RELEASE_TAG=vX.Y.Z
 
 git checkout -b sync-upstream-$RELEASE_BRANCH
+git submodule update --init
 git reset --hard upbound-upstream/$RELEASE_BRANCH
 git fetch --tags upstream
 git merge $UPSTREAM_RELEASE_TAG
@@ -173,6 +175,7 @@ git fetch --all
 git checkout -b sync-upstream-master
 git reset --hard upbound-upstream/master
 git merge upstream/master
+git submodule update --init
 # Resolve conflicts, if any
 git push --set-upstream upbound-origin sync-upstream-master
 ```

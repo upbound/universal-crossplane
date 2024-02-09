@@ -35,8 +35,8 @@ according to the declared [schedule][uxp-schedule], you should have:
   - [ ] Running the [Tag workflow][tag-uxp] on the `release-X.Y` branch with the proper release version, `vX.Y.Z-up.1`. Message suggested but not required: `Release vX.Y.Z-up.1`.
   - [ ] Running the [CI workflow][ci-uxp] on the `release-X.Y` branch to build and publish the latest tagged artifacts.
   - [ ] Verify that the tagged build version exists on the [releases.upbound.io](https://releases.upbound.io/universal-crossplane/) `build` channel, e.g. `build/release-X.Y/vX.Y.Z-up.K/...`
-- [ ] Cut the next prerelease of [UXP][uxp] from the `main` branch, `vX.<Y+1>.0-up.1-rc.1` by:
-  - [ ] Running the [Tag workflow][tag-uxp] on the `main` branch with the proper release version, `vX.<Y+1>.0-up.1-rc.1`. Message suggested but not required: `Release vX.<Y+1>.0-up.1-rc.1`.
+- [ ] Cut the next prerelease of [UXP][uxp] from the `main` branch, `vX.<Y+1>.0-up.1-rc.0` by:
+  - [ ] Running the [Tag workflow][tag-uxp] on the `main` branch with the proper release version, `vX.<Y+1>.0-up.1-rc.0`. Message suggested but not required: `Release vX.<Y+1>.0-up.1-rc.0`.
 - [ ] Verify the produced helm chart available in the `build` channnel at `build/release-X.Y/vX.Y.Z-up.K/charts` by doing some sanity checks:
   - [ ] Installs on a cluster properly with `helm -n upbound-system upgrade --install universal-crossplane <path-to-chart.tgz> --create-namespace`.
   - [ ] Uses the correct image versions of `upbound/crossplane`, e.g. `kubectl -n upbound-system get pods  -o yaml | grep image:`

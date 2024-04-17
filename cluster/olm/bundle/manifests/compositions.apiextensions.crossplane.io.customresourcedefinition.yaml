@@ -310,7 +310,7 @@ spec:
                                 description: String is used to transform the input into a string or a different kind of string. Note that the input does not necessarily need to be a string.
                                 properties:
                                   convert:
-                                    description: Optional conversion method to be specified. `ToUpper` and `ToLower` change the letter case of the input string. `ToBase64` and `FromBase64` perform a base64 conversion based on the input string. `ToJson` converts any input value into its raw JSON representation. `ToSha1`, `ToSha256` and `ToSha512` generate a hash value based on the input converted to JSON.
+                                    description: Optional conversion method to be specified. `ToUpper` and `ToLower` change the letter case of the input string. `ToBase64` and `FromBase64` perform a base64 conversion based on the input string. `ToJson` converts any input value into its raw JSON representation. `ToSha1`, `ToSha256` and `ToSha512` generate a hash value based on the input converted to JSON. `ToAdler32` generate a addler32 hash based on the input string.
                                     enum:
                                     - ToUpper
                                     - ToLower
@@ -320,6 +320,7 @@ spec:
                                     - ToSha1
                                     - ToSha256
                                     - ToSha512
+                                    - ToAdler32
                                     type: string
                                   fmt:
                                     description: Format the input using a Go format string. See https://golang.org/pkg/fmt/ for details.
@@ -577,7 +578,7 @@ spec:
                                   description: String is used to transform the input into a string or a different kind of string. Note that the input does not necessarily need to be a string.
                                   properties:
                                     convert:
-                                      description: Optional conversion method to be specified. `ToUpper` and `ToLower` change the letter case of the input string. `ToBase64` and `FromBase64` perform a base64 conversion based on the input string. `ToJson` converts any input value into its raw JSON representation. `ToSha1`, `ToSha256` and `ToSha512` generate a hash value based on the input converted to JSON.
+                                      description: Optional conversion method to be specified. `ToUpper` and `ToLower` change the letter case of the input string. `ToBase64` and `FromBase64` perform a base64 conversion based on the input string. `ToJson` converts any input value into its raw JSON representation. `ToSha1`, `ToSha256` and `ToSha512` generate a hash value based on the input converted to JSON. `ToAdler32` generate a addler32 hash based on the input string.
                                       enum:
                                       - ToUpper
                                       - ToLower
@@ -587,6 +588,7 @@ spec:
                                       - ToSha1
                                       - ToSha256
                                       - ToSha512
+                                      - ToAdler32
                                       type: string
                                     fmt:
                                       description: Format the input using a Go format string. See https://golang.org/pkg/fmt/ for details.
@@ -898,7 +900,7 @@ spec:
                                   description: String is used to transform the input into a string or a different kind of string. Note that the input does not necessarily need to be a string.
                                   properties:
                                     convert:
-                                      description: Optional conversion method to be specified. `ToUpper` and `ToLower` change the letter case of the input string. `ToBase64` and `FromBase64` perform a base64 conversion based on the input string. `ToJson` converts any input value into its raw JSON representation. `ToSha1`, `ToSha256` and `ToSha512` generate a hash value based on the input converted to JSON.
+                                      description: Optional conversion method to be specified. `ToUpper` and `ToLower` change the letter case of the input string. `ToBase64` and `FromBase64` perform a base64 conversion based on the input string. `ToJson` converts any input value into its raw JSON representation. `ToSha1`, `ToSha256` and `ToSha512` generate a hash value based on the input converted to JSON. `ToAdler32` generate a addler32 hash based on the input string.
                                       enum:
                                       - ToUpper
                                       - ToLower
@@ -908,6 +910,7 @@ spec:
                                       - ToSha1
                                       - ToSha256
                                       - ToSha512
+                                      - ToAdler32
                                       type: string
                                     fmt:
                                       description: Format the input using a Go format string. See https://golang.org/pkg/fmt/ for details.

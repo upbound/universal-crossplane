@@ -31,7 +31,13 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: A Composition specifies how a composite resource should be composed.
+        description: |-
+          A Composition defines a collection of managed resources or functions that
+          Crossplane uses to create and manage new composite resources.
+
+
+          Read the Crossplane documentation for
+          [more information about Compositions](https://docs.crossplane.io/latest/concepts/compositions).
         properties:
           apiVersion:
             description: |-
@@ -266,7 +272,7 @@ spec:
                               - Required
                               type: string
                             mergeOptions:
-                              description: MergeOptions Specifies merge options on a field path
+                              description: MergeOptions Specifies merge options on a field path.
                               properties:
                                 appendSlice:
                                   description: Specifies that already existing elements in a merged slice should be preserved
@@ -660,7 +666,7 @@ spec:
                                 - Required
                                 type: string
                               mergeOptions:
-                                description: MergeOptions Specifies merge options on a field path
+                                description: MergeOptions Specifies merge options on a field path.
                                 properties:
                                   appendSlice:
                                     description: Specifies that already existing elements in a merged slice should be preserved
@@ -933,6 +939,45 @@ spec:
                 items:
                   description: A PipelineStep in a Composition Function pipeline.
                   properties:
+                    credentials:
+                      description: Credentials are optional credentials that the Composition Function needs.
+                      items:
+                        description: |-
+                          FunctionCredentials are optional credentials that a Composition Function
+                          needs to run.
+                        properties:
+                          name:
+                            description: Name of this set of credentials.
+                            type: string
+                          secretRef:
+                            description: |-
+                              A SecretRef is a reference to a secret containing credentials that should
+                              be supplied to the function.
+                            properties:
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: Namespace of the secret.
+                                type: string
+                            required:
+                            - name
+                            - namespace
+                            type: object
+                          source:
+                            description: Source of the function credentials.
+                            enum:
+                            - None
+                            - Secret
+                            type: string
+                        required:
+                        - name
+                        - source
+                        type: object
+                      type: array
+                      x-kubernetes-list-map-keys:
+                      - name
+                      x-kubernetes-list-type: map
                     functionRef:
                       description: |-
                         FunctionRef is a reference to the Composition Function this step should
@@ -960,6 +1005,9 @@ spec:
                   - step
                   type: object
                 type: array
+                x-kubernetes-list-map-keys:
+                - step
+                x-kubernetes-list-type: map
               publishConnectionDetailsWithStoreConfigRef:
                 default:
                   name: default
@@ -1136,7 +1184,7 @@ spec:
                                 - Required
                                 type: string
                               mergeOptions:
-                                description: MergeOptions Specifies merge options on a field path
+                                description: MergeOptions Specifies merge options on a field path.
                                 properties:
                                   appendSlice:
                                     description: Specifies that already existing elements in a merged slice should be preserved
@@ -1401,7 +1449,7 @@ spec:
                       items:
                         description: |-
                           ReadinessCheck is used to indicate how to tell whether a resource is ready
-                          for consumption
+                          for consumption.
                         properties:
                           fieldPath:
                             description: FieldPath shows the path of the field whose value will be used.

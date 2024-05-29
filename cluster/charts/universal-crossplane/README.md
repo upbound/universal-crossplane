@@ -42,11 +42,12 @@ planes.
 | extraObjects | list | `[]` | To add arbitrary Kubernetes Objects during a Helm Install |
 | extraVolumeMountsCrossplane | object | `{}` | Add custom `volumeMounts` to the Crossplane pod. |
 | extraVolumesCrossplane | object | `{}` | Add custom `volumes` to the Crossplane pod. |
+| function.packages | list | `[]` | A list of Function packages to install |
 | hostNetwork | bool | `false` | Enable `hostNetwork` for the Crossplane deployment. Caution: enabling `hostNetwork` grants the Crossplane Pod access to the host network namespace. Consider setting `dnsPolicy` to `ClusterFirstWithHostNet`. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy used for Crossplane and RBAC Manager pods. |
 | image.repository | string | `"xpkg.upbound.io/upbound/crossplane"` | Repository for the Crossplane pod image. |
-| image.tag | string | `"v1.15.2-up.1"` | The Crossplane image tag. Defaults to the value of `appVersion` in `Chart.yaml`. |
-| imagePullSecrets | object | `{}` | The imagePullSecret names to add to the Crossplane ServiceAccount. |
+| image.tag | string | `"v1.16.0-up.1"` | The Crossplane image tag. Defaults to the value of `appVersion` in `Chart.yaml`. |
+| imagePullSecrets | list | `[]` | The imagePullSecret names to add to the Crossplane ServiceAccount. |
 | leaderElection | bool | `true` | Enable [leader election](https://docs.crossplane.io/latest/concepts/pods/#leader-election) for the Crossplane pod. |
 | metrics.enabled | bool | `false` | Enable Prometheus path, port and scrape annotations and expose port 8080 for both the Crossplane and RBAC Manager pods. |
 | nameOverride | string | `"crossplane"` |  |
@@ -86,6 +87,7 @@ planes.
 | securityContextRBACManager.readOnlyRootFilesystem | bool | `true` | Set the RBAC Manager pod root file system as read-only. |
 | securityContextRBACManager.runAsGroup | int | `65532` | The group ID used by the RBAC Manager pod. |
 | securityContextRBACManager.runAsUser | int | `65532` | The user ID used by the RBAC Manager pod. |
+| service.customAnnotations | object | `{}` | Configure annotations on the service object. Only enabled when webhooks.enabled = true |
 | serviceAccount.customAnnotations | object | `{}` | Add custom `annotations` to the Crossplane ServiceAccount. |
 | tolerations | list | `[]` | Add `tolerations` to the Crossplane pod deployment. |
 | webhooks.enabled | bool | `true` | Enable webhooks for Crossplane and installed Provider packages. |

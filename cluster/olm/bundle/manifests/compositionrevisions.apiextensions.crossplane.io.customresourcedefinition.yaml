@@ -35,8 +35,12 @@ spec:
     schema:
       openAPIV3Schema:
         description: |-
-          A CompositionRevision represents a revision in time of a Composition.
-          Revisions are created by Crossplane; they should be treated as immutable.
+          A CompositionRevision represents a revision of a Composition. Crossplane
+          creates new revisions when there are changes to the Composition.
+
+
+          Crossplane creates and manages CompositionRevisions. Don't directly edit
+          CompositionRevisions.
         properties:
           apiVersion:
             description: |-
@@ -273,7 +277,7 @@ spec:
                               - Required
                               type: string
                             mergeOptions:
-                              description: MergeOptions Specifies merge options on a field path
+                              description: MergeOptions Specifies merge options on a field path.
                               properties:
                                 appendSlice:
                                   description: Specifies that already existing elements in a merged slice should be preserved
@@ -667,7 +671,7 @@ spec:
                                 - Required
                                 type: string
                               mergeOptions:
-                                description: MergeOptions Specifies merge options on a field path
+                                description: MergeOptions Specifies merge options on a field path.
                                 properties:
                                   appendSlice:
                                     description: Specifies that already existing elements in a merged slice should be preserved
@@ -940,6 +944,45 @@ spec:
                 items:
                   description: A PipelineStep in a Composition Function pipeline.
                   properties:
+                    credentials:
+                      description: Credentials are optional credentials that the Composition Function needs.
+                      items:
+                        description: |-
+                          FunctionCredentials are optional credentials that a Composition Function
+                          needs to run.
+                        properties:
+                          name:
+                            description: Name of this set of credentials.
+                            type: string
+                          secretRef:
+                            description: |-
+                              A SecretRef is a reference to a secret containing credentials that should
+                              be supplied to the function.
+                            properties:
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: Namespace of the secret.
+                                type: string
+                            required:
+                            - name
+                            - namespace
+                            type: object
+                          source:
+                            description: Source of the function credentials.
+                            enum:
+                            - None
+                            - Secret
+                            type: string
+                        required:
+                        - name
+                        - source
+                        type: object
+                      type: array
+                      x-kubernetes-list-map-keys:
+                      - name
+                      x-kubernetes-list-type: map
                     functionRef:
                       description: |-
                         FunctionRef is a reference to the Composition Function this step should
@@ -1143,7 +1186,7 @@ spec:
                                 - Required
                                 type: string
                               mergeOptions:
-                                description: MergeOptions Specifies merge options on a field path
+                                description: MergeOptions Specifies merge options on a field path.
                                 properties:
                                   appendSlice:
                                     description: Specifies that already existing elements in a merged slice should be preserved
@@ -1408,7 +1451,7 @@ spec:
                       items:
                         description: |-
                           ReadinessCheck is used to indicate how to tell whether a resource is ready
-                          for consumption
+                          for consumption.
                         properties:
                           fieldPath:
                             description: FieldPath shows the path of the field whose value will be used.
@@ -1494,6 +1537,13 @@ spec:
                         A Message containing details about this condition's last transition from
                         one status to another, if any.
                       type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
                     reason:
                       description: A Reason for this condition's last transition from one status to another.
                       type: string
@@ -1538,8 +1588,12 @@ spec:
     schema:
       openAPIV3Schema:
         description: |-
-          A CompositionRevision represents a revision in time of a Composition.
-          Revisions are created by Crossplane; they should be treated as immutable.
+          A CompositionRevision represents a revision of a Composition. Crossplane
+          creates new revisions when there are changes to the Composition.
+
+
+          Crossplane creates and manages CompositionRevisions. Don't directly edit
+          CompositionRevisions.
         properties:
           apiVersion:
             description: |-
@@ -1776,7 +1830,7 @@ spec:
                               - Required
                               type: string
                             mergeOptions:
-                              description: MergeOptions Specifies merge options on a field path
+                              description: MergeOptions Specifies merge options on a field path.
                               properties:
                                 appendSlice:
                                   description: Specifies that already existing elements in a merged slice should be preserved
@@ -2170,7 +2224,7 @@ spec:
                                 - Required
                                 type: string
                               mergeOptions:
-                                description: MergeOptions Specifies merge options on a field path
+                                description: MergeOptions Specifies merge options on a field path.
                                 properties:
                                   appendSlice:
                                     description: Specifies that already existing elements in a merged slice should be preserved
@@ -2443,6 +2497,45 @@ spec:
                 items:
                   description: A PipelineStep in a Composition Function pipeline.
                   properties:
+                    credentials:
+                      description: Credentials are optional credentials that the Composition Function needs.
+                      items:
+                        description: |-
+                          FunctionCredentials are optional credentials that a Composition Function
+                          needs to run.
+                        properties:
+                          name:
+                            description: Name of this set of credentials.
+                            type: string
+                          secretRef:
+                            description: |-
+                              A SecretRef is a reference to a secret containing credentials that should
+                              be supplied to the function.
+                            properties:
+                              name:
+                                description: Name of the secret.
+                                type: string
+                              namespace:
+                                description: Namespace of the secret.
+                                type: string
+                            required:
+                            - name
+                            - namespace
+                            type: object
+                          source:
+                            description: Source of the function credentials.
+                            enum:
+                            - None
+                            - Secret
+                            type: string
+                        required:
+                        - name
+                        - source
+                        type: object
+                      type: array
+                      x-kubernetes-list-map-keys:
+                      - name
+                      x-kubernetes-list-type: map
                     functionRef:
                       description: |-
                         FunctionRef is a reference to the Composition Function this step should
@@ -2646,7 +2739,7 @@ spec:
                                 - Required
                                 type: string
                               mergeOptions:
-                                description: MergeOptions Specifies merge options on a field path
+                                description: MergeOptions Specifies merge options on a field path.
                                 properties:
                                   appendSlice:
                                     description: Specifies that already existing elements in a merged slice should be preserved
@@ -2911,7 +3004,7 @@ spec:
                       items:
                         description: |-
                           ReadinessCheck is used to indicate how to tell whether a resource is ready
-                          for consumption
+                          for consumption.
                         properties:
                           fieldPath:
                             description: FieldPath shows the path of the field whose value will be used.
@@ -2997,6 +3090,13 @@ spec:
                         A Message containing details about this condition's last transition from
                         one status to another, if any.
                       type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
                     reason:
                       description: A Reason for this condition's last transition from one status to another.
                       type: string

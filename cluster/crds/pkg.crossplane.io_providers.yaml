@@ -32,7 +32,13 @@ spec:
     name: v1
     schema:
       openAPIV3Schema:
-        description: Provider is the CRD type for a request to add a provider to Crossplane.
+        description: |-
+          A Provider installs an OCI compatible Crossplane package, extending
+          Crossplane with support for new kinds of managed resources.
+
+
+          Read the Crossplane documentation for
+          [more information about Providers](https://docs.crossplane.io/latest/concepts/providers).
         properties:
           apiVersion:
             description: |-
@@ -63,7 +69,7 @@ spec:
                   Map of string keys and values that can be used to organize and categorize
                   (scope and select) objects. May match selectors of replication controllers
                   and services.
-                  More info: http://kubernetes.io/docs/user-guide/labels
+                  More info: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
                 type: object
               controllerConfigRef:
                 description: |-
@@ -177,6 +183,13 @@ spec:
                         A Message containing details about this condition's last transition from
                         one status to another, if any.
                       type: string
+                    observedGeneration:
+                      description: |-
+                        ObservedGeneration represents the .metadata.generation that the condition was set based upon.
+                        For instance, if .metadata.generation is currently 12, but the .status.conditions[x].observedGeneration is 9, the condition is out of date
+                        with respect to the current state of the instance.
+                      format: int64
+                      type: integer
                     reason:
                       description: A Reason for this condition's last transition from
                         one status to another.

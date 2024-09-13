@@ -88,7 +88,7 @@ If you are releasing a new minor of UXP, e.g. `vX.Y.0-up.1`, and you want to
 create a new release branch `release-X.Y` on `upbound/crossplane` based on the
 upstream `crossplane/crossplane` release branch.
 
-First, make sure to have updated the master branch first, see the section below.
+First, make sure to have updated the main branch first, see the section below.
 
 ```shell
 RELEASE_BRANCH=release-X.Y
@@ -98,23 +98,22 @@ git fetch --all
 
 # Create the new release branch from the one on crossplane/crossplane.
 git checkout -b $RELEASE_BRANCH upstream/$RELEASE_BRANCH
-git submodule update --init
 git diff --exit-code && git reset --hard $RELEASE_TAG # or whatever version we are releasing
 
 # Push it to upbound/crossplane, creating the new release branch.
 git push upbound-upstream $RELEASE_BRANCH
 
-# Create/update the sync-upstream-master branch
-git checkout sync-upstream-master || git checkout -b sync-upstream-master
+# Create/update the sync-upstream-main branch
+git checkout sync-upstream-main || git checkout -b sync-upstream-main
 
-git reset --hard upbound-upstream/master
-git merge upstream/master
+git reset --hard upbound-upstream/main
+git merge upstream/main
 # Resolve conflicts, if any
 
-# Now we have the latest master branch + our changes in sync-upstream-master
+# Now we have the latest main branch + our changes in sync-upstream-main
 # branch. Take a diff of the two branches and apply it to the release branch.
 git checkout -b patch-$RELEASE_BRANCH $RELEASE_BRANCH
-git diff upstream/master upbound-upstream/master | git apply -3
+git diff upstream/main upbound-upstream/main | git apply -3
 # Resolve conflicts, if any
 # Ensure code builds and tests pass
 # go mod tidy
@@ -151,21 +150,21 @@ git push --set-upstream upbound-origin sync-upstream-$RELEASE_BRANCH
 You can then create a PR from your fork's `sync-upstream-X.Y` branch to
 `upbound/crossplane`'s `release-X.Y` branch and get it reviewed and merged.
 
-##### Sync latest master:
+##### Sync latest main:
 
 This step is not required at the moment, but if you want to sync
-`upbound/crossplane`'s master branch to the latest `crossplane/crossplane`
-branch, run the following commands and open a PR from your fork's `sync-upstream-master` branch to
-`upbound/crossplane`'s `master` branch and get it reviewed and merged.
+`upbound/crossplane`'s main branch to the latest `crossplane/crossplane`
+branch, run the following commands and open a PR from your fork's `sync-upstream-main` branch to
+`upbound/crossplane`'s `main` branch and get it reviewed and merged.
 
 ```shell
 git fetch --all
-git checkout -b sync-upstream-master
-git reset --hard upbound-upstream/master
-git merge upstream/master
+git checkout -b sync-upstream-main
+git reset --hard upbound-upstream/main
+git merge upstream/main
 git submodule update --init
 # Resolve conflicts, if any
-git push --set-upstream upbound-origin sync-upstream-master
+git push --set-upstream upbound-origin sync-upstream-main
 ```
 
 ## Deprecated or on-demand release channels

@@ -261,3 +261,27 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_USR }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PSW }}
           AWS_DEFAULT_REGION: us-east-1
+
+  mirror-spaces-artifacts:
+    runs-on: ubuntu-20.04
+    needs: publish-artifacts
+    if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-'))
+
+    steps:
+      - name: Set Crossplane Version
+        run: make crossplane.version > $GITHUB_ENV
+
+      - name: Setup Crane
+        uses: imjasonh/setup-crane@v0.4
+
+      - name: Login to Spaces Artifacts Registry
+        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3
+        if: env.XPKG_SPACES_ARTIFACTS_ACCESS_ID != ''
+        with:
+          registry: xpkg.upbound.io/spaces-artifacts
+          username: ${{ secrets.XPKG_SPACES_ARTIFACTS_ACCESS_ID }}
+          password: ${{ secrets.XPKG_SPACES_ARTIFACTS_TOKEN }}
+
+      - name: Copy Upbound Crossplane image to Spaces Artifacts Registry
+        if: env.XPKG_SPACES_ARTIFACTS_ACCESS_ID != ''
+        run: crane cp xpkg.upbound.io/upbound/crossplane:${CROSSPLANE_VERSION} xpkg.upbound.io/spaces-artifacts/crossplane:${CROSSPLANE_VERSION}

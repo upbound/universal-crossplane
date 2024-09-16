@@ -48,3 +48,9 @@ rules:
   - '*'
   verbs:
   - '*'
+- apiGroups:
+  - secrets.crossplane.io
+  resources:
+  - '*'
+  verbs:
+  - '*'

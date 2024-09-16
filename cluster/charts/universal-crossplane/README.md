@@ -46,7 +46,7 @@ planes.
 | hostNetwork | bool | `false` | Enable `hostNetwork` for the Crossplane deployment. Caution: enabling `hostNetwork` grants the Crossplane Pod access to the host network namespace. Consider setting `dnsPolicy` to `ClusterFirstWithHostNet`. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy used for Crossplane and RBAC Manager pods. |
 | image.repository | string | `"xpkg.upbound.io/upbound/crossplane"` | Repository for the Crossplane pod image. |
-| image.tag | string | `"v1.16.0-up.1"` | The Crossplane image tag. Defaults to the value of `appVersion` in `Chart.yaml`. |
+| image.tag | string | `"v1.17.0-up.1"` | The Crossplane image tag. Defaults to the value of `appVersion` in `Chart.yaml`. |
 | imagePullSecrets | list | `[]` | The imagePullSecret names to add to the Crossplane ServiceAccount. |
 | leaderElection | bool | `true` | Enable [leader election](https://docs.crossplane.io/latest/concepts/pods/#leader-election) for the Crossplane pod. |
 | metrics.enabled | bool | `false` | Enable Prometheus path, port and scrape annotations and expose port 8080 for both the Crossplane and RBAC Manager pods. |
@@ -68,6 +68,7 @@ planes.
 | rbacManager.replicas | int | `1` | The number of RBAC Manager pod `replicas` to deploy. |
 | rbacManager.skipAggregatedClusterRoles | bool | `false` | Don't install aggregated Crossplane ClusterRoles. |
 | rbacManager.tolerations | list | `[]` | Add `tolerations` to the RBAC Manager pod deployment. |
+| rbacManager.topologySpreadConstraints | list | `[]` | Add `topologySpreadConstraints` to the RBAC Manager pod deployment. |
 | registryCaBundleConfig.key | string | `""` | The ConfigMap key containing a custom CA bundle to enable fetching packages from registries with unknown or untrusted certificates. |
 | registryCaBundleConfig.name | string | `""` | The ConfigMap name containing a custom CA bundle to enable fetching packages from registries with unknown or untrusted certificates. |
 | replicas | int | `1` | The number of Crossplane pod `replicas` to deploy. |
@@ -90,5 +91,6 @@ planes.
 | service.customAnnotations | object | `{}` | Configure annotations on the service object. Only enabled when webhooks.enabled = true |
 | serviceAccount.customAnnotations | object | `{}` | Add custom `annotations` to the Crossplane ServiceAccount. |
 | tolerations | list | `[]` | Add `tolerations` to the Crossplane pod deployment. |
+| topologySpreadConstraints | list | `[]` | Add `topologySpreadConstraints` to the Crossplane pod deployment. |
 | webhooks.enabled | bool | `true` | Enable webhooks for Crossplane and installed Provider packages. |
 

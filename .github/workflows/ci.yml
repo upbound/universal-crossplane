@@ -268,6 +268,14 @@ jobs:
     if: (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/release-'))
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Fetch History
+        run: git fetch --prune --unshallow
+
       - name: Set Crossplane Version
         run: make crossplane.version > $GITHUB_ENV
 

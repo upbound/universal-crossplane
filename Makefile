@@ -130,6 +130,9 @@ crossplane:
 	@cat $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/uxp-values.yaml >> $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Crossplane chart has been fetched
 
+crossplane.version:
+	@echo CROSSPLANE_VERSION=$(CROSSPLANE_TAG)
+
 eksaddon.chart: crossplane
 	@$(INFO) Generating values.yaml for the EKS Add-on chart
 	@$(SED_CMD) 's|repository: upbound/crossplane|repository: $(EKS_ADDON_REGISTRY)/upbound/crossplane|g' $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml

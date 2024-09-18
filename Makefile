@@ -25,9 +25,6 @@ CROSSPLANE_REPO := https://github.com/upbound/crossplane.git
 CROSSPLANE_TAG := v1.16.2-up.1
 CROSSPLANE_COMMIT := v1.16.2-up.1
 
-BOOTSTRAPPER_TAG := $(VERSION)
-
-export BOOTSTRAPPER_TAG
 export CROSSPLANE_TAG
 
 # ====================================================================================
@@ -66,12 +63,14 @@ CRDS_DIR=$(ROOT_DIR)/cluster/crds
 # Setup Helm
 
 HELM_BASE_URL = https://charts.upbound.io
+HELM_OCI_URL = xpkg.upbound.io/upbound
 HELM_S3_BUCKET = public-upbound.charts
 HELM_CHARTS = $(PACKAGE_NAME)
 HELM_CHART_LINT_ARGS_$(PACKAGE_NAME) = --set nameOverride='',imagePullSecrets=''
 HELM_DOCS_ENABLED = true
 HELM_VALUES_TEMPLATE_SKIPPED = true
 -include build/makelib/helm.mk
+-include makelib/helmoci.mk
 
 # ====================================================================================
 # Setup Images

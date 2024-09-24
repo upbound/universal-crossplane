@@ -22,8 +22,8 @@ EKS_ADDON_REGISTRY := 709825985650.dkr.ecr.us-east-1.amazonaws.com
 CROSSPLANE_REPO := https://github.com/upbound/crossplane.git
 # Tag corresponds to Docker image tag while commit is git-compatible signature
 # for pulling. They do not always match.
-CROSSPLANE_TAG := v1.17.1-up.1
-CROSSPLANE_COMMIT := v1.17.1-up.1
+CROSSPLANE_TAG := v1.18.0-up.1.rc.0.20.g64705d99
+CROSSPLANE_COMMIT := 64705d9 # https://github.com/upbound/crossplane/commit/64705d9945221431048d656c379b9ed9b9bdc03d
 
 export CROSSPLANE_TAG
 
@@ -129,8 +129,9 @@ crossplane:
 	@cat $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/uxp-values.yaml >> $(HELM_CHARTS_DIR)/$(PACKAGE_NAME)/values.yaml
 	@$(OK) Crossplane chart has been fetched
 
-crossplane.version:
+get-versions:
 	@echo CROSSPLANE_VERSION=$(CROSSPLANE_TAG)
+	@echo HELM_CHART_VERSION=$(HELM_CHART_VERSION)
 
 eksaddon.chart: crossplane
 	@$(INFO) Generating values.yaml for the EKS Add-on chart

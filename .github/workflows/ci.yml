@@ -278,7 +278,7 @@ jobs:
         run: git fetch --prune --unshallow
 
       - name: Set Crossplane Version
-        run: make crossplane.version > $GITHUB_ENV
+        run: make get-versions > $GITHUB_ENV
 
       - name: Setup Crane
         uses: imjasonh/setup-crane@v0.4
@@ -293,4 +293,6 @@ jobs:
 
       - name: Copy Upbound Crossplane image to Spaces Artifacts Registry
         if: env.XPKG_SPACES_ARTIFACTS_ACCESS_ID != ''
-        run: crane cp xpkg.upbound.io/upbound/crossplane:${CROSSPLANE_VERSION} xpkg.upbound.io/spaces-artifacts/crossplane:${CROSSPLANE_VERSION}
+        run: |
+          crane cp xpkg.upbound.io/upbound/crossplane:${CROSSPLANE_VERSION} xpkg.upbound.io/spaces-artifacts/crossplane:${CROSSPLANE_VERSION}
+          crane cp xpkg.upbound.io/upbound/universal-crossplane:${HELM_CHART_VERSION} xpkg.upbound.io/spaces-artifacts/universal-crossplane:${HELM_CHART_VERSION}

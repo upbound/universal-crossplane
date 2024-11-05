@@ -22,8 +22,8 @@ EKS_ADDON_REGISTRY := 709825985650.dkr.ecr.us-east-1.amazonaws.com
 CROSSPLANE_REPO := https://github.com/upbound/crossplane.git
 # Tag corresponds to Docker image tag while commit is git-compatible signature
 # for pulling. They do not always match.
-CROSSPLANE_TAG := v1.18.0-up.1.rc.0.66.ge4ac38c8
-CROSSPLANE_COMMIT := e4ac38c # https://github.com/upbound/crossplane/commit/e4ac38c87984e1f8861d97fb7a946bc46e8fd88c
+CROSSPLANE_TAG := v1.18.0-up.1
+CROSSPLANE_COMMIT := v1.18.0-up.1
 
 export CROSSPLANE_TAG
 

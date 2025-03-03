@@ -107,6 +107,7 @@ GITCP_CMD?=git -C $(WORK_DIR)/crossplane
 
 crossplane:
 	@$(INFO) Fetching Crossplane chart $(CROSSPLANE_TAG)
+	@rm -rf $(WORK_DIR)/crossplane
 	@mkdir -p $(WORK_DIR)/crossplane
 	@$(GITCP_CMD) init
 	@$(GITCP_CMD) remote add origin $(CROSSPLANE_REPO) 2>/dev/null || true

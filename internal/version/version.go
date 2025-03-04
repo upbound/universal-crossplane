@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package version contains the injected version of the package.
 package version
 
-// Version will be overridden with the current version at build time using the -X linker flag
-var Version = "0.0.0"
+// Version will be overridden with the current version at build time using the -X linker flag.
+var Version = "0.0.0" //nolint:gochecknoglobals // Version will be overridden at build time.

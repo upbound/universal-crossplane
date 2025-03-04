@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package main contains the entrypoint for the bootstrapper.
 package main
 
 import (
@@ -19,30 +20,31 @@ import (
 	"time"
 
 	"github.com/alecthomas/kong"
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
-	"github.com/pkg/errors"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+
 	"github.com/upbound/universal-crossplane/internal/controllers/billing"
 	"github.com/upbound/universal-crossplane/internal/version"
 )
 
-// BootstrapCmd represents the "bootstrap" command
+// BootstrapCmd represents the "bootstrap" command.
 type BootstrapCmd struct {
 	SyncPeriod  time.Duration `default:"10m"`
 	Namespace   string        `default:"upbound-system"`
-	Controllers []string      `default:"aws-marketplace" name:"controller" help:"List of controllers you want to run"`
-	MetricsPort int           `default:"8085" help:"Port for metrics server."`
+	Controllers []string      `default:"aws-marketplace" help:"List of controllers you want to run" name:"controller"`
+	MetricsPort int           `default:"8085"            help:"Port for metrics server."`
 }
 
-var cli struct {
+var cli struct { //nolint:gochecknoglobals // CLI definition.
 	Debug bool `help:"Enable debug mode"`
 
-	Bootstrap BootstrapCmd `cmd:"" name:"start" help:"Bootstraps Universal Crossplane"`
+	Bootstrap BootstrapCmd `cmd:"" help:"Bootstraps Universal Crossplane" name:"start"`
 }
 
 func main() {

@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package aws contains logic to handle AWS Marketplace billing.
 package aws
 
 import (
 	"context"
 
-	"k8s.io/client-go/util/retry"
-
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/marketplacemetering"
 	"github.com/golang-jwt/jwt"
-	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/retry"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 )
 
@@ -103,7 +103,10 @@ func (am *Marketplace) Verify(token, uid string) (bool, error) {
 	if !t.Valid {
 		return false, nil
 	}
-	claims := t.Claims.(jwt.MapClaims)
+	claims, ok := t.Claims.(jwt.MapClaims)
+	if !ok {
+		return false, errors.Errorf("expected jwt.MapClaims, got %t instead", t.Claims)
+	}
 	switch {
 	case claims["productCode"] != MarketplaceProductCode:
 		return false, errors.Errorf(errProductCodeMatchFmt, claims["productCode"], MarketplaceProductCode)

@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package billing contains controllers that manage billing-related resources.
 package billing
 
 import (
 	"context"
 
-	"github.com/upbound/universal-crossplane/internal/controllers/billing/aws"
-
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/marketplacemetering"
-	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/crossplane/crossplane-runtime/pkg/errors"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	"github.com/upbound/universal-crossplane/internal/controllers/billing/aws"
 	"github.com/upbound/universal-crossplane/internal/meta"
 )
 

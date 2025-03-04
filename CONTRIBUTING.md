@@ -88,7 +88,8 @@ If you are releasing a new minor of UXP, e.g. `vX.Y.0-up.1`, and you want to
 create a new release branch `release-X.Y` on `upbound/crossplane` based on the
 upstream `crossplane/crossplane` release branch.
 
-First, make sure to have updated the main branch first, see the section below.
+> [!IMPORTANT]
+> First, make sure to have updated the main branch, see [section below](#sync-latest-main).
 
 ```shell
 RELEASE_BRANCH=release-X.Y
@@ -117,7 +118,7 @@ git diff upstream/main upbound-upstream/main | git apply -3
 # Resolve conflicts, if any
 # Ensure code builds and tests pass
 # go mod tidy
-# make reviewable
+# earthly +reviewable
 # commit all changes
 git commit -s -m "Apply upbound patches"
 

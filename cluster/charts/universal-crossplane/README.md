@@ -43,10 +43,13 @@ planes.
 | extraVolumeMountsCrossplane | object | `{}` | Add custom `volumeMounts` to the Crossplane pod. |
 | extraVolumesCrossplane | object | `{}` | Add custom `volumes` to the Crossplane pod. |
 | function.packages | list | `[]` | A list of Function packages to install |
+| functionCache.medium | string | `""` | Set to `Memory` to hold the function cache in a RAM backed file system. Useful for Crossplane development. |
+| functionCache.pvc | string | `""` | The name of a PersistentVolumeClaim to use as the function cache. Disables the default function cache `emptyDir` Volume. |
+| functionCache.sizeLimit | string | `"512Mi"` | The size limit for the function cache. If medium is `Memory` the `sizeLimit` can't exceed Node memory. |
 | hostNetwork | bool | `false` | Enable `hostNetwork` for the Crossplane deployment. Caution: enabling `hostNetwork` grants the Crossplane Pod access to the host network namespace. Consider setting `dnsPolicy` to `ClusterFirstWithHostNet`. |
 | image.pullPolicy | string | `"IfNotPresent"` | The image pull policy used for Crossplane and RBAC Manager pods. |
 | image.repository | string | `"xpkg.upbound.io/upbound/crossplane"` | Repository for the Crossplane pod image. |
-| image.tag | string | `"v1.19.0-up.1"` | The Crossplane image tag. Defaults to the value of `appVersion` in `Chart.yaml`. |
+| image.tag | string | `"v1.20.0-up.1"` | The Crossplane image tag. Defaults to the value of `appVersion` in `Chart.yaml`. |
 | imagePullSecrets | list | `[]` | The imagePullSecret names to add to the Crossplane ServiceAccount. |
 | leaderElection | bool | `true` | Enable [leader election](https://docs.crossplane.io/latest/concepts/pods/#leader-election) for the Crossplane pod. |
 | metrics.enabled | bool | `false` | Enable Prometheus path, port and scrape annotations and expose port 8080 for both the Crossplane and RBAC Manager pods. |
@@ -57,7 +60,6 @@ planes.
 | packageCache.medium | string | `""` | Set to `Memory` to hold the package cache in a RAM backed file system. Useful for Crossplane development. |
 | packageCache.pvc | string | `""` | The name of a PersistentVolumeClaim to use as the package cache. Disables the default package cache `emptyDir` Volume. |
 | packageCache.sizeLimit | string | `"20Mi"` | The size limit for the package cache. If medium is `Memory` the `sizeLimit` can't exceed Node memory. |
-| packageManager.enableAutomaticDependencyDowngrade | bool | `false` | Enable automatic dependency version downgrades. This configuration is only used when `--enable-dependency-version-upgrades` flag is passed. |
 | podSecurityContextCrossplane | object | `{}` | Add a custom `securityContext` to the Crossplane pod. |
 | podSecurityContextRBACManager | object | `{}` | Add a custom `securityContext` to the RBAC Manager pod. |
 | priorityClassName | string | `""` | The PriorityClass name to apply to the Crossplane and RBAC Manager pods. |
@@ -85,6 +87,7 @@ planes.
 | resourcesRBACManager.requests.cpu | string | `"100m"` | CPU resource requests for the RBAC Manager pod. |
 | resourcesRBACManager.requests.memory | string | `"256Mi"` | Memory resource requests for the RBAC Manager pod. |
 | revisionHistoryLimit | string | `nil` | The number of Crossplane ReplicaSets to retain. |
+| runtimeClassName | string | `""` | The runtimeClassName name to apply to the Crossplane and RBAC Manager pods. |
 | securityContextCrossplane.allowPrivilegeEscalation | bool | `false` | Enable `allowPrivilegeEscalation` for the Crossplane pod. |
 | securityContextCrossplane.readOnlyRootFilesystem | bool | `true` | Set the Crossplane pod root file system as read-only. |
 | securityContextCrossplane.runAsGroup | int | `65532` | The group ID used by the Crossplane pod. |

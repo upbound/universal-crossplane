@@ -14,7 +14,7 @@ image:
   # -- Repository for the Crossplane pod image.
   repository: xpkg.upbound.io/upbound/crossplane
   # -- The Crossplane image tag. Defaults to the value of `appVersion` in `Chart.yaml`.
-  tag: "v1.20.1-up.1"
+  tag: "v1.20.4-up.1"
   # -- The image pull policy used for Crossplane and RBAC Manager pods.
   pullPolicy: IfNotPresent
 
@@ -75,6 +75,10 @@ registryCaBundleConfig:
 
 service:
   # -- Configure annotations on the service object. Only enabled when webhooks.enabled = true
+  customAnnotations: {}
+
+secrets:
+  # -- Add custom annotations to Crossplane Secret resources.
   customAnnotations: {}
 
 webhooks:

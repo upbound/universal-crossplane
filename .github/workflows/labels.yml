@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
 
       - name: Create Default Labels
-        uses: crazy-max/ghaction-github-labeler@v3
+        uses: crazy-max/ghaction-github-labeler@f8d36db286402ecb67054c6a14ec17ba2cd681a0 # v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           yaml-file: .github/default-labels.yml

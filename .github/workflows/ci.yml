@@ -89,10 +89,15 @@ jobs:
     if: needs.detect-noop.outputs.noop != 'true'
 
     steps:
+      - name: Configure Git credentials for private repositories
+        run: |
+          git config --global url."https://upbound-bot:${{ secrets.UPBOUND_BOT_GITHUB_TOKEN }}@github.com".insteadOf "https://github.com"
+
       - name: Checkout
         uses: actions/checkout@v2
         with:
           submodules: true
+          token: ${{ secrets.UPBOUND_BOT_GITHUB_TOKEN }}
 
       - name: Setup Go
         uses: actions/setup-go@v2

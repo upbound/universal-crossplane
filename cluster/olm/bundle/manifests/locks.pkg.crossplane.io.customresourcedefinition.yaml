@@ -71,6 +71,7 @@ spec:
                       type:
                         description: |-
                           Type is the type of package. Can be either Configuration or Provider.
+
                           Deprecated: Specify an apiVersion and kind instead.
                         enum:
                         - Configuration
@@ -94,6 +95,7 @@ spec:
                 type:
                   description: |-
                     Type is the type of package.
+
                     Deprecated: Specify an apiVersion and kind instead.
                   enum:
                   - Configuration

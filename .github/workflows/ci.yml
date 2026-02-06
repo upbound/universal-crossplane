@@ -14,12 +14,12 @@ env:
   GOLANGCI_VERSION: 'v1.64.8'
   DOCKER_BUILDX_VERSION: 'v0.8.2'
 
-  # Common users. We can't run a step 'if secrets.AWS_USR != ""' but we can run
-  # a step 'if env.AWS_USR' != ""', so we copy these to succinctly test whether
+  # We can't run a step 'if secrets.AWS_ROLE_ARN != ""' but we can run a step
+  # 'if env.AWS_ROLE_ARN != ""', so we copy these to succinctly test whether
   # credentials have been provided before trying to run steps that need them.
   XPKG_ACCESS_ID: ${{ secrets.XPKG_ACCESS_ID }}
   XPKG_SPACES_ARTIFACTS_ACCESS_ID: ${{ secrets.XPKG_SPACES_ARTIFACTS_ACCESS_ID }}
-  AWS_USR: ${{ secrets.AWS_USR }}
+  AWS_ROLE_ARN: ${{ secrets.AWS_ROLE_ARN }}
 
 jobs:
   detect-noop:
@@ -181,6 +181,9 @@ jobs:
     runs-on: ubuntu-22.04
     needs: detect-noop
     if: needs.detect-noop.outputs.noop != 'true'
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Setup QEMU
@@ -249,25 +252,26 @@ jobs:
           username: ${{ secrets.XPKG_ACCESS_ID }}
           password: ${{ secrets.XPKG_TOKEN }}
 
+      - name: Configure AWS Credentials
+        if: env.AWS_ROLE_ARN != ''
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: us-east-1
+
       - name: Publish Artifacts to S3 and Marketplace
         run: make -j2 publish BRANCH_NAME=${GITHUB_REF##*/}
-        if: env.AWS_USR != '' && env.XPKG_ACCESS_ID != ''
+        if: env.AWS_ROLE_ARN != '' && env.XPKG_ACCESS_ID != ''
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_USR }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PSW }}
-          AWS_DEFAULT_REGION: us-east-1
           GIT_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 
       - name: Promote Artifacts in S3 and Marketplace
-        if: github.ref == 'refs/heads/main' && env.AWS_USR != '' && env.XPKG_ACCESS_ID != ''
+        if: github.ref == 'refs/heads/main' && env.AWS_ROLE_ARN != '' && env.XPKG_ACCESS_ID != ''
         run: make -j2 promote
         env:
           BRANCH_NAME: main
           CHANNEL: main
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_USR }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PSW }}
-          AWS_DEFAULT_REGION: us-east-1
 
   mirror-spaces-artifacts:
     runs-on: ubuntu-22.04

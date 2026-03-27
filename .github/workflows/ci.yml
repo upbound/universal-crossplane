@@ -291,7 +291,7 @@ jobs:
         run: make get-versions > $GITHUB_ENV
 
       - name: Setup Crane
-        uses: imjasonh/setup-crane@v0.4
+        uses: imjasonh/setup-crane@6da1ae018866400525525ce74ff892880c099987 # v0.5
 
       - name: Login to Spaces Artifacts Registry
         uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3

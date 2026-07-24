@@ -294,7 +294,7 @@ jobs:
         uses: imjasonh/setup-crane@v0.4
 
       - name: Login to Spaces Artifacts Registry
-        uses: docker/login-action@343f7c4344506bcbf9b4de18042ae17996df046d # v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3
         if: env.XPKG_SPACES_ARTIFACTS_ACCESS_ID != ''
         with:
           registry: xpkg.upbound.io/spaces-artifacts
